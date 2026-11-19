@@ -555,7 +555,7 @@ Vista alternativa de un evento para shows de ritmo rápido (música, galas):
 
 ### Marca
 
-Logo y paleta en `docs/referencias/marca/` (logo vectorial pendiente de recibir).
+Logo y paleta en `docs/referencias/marca/`. Logo oficial: `runflow-logo.svg` (vectorial, color `#FAFAFA`, se recolorea por CSS). `runflow-logo-flat.svg` es un PNG dentro de un SVG: no usar para escalar.
 
 | Token | Valor | Uso |
 |---|---|---|
@@ -848,11 +848,10 @@ Cobro con Stripe en el hito de lanzamiento.
 
 ## 34. Preguntas abiertas
 
-Resueltas (ver D12–D19): publicidad, mezcladores, autonext, coleo, marca (amarillo `#FFD24A`), velocidad de lectura, numeración, idiomas, vistas.
+Resueltas (ver D12–D19): logo vectorial, publicidad, mezcladores, autonext, coleo, marca (amarillo `#FFD24A`), velocidad de lectura, numeración, idiomas, vistas.
 
 | # | Pendiente | Propuesta por defecto |
 |---|---|---|
-| P4b | Logo en vectorial (SVG): lo enviará el cliente | Usar el PNG mientras tanto |
 
 ---
 
