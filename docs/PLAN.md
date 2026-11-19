@@ -850,8 +850,7 @@ Cobro con Stripe en el hito de lanzamiento.
 
 Resueltas (ver D12–D19): logo vectorial, publicidad, mezcladores, autonext, coleo, marca (amarillo `#FFD24A`), velocidad de lectura, numeración, idiomas, vistas.
 
-| # | Pendiente | Propuesta por defecto |
-|---|---|---|
+No hay preguntas pendientes.
 
 ---
 
