@@ -143,8 +143,12 @@ describe('límite de intentos', () => {
       const statuses: number[] = [];
       for (let i = 0; i < 4; i++) {
         statuses.push(
-          (await c.post('/api/auth/login', { email: 'ana@chaneltv.test', password: 'mala-clave-123' }))
-            .status,
+          (
+            await c.post('/api/auth/login', {
+              email: 'ana@chaneltv.test',
+              password: 'mala-clave-123',
+            })
+          ).status,
         );
       }
       expect(statuses).toEqual([401, 401, 401, 429]);
