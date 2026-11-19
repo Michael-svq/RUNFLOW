@@ -78,7 +78,7 @@ Principios:
 | D9 | Duración por defecto de rótulo: **6 s**, configurable. Salida automática en cámara según Configuración Master. |
 | D10 | Interfaz muy parecida a la escaleta aportada (gris oscuro, naranja RunFlow, celdas de color). |
 | D11 | Acceso por navegador; sin apps nativas. Station es un servicio sin ventanas, administrado desde el navegador. |
-| D12 | *(Recomendación, pendiente de confirmar)* Sin publicidad dentro de la app; en su lugar, plan gratuito limitado. |
+| D12 | Sin publicidad dentro de la app (tampoco en el plan gratuito); en su lugar, plan gratuito limitado. |
 | D13 | Orden de mezcladores: **OBS → vMix → ATEM**. |
 | D14 | Autonext activado por defecto en VTR, configurable. |
 | D15 | Cada media/VTR tiene **duración + coleo** (ej. `0:50 +5`): el coleo son segundos de seguridad tras el final. |
@@ -727,7 +727,7 @@ Formatos: PDF, CSV, XLSX, JSON (copia completa). Importación desde CSV/XLSX con
 
 | Plan | Para | Notas |
 |---|---|---|
-| Gratis | Probar | 1 programa, 3 usuarios, sin equipos. **Sin publicidad** (recomendado) |
+| Gratis | Probar | 1 programa, 3 usuarios, sin equipos. **Sin publicidad** |
 | Básico | Producciones pequeñas | Usuarios limitados, nube |
 | Profesional | TV local | Usuarios, Station, CasparCG, mezcladores, IA |
 | Educación | Escuelas y universidades | Precio reducido, muchas cuentas, clases/grupos |
@@ -848,13 +848,11 @@ Cobro con Stripe en el hito de lanzamiento.
 
 ## 34. Preguntas abiertas
 
-Resueltas (ver D13–D19): mezcladores, autonext, coleo, marca, velocidad de lectura, numeración, idiomas, vistas.
+Resueltas (ver D12–D19): publicidad, mezcladores, autonext, coleo, marca (amarillo `#FFD24A`), velocidad de lectura, numeración, idiomas, vistas.
 
 | # | Pendiente | Propuesta por defecto |
 |---|---|---|
-| P4b | Logo en vectorial (SVG) | Usar el PNG mientras tanto |
-| P9 | Amarillo: en el texto aparece `#FED24A` y en la imagen `#FFD24A` | `#FFD24A` |
-| P10 | Publicidad en el plan gratuito (D12) | Sin publicidad |
+| P4b | Logo en vectorial (SVG): lo enviará el cliente | Usar el PNG mientras tanto |
 
 ---
 
