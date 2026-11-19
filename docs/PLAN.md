@@ -79,6 +79,13 @@ Principios:
 | D10 | Interfaz muy parecida a la escaleta aportada (gris oscuro, naranja RunFlow, celdas de color). |
 | D11 | Acceso por navegador; sin apps nativas. Station es un servicio sin ventanas, administrado desde el navegador. |
 | D12 | *(Recomendación, pendiente de confirmar)* Sin publicidad dentro de la app; en su lugar, plan gratuito limitado. |
+| D13 | Orden de mezcladores: **OBS → vMix → ATEM**. |
+| D14 | Autonext activado por defecto en VTR, configurable. |
+| D15 | Cada media/VTR tiene **duración + coleo** (ej. `0:50 +5`): el coleo son segundos de seguridad tras el final. |
+| D16 | Marca: paleta `#FF7A1A` `#FFD24A` `#A3C94A` `#2F7D32` `#1F2A2E`; tipografías Helvetica y Montserrat (Bold/Black). |
+| D17 | Velocidad de lectura por defecto: 3 palabras/segundo. Numeración de líneas de 2 en 2, configurable. |
+| D18 | Solo español en el lanzamiento, preparado para más idiomas. |
+| D19 | Columnas redimensionables y movibles; la disposición se guarda como **vista con nombre** y se puede elegir después. |
 
 ---
 
@@ -272,7 +279,8 @@ Paquete puro en `packages/core`, probado con tests deterministas.
 
 | Término | Definición |
 |---|---|
-| Duración estimada | Introducida a mano o calculada: en ACTING/paso, por nº de palabras ÷ velocidad de lectura; en VTR = DUR. VTR (+ colas). |
+| Duración estimada | Introducida a mano o calculada: en ACTING/paso, por nº de palabras ÷ velocidad de lectura (3 palabras/s por defecto); en VTR = DUR. VTR (+ colas). |
+| Coleo | Segundos de seguridad tras el final de un media/VTR (columna COLEAs). Se muestra como `0:50 +5`. No suma a la duración de la línea: es margen por si el corte llega tarde. |
 | Duración real | Medida entre el GO que entra la línea y el GO que la saca. |
 | Hora prevista de inicio (front-time) | Hora inicio programa + Σ duraciones anteriores (reales en las emitidas, estimadas en las pendientes). |
 | Back-time | Hora fin programa − Σ duraciones restantes. Indica a qué hora debe empezar cada línea para acabar en hora. |
@@ -298,7 +306,7 @@ Se puede alternar la vista entre **hora real** y **hora estimada**.
 - **Bloque actual** (ej. HEADLINES 1): transcurrido / restante.
 - **Línea en aire:** cuenta adelante y cuenta atrás.
 - **Cronómetro** libre.
-- **Media duración:** duración objetivo de piezas con tolerancia (ej. `0:50 ±5`); marca las que se salen *(por confirmar, ver §34)*.
+- **Media en reproducción:** duración + coleo del VTR en aire (ej. `0:50 +5`). La cuenta atrás llega a 0 al final de la duración y después cuenta el coleo en ámbar; al agotarse el coleo, aviso en rojo.
 
 Colores de cuenta atrás configurables (ej. amarillo a 30 s, rojo a 10 s, parpadeo en 0).
 
@@ -323,7 +331,7 @@ Objetivo de latencia: **< 100 ms** del GO al equipo en red local.
 
 ### Autonext
 
-Un VTR puede pasar solo a la línea siguiente al terminar (configurable por tipo de línea y por línea).
+Un VTR pasa solo a la línea siguiente al terminar su duración (**activado por defecto en VTR**; configurable por tipo de línea y por línea). Opción de configuración: cortar al final de la duración (por defecto) o al final del coleo.
 
 ### Seguridad
 
@@ -465,9 +473,9 @@ Cada salida se abre con un **enlace con token** (sin usuario), revocable, para T
 | Integración | Fase | Uso |
 |---|---|---|
 | CasparCG | I (M7) | Rótulos, VTR |
-| ATEM | I (M8) | Corte de fuente en GO, estado de PGM/PVW |
-| OBS | I (M8) | Cambio de escena, inicio/fin de grabación y streaming |
-| vMix | I (M8) | Corte de entrada, títulos, streaming |
+| OBS | I (M8, 1º) | Cambio de escena, inicio/fin de grabación y streaming |
+| vMix | I (M8, 2º) | Corte de entrada, títulos, streaming |
+| ATEM | I (M8, 3º) | Corte de fuente en GO, estado de PGM/PVW |
 | Bitfocus Companion / Stream Deck | I (M8) | GO, rótulos, prompter |
 | Vista presentador + control de streaming | II | Sobre OBS/vMix (RunFlow no emite vídeo) |
 | TriCaster, Ross, XPression, Chyron, Wirecast, XSplit, Autoscript | IV | Según demanda |
@@ -475,7 +483,7 @@ Cada salida se abre con un **enlace con token** (sin usuario), revocable, para T
 | Protocolo MOS | IV | Integración con sistemas broadcast |
 | API pública + webhooks | II | Integraciones de terceros |
 
-El **orden** dentro de M8 se decide según §34 (propuesta: ATEM primero, muy común en TV local y educación).
+Orden dentro de M8: **OBS → vMix → ATEM**.
 
 ---
 
@@ -545,14 +553,21 @@ Vista alternativa de un evento para shows de ritmo rápido (música, galas):
 
 ## 23. Interfaz de usuario
 
-### Estilo (tomado de la referencia)
+### Marca
+
+Logo y paleta en `docs/referencias/marca/` (logo vectorial pendiente de recibir).
 
 | Token | Valor | Uso |
 |---|---|---|
-| Fondo app | `#333333` | Marco general (presentación) |
-| Fondo rejilla | `#434343` / `#999999` | Escaleta (referencia) |
-| Naranja RunFlow | ≈ `#F7931E` *(confirmar valor exacto del logo)* | Acentos, selección, botones primarios |
+| Naranja RunFlow | `#FF7A1A` | Acentos, selección, botones primarios, GO armado |
+| Amarillo | `#FFD24A` | Avisos, cuenta atrás próxima a 0, coleo |
+| Verde claro | `#A3C94A` | Correcto / listo, línea SIGUIENTE |
+| Verde oscuro | `#2F7D32` | Confirmaciones, estado "en línea" de equipos |
+| Antracita | `#1F2A2E` | Fondo de la aplicación (tema interior) |
+| Rejilla | `#434343` / `#999999` | Fondo y bordes de la escaleta (referencia) |
 | Texto | blanco / negro según celda | |
+
+**Tipografías:** Montserrat Bold/Black para logo, títulos y relojes grandes; Helvetica (con Arial de respaldo) para texto y rejilla. Cifras de relojes con ancho fijo (`tabular-nums`). Las fuentes van **incluidas en la app** (no desde CDN) para que funcionen sin internet en Station.
 
 **Tipos de línea** (colores de la referencia, editables):
 
@@ -593,7 +608,8 @@ Vista alternativa de un evento para shows de ritmo rápido (música, galas):
 Mejoras sobre la hoja, manteniendo su aspecto:
 
 - Columnas fijas a la izquierda (Estado, Nº, Tipo, Nombre) al hacer scroll horizontal.
-- **Vistas por puesto** (Redacción, Realización, Producción, CG, Técnica, Presentador) con columnas, orden y anchos guardados.
+- Columnas **redimensionables y movibles** (arrastrar cabecera y borde).
+- **Vistas guardadas con nombre:** la disposición actual (columnas visibles, orden, anchos) se guarda como vista personal o compartida, y se elige después desde el selector. Vistas por defecto por puesto: Redacción, Realización, Producción, CG, Técnica, Presentador.
 - Ocultar columnas o líneas según permisos.
 - Línea EN AIRE y SIGUIENTE resaltadas.
 - Arrastrar para reordenar; numeración configurable (por defecto de 2 en 2, para intercalar).
@@ -832,16 +848,13 @@ Cobro con Stripe en el hito de lanzamiento.
 
 ## 34. Preguntas abiertas
 
-| # | Pregunta | Propuesta por defecto |
+Resueltas (ver D13–D19): mezcladores, autonext, coleo, marca, velocidad de lectura, numeración, idiomas, vistas.
+
+| # | Pendiente | Propuesta por defecto |
 |---|---|---|
-| P1 | ¿Qué mezclador primero? | ATEM → OBS → vMix |
-| P2 | ¿Autonext al terminar un VTR, por defecto? | Activado en VTR, configurable |
-| P3 | ¿Qué significa exactamente "MEDIA DURACIÓN 0:50 +5" en la cabecera? | Duración objetivo de piezas ± tolerancia |
-| P4 | Valores exactos de marca: naranja, tipografía, logo en vectorial | Tomar del logo RunFlow |
-| P5 | Velocidad de lectura por defecto | 3 palabras/segundo (≈180 ppm) |
-| P6 | Numeración de líneas | De 2 en 2, configurable |
-| P7 | ¿Se necesita inglés u otros idiomas en el lanzamiento? | Solo español, preparado para más |
-| P8 | Columnas exactas de la vista de cada puesto | Partir de la referencia y ajustar en M1 |
+| P4b | Logo en vectorial (SVG) | Usar el PNG mientras tanto |
+| P9 | Amarillo: en el texto aparece `#FED24A` y en la imagen `#FFD24A` | `#FFD24A` |
+| P10 | Publicidad en el plan gratuito (D12) | Sin publicidad |
 
 ---
 
