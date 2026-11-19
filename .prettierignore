@@ -3,3 +3,7 @@ dist
 dev-dist
 docs/referencias
 packages/db/migrations/meta
+apps/web/public
+**/playwright-report
+**/test-results
+*.svg

@@ -1,0 +1,19 @@
+# Solo la base de datos, para desarrollar con `pnpm dev`.
+#   docker compose -f docker-compose.dev.yml up -d
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: runflow
+      POSTGRES_PASSWORD: runflow
+      POSTGRES_DB: runflow
+      RUNFLOW_APP_DB_PASSWORD: runflow_app
+    ports:
+      - '5432:5432'
+    volumes:
+      - db-dev:/var/lib/postgresql/data
+      - ./deploy/postgres-init.sh:/docker-entrypoint-initdb.d/10-runflow.sh:ro
+      - ./deploy/runflow-init.sql.tpl:/docker-entrypoint-initdb.d/runflow-init.sql.tpl:ro
+
+volumes:
+  db-dev:

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es" data-theme="interior">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1F2A2E" />
+    <meta
+      name="description"
+      content="RunFlow: escaletas, guiones, rótulos, teleprompter y producción"
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <title>RunFlow</title>
+    <script>
+      // Aplica el tema guardado antes de pintar (evita un destello del tema equivocado).
+      try {
+        var t = localStorage.getItem('rf-theme');
+        if (t === 'interior' || t === 'exterior') document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

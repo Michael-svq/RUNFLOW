@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: runflow
+          POSTGRES_PASSWORD: runflow
+          POSTGRES_DB: runflow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U runflow"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_ADMIN_URL: postgres://runflow:runflow@localhost:5432/runflow
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Crear el rol de la aplicación (sin privilegios, sujeto a RLS)
+        run: PGPASSWORD=runflow psql -h localhost -U runflow -d runflow -c "CREATE ROLE runflow_app LOGIN PASSWORD 'runflow_app';"
+
+      - name: Formato
+        run: pnpm exec prettier --check .
+
+      - name: Tipos
+        run: pnpm typecheck
+
+      - name: Pruebas unitarias y de API
+        run: pnpm test
+
+      - name: Compilar
+        run: pnpm build
+
+      - name: Instalar Chromium para Playwright
+        run: pnpm --filter @runflow/web exec playwright install --with-deps chromium
+
+      - name: Pruebas de navegador
+        run: pnpm test:e2e
+
+      - name: Informe de Playwright
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 7

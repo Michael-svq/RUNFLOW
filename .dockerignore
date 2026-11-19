@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+**/dist
+**/dev-dist
+.git
+.env
+.env.*
+!.env.example
+.data
+docs/referencias
+**/playwright-report
+**/test-results

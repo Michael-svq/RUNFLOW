@@ -207,3 +207,11 @@ describe('contraseñas', () => {
     expect(res.body.user.name).toBe('Ana María');
   });
 });
+
+describe('último acceso', () => {
+  it('se registra al configurar y al entrar', async () => {
+    const { admin } = await setupFirstOrg(ctx.app);
+    const list = await admin.get('/api/users');
+    expect(list.body.members[0].lastLoginAt).not.toBeNull();
+  });
+});

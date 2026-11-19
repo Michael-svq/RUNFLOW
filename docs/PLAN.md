@@ -3,7 +3,7 @@
 > Sistema de escaletas, guiones, rótulos, teleprompter y producción para TV local, educación y eventos.
 > Web (PWA) multiempresa en la nube **y** funcionamiento local sin conexión mediante **RunFlow Station**.
 
-Estado: **planificación** (nada construido aún). Documento vivo: se actualiza en cada hito.
+Estado: **M0 terminado** (falta publicar el entorno de staging, que necesita un servidor). Siguiente: **M1**. Documento vivo: se actualiza en cada hito.
 
 ---
 
@@ -65,44 +65,44 @@ Principios:
 
 ## 2. Decisiones tomadas
 
-| # | Decisión |
-|---|---|
-| D1 | Público: TV local, educación y eventos (prioridad TV local y educación). |
-| D2 | Debe funcionar en local, sin internet, con un ordenador como servidor. |
-| D3 | Motor de rótulos y playout: **CasparCG**, integrado y controlado directamente desde RunFlow. |
-| D4 | Multiempresa: SaaS en la nube + solución local con servidor propio. |
-| D5 | IA multiproveedor: cada empresa configura su API (Anthropic, OpenAI, Gemini…; Ollama en local). |
-| D6 | Se desarrollan todas las fases, por hitos. |
-| D7 | Botón **GO** para pasar al siguiente evento y mover los equipos (CasparCG, mezclador, rótulos). |
-| D8 | Rótulos de VTR automáticos por código de tiempo `mm:ss`; rótulos de cámara manuales con ▶/■. |
-| D9 | Duración por defecto de rótulo: **6 s**, configurable. Salida automática en cámara según Configuración Master. |
-| D10 | Interfaz muy parecida a la escaleta aportada (gris oscuro, naranja RunFlow, celdas de color). |
-| D11 | Acceso por navegador; sin apps nativas. Station es un servicio sin ventanas, administrado desde el navegador. |
-| D12 | Sin publicidad dentro de la app (tampoco en el plan gratuito); en su lugar, plan gratuito limitado. |
-| D13 | Orden de mezcladores: **OBS → vMix → ATEM**. |
-| D14 | Autonext activado por defecto en VTR, configurable. |
-| D15 | Cada media/VTR tiene **duración + coleo** (ej. `0:50 +5`): el coleo son segundos de seguridad tras el final. |
-| D16 | Marca: paleta `#FF7A1A` `#FFD24A` `#A3C94A` `#2F7D32` `#1F2A2E`; tipografías Helvetica y Montserrat (Bold/Black). |
-| D17 | Velocidad de lectura por defecto: 3 palabras/segundo. Numeración de líneas de 2 en 2, configurable. |
-| D18 | Solo español en el lanzamiento, preparado para más idiomas. |
+| #   | Decisión                                                                                                            |
+| --- | ------------------------------------------------------------------------------------------------------------------- |
+| D1  | Público: TV local, educación y eventos (prioridad TV local y educación).                                            |
+| D2  | Debe funcionar en local, sin internet, con un ordenador como servidor.                                              |
+| D3  | Motor de rótulos y playout: **CasparCG**, integrado y controlado directamente desde RunFlow.                        |
+| D4  | Multiempresa: SaaS en la nube + solución local con servidor propio.                                                 |
+| D5  | IA multiproveedor: cada empresa configura su API (Anthropic, OpenAI, Gemini…; Ollama en local).                     |
+| D6  | Se desarrollan todas las fases, por hitos.                                                                          |
+| D7  | Botón **GO** para pasar al siguiente evento y mover los equipos (CasparCG, mezclador, rótulos).                     |
+| D8  | Rótulos de VTR automáticos por código de tiempo `mm:ss`; rótulos de cámara manuales con ▶/■.                       |
+| D9  | Duración por defecto de rótulo: **6 s**, configurable. Salida automática en cámara según Configuración Master.      |
+| D10 | Interfaz muy parecida a la escaleta aportada (gris oscuro, naranja RunFlow, celdas de color).                       |
+| D11 | Acceso por navegador; sin apps nativas. Station es un servicio sin ventanas, administrado desde el navegador.       |
+| D12 | Sin publicidad dentro de la app (tampoco en el plan gratuito); en su lugar, plan gratuito limitado.                 |
+| D13 | Orden de mezcladores: **OBS → vMix → ATEM**.                                                                        |
+| D14 | Autonext activado por defecto en VTR, configurable.                                                                 |
+| D15 | Cada media/VTR tiene **duración + coleo** (ej. `0:50 +5`): el coleo son segundos de seguridad tras el final.        |
+| D16 | Marca: paleta `#FF7A1A` `#FFD24A` `#A3C94A` `#2F7D32` `#1F2A2E`; tipografías Helvetica y Montserrat (Bold/Black).   |
+| D17 | Velocidad de lectura por defecto: 3 palabras/segundo. Numeración de líneas de 2 en 2, configurable.                 |
+| D18 | Solo español en el lanzamiento, preparado para más idiomas.                                                         |
 | D19 | Columnas redimensionables y movibles; la disposición se guarda como **vista con nombre** y se puede elegir después. |
 
 ---
 
 ## 3. Usuarios y roles
 
-| Rol | Qué hace principalmente |
-|---|---|
-| Administrador de empresa | Usuarios, licencias, configuración global |
-| Productor / Editor jefe | Crea escaletas, ordena, aprueba, controla tiempos |
-| Redactor / Periodista | Escribe guion (paso, off, rótulos) de sus piezas |
-| Realizador | Ejecuta el directo (GO), vista realización |
-| Operador CG | Lanza / revisa rótulos |
-| Presentador / Operador prompter | Teleprompter, vista de presentador |
-| Técnicos (VTR, sonido, cámaras) | Vistas de sus columnas, estados (VTR OK, fuentes) |
-| Producción | Invitados, teléfonos, sets, logística (y Fase III completa) |
-| Profesor / Alumno (educación) | Igual que los anteriores con clases y grupos |
-| Invitado / Solo lectura | Ver escaleta o una salida concreta |
+| Rol                             | Qué hace principalmente                                     |
+| ------------------------------- | ----------------------------------------------------------- |
+| Administrador de empresa        | Usuarios, licencias, configuración global                   |
+| Productor / Editor jefe         | Crea escaletas, ordena, aprueba, controla tiempos           |
+| Redactor / Periodista           | Escribe guion (paso, off, rótulos) de sus piezas            |
+| Realizador                      | Ejecuta el directo (GO), vista realización                  |
+| Operador CG                     | Lanza / revisa rótulos                                      |
+| Presentador / Operador prompter | Teleprompter, vista de presentador                          |
+| Técnicos (VTR, sonido, cámaras) | Vistas de sus columnas, estados (VTR OK, fuentes)           |
+| Producción                      | Invitados, teléfonos, sets, logística (y Fase III completa) |
+| Profesor / Alumno (educación)   | Igual que los anteriores con clases y grupos                |
+| Invitado / Solo lectura         | Ver escaleta o una salida concreta                          |
 
 Los roles son plantillas de permisos; cada empresa puede crear los suyos (ver §26).
 
@@ -110,11 +110,11 @@ Los roles son plantillas de permisos; cada empresa puede crear los suyos (ver §
 
 ## 4. Modos de despliegue
 
-| Modo | Para quién | Cómo funciona |
-|---|---|---|
-| **Nube** | Escuelas, productoras sin equipos que controlar | Todo en `app.runflow.tv`. Nada que instalar. |
-| **Híbrido** | TV local con equipos | Nube + Station en el control. El estudio trabaja contra Station (red local); los redactores fuera, contra la nube. Station y nube se sincronizan solos. Si se cae internet, el estudio sigue. |
-| **Local** | Quien no quiera nube | Solo Station. Todo dentro de la red del centro. Licencia local. |
+| Modo        | Para quién                                      | Cómo funciona                                                                                                                                                                                 |
+| ----------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Nube**    | Escuelas, productoras sin equipos que controlar | Todo en `app.runflow.tv`. Nada que instalar.                                                                                                                                                  |
+| **Híbrido** | TV local con equipos                            | Nube + Station en el control. El estudio trabaja contra Station (red local); los redactores fuera, contra la nube. Station y nube se sincronizan solos. Si se cae internet, el estudio sigue. |
+| **Local**   | Quien no quiera nube                            | Solo Station. Todo dentro de la red del centro. Licencia local.                                                                                                                               |
 
 ---
 
@@ -152,32 +152,32 @@ Piezas:
 
 ## 6. Stack tecnológico
 
-| Capa | Elección | Motivo |
-|---|---|---|
-| Lenguaje | TypeScript en todo | Un solo lenguaje para web, servidor y Station |
-| Web | React + Vite + `vite-plugin-pwa` | Estándar, rápido, PWA instalable |
-| Rejilla de escaleta | Componente propio sobre TanStack Table + TanStack Virtual | Comportamiento tipo hoja de cálculo, miles de filas fluidas |
-| Editor de guion | TipTap (ProseMirror) + `y-prosemirror` | Edición colaborativa, marcas y bloques propios (paso/off/rótulo) |
-| Estado en cliente | Zustand + Yjs | Simple |
-| Colaboración | Yjs + Hocuspocus | CRDT probado, persistencia y permisos en servidor |
-| Servidor | Node 22 + Fastify + WebSocket | Rendimiento y ecosistema |
-| Base de datos | PostgreSQL 16 + Drizzle ORM | Igual en nube y local |
-| Autenticación | Better Auth (sesiones, organizaciones) | Multiempresa; SSO más adelante |
-| Mensajería entre nodos (SaaS) | Redis (solo nube a escala) | Station no lo necesita |
-| Ficheros | S3 compatible (Cloudflare R2) en nube; disco local en Station | Sin coste de salida |
-| Subidas | Protocolo tus (subidas reanudables) | Vídeos grandes |
-| Transcodificación | ffmpeg en worker | Proxies, miniaturas, duración |
-| PDF | Generación en el navegador (pdfmake o react-pdf) | Funciona igual sin conexión |
-| Importar/Exportar | CSV, XLSX (ExcelJS), JSON propio | Migrar desde hojas actuales |
-| CasparCG | `casparcg-connection` (AMCP) + OSC | Librería madura |
-| ATEM | `atem-connection` | Librería madura |
-| OBS | `obs-websocket-js` (v5) | Oficial |
-| vMix | API HTTP/TCP de vMix | Oficial |
-| Descubrimiento en red | mDNS (`bonjour-service`) | Encontrar Station y equipos |
-| Pruebas | Vitest, Playwright, simuladores propios de equipos | |
-| Monorepo | pnpm + Turborepo | |
-| CI | GitHub Actions | |
-| Errores | Sentry (desactivable en local) | |
+| Capa                          | Elección                                                      | Motivo                                                              |
+| ----------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Lenguaje                      | TypeScript en todo                                            | Un solo lenguaje para web, servidor y Station                       |
+| Web                           | React + Vite + `vite-plugin-pwa`                              | Estándar, rápido, PWA instalable                                    |
+| Rejilla de escaleta           | Componente propio sobre TanStack Table + TanStack Virtual     | Comportamiento tipo hoja de cálculo, miles de filas fluidas         |
+| Editor de guion               | TipTap (ProseMirror) + `y-prosemirror`                        | Edición colaborativa, marcas y bloques propios (paso/off/rótulo)    |
+| Estado en cliente             | Zustand + Yjs                                                 | Simple                                                              |
+| Colaboración                  | Yjs + Hocuspocus                                              | CRDT probado, persistencia y permisos en servidor                   |
+| Servidor                      | Node 22 + Fastify + WebSocket                                 | Rendimiento y ecosistema                                            |
+| Base de datos                 | PostgreSQL 16 + Drizzle ORM                                   | Igual en nube y local                                               |
+| Autenticación                 | Propia: scrypt + sesiones en Postgres (ver `docs/adr/0001`)   | Sin dependencias nativas (Station), control total; SSO más adelante |
+| Mensajería entre nodos (SaaS) | Redis (solo nube a escala)                                    | Station no lo necesita                                              |
+| Ficheros                      | S3 compatible (Cloudflare R2) en nube; disco local en Station | Sin coste de salida                                                 |
+| Subidas                       | Protocolo tus (subidas reanudables)                           | Vídeos grandes                                                      |
+| Transcodificación             | ffmpeg en worker                                              | Proxies, miniaturas, duración                                       |
+| PDF                           | Generación en el navegador (pdfmake o react-pdf)              | Funciona igual sin conexión                                         |
+| Importar/Exportar             | CSV, XLSX (ExcelJS), JSON propio                              | Migrar desde hojas actuales                                         |
+| CasparCG                      | `casparcg-connection` (AMCP) + OSC                            | Librería madura                                                     |
+| ATEM                          | `atem-connection`                                             | Librería madura                                                     |
+| OBS                           | `obs-websocket-js` (v5)                                       | Oficial                                                             |
+| vMix                          | API HTTP/TCP de vMix                                          | Oficial                                                             |
+| Descubrimiento en red         | mDNS (`bonjour-service`)                                      | Encontrar Station y equipos                                         |
+| Pruebas                       | Vitest, Playwright, simuladores propios de equipos            |                                                                     |
+| Monorepo                      | pnpm workspaces (Turborepo si el monorepo crece)              |                                                                     |
+| CI                            | GitHub Actions                                                |                                                                     |
+| Errores                       | Sentry (desactivable en local)                                |                                                                     |
 
 ---
 
@@ -213,48 +213,48 @@ Todas las tablas de negocio llevan `org_id` y se protegen con **Row Level Securi
 
 ### Núcleo
 
-| Entidad | Campos principales |
-|---|---|
-| `organizations` | nombre, plan, modo (nube/híbrido/local), logo, zona horaria |
-| `users`, `memberships` | usuario ↔ empresa ↔ rol |
-| `roles`, `permissions` | permisos por capacidad (§26) |
-| `programs` | nombre, tipo (informativo, deportes, magacín, evento…), plantilla, configuración |
+| Entidad                | Campos principales                                                                                       |
+| ---------------------- | -------------------------------------------------------------------------------------------------------- |
+| `organizations`        | nombre, plan, modo (nube/híbrido/local), logo, zona horaria                                              |
+| `users`, `memberships` | usuario ↔ empresa ↔ rol                                                                                |
+| `roles`, `permissions` | permisos por capacidad (§26)                                                                             |
+| `programs`             | nombre, tipo (informativo, deportes, magacín, evento…), plantilla, configuración                         |
 | `rundowns` (escaletas) | programa, fecha, hora inicio, hora fin, modo de tiempo, estado (borrador/lista/en aire/cerrada), doc Yjs |
-| `rundown_lines` | proyección de la escaleta para búsquedas e informes: orden, nº, tipo, campos (JSONB), duraciones |
-| `blocks` | bloques/segmentos (ej. "HEADLINES 1") con reloj propio |
-| `line_types` | ACTING, TEMA, VTR, COLAS, MOCHILA, FIBRA, GRAFISMO… con color, comportamiento y fuente por defecto |
-| `column_defs` | catálogo de columnas (fijas y personalizadas) |
-| `views` | vistas por puesto: columnas visibles, orden, anchos |
-| `scripts` | guion de cada línea (fragmento Yjs) + proyección de texto paso/off |
-| `graphics` (rótulos) | línea, tipo, campos, tc_in, tc_out, modo (auto/manual), estado |
-| `graphic_types` | TOT, LOC, INF, DAT, BAN, HIG… campos con longitud máxima y plantilla |
-| `graphic_templates` | diseño HTML versionado por empresa |
-| `people` | base de datos de personas y cargos para rótulos |
-| `settings` | clave/valor con ámbito empresa/programa/escaleta |
+| `rundown_lines`        | proyección de la escaleta para búsquedas e informes: orden, nº, tipo, campos (JSONB), duraciones         |
+| `blocks`               | bloques/segmentos (ej. "HEADLINES 1") con reloj propio                                                   |
+| `line_types`           | ACTING, TEMA, VTR, COLAS, MOCHILA, FIBRA, GRAFISMO… con color, comportamiento y fuente por defecto       |
+| `column_defs`          | catálogo de columnas (fijas y personalizadas)                                                            |
+| `views`                | vistas por puesto: columnas visibles, orden, anchos                                                      |
+| `scripts`              | guion de cada línea (fragmento Yjs) + proyección de texto paso/off                                       |
+| `graphics` (rótulos)   | línea, tipo, campos, tc_in, tc_out, modo (auto/manual), estado                                           |
+| `graphic_types`        | TOT, LOC, INF, DAT, BAN, HIG… campos con longitud máxima y plantilla                                     |
+| `graphic_templates`    | diseño HTML versionado por empresa                                                                       |
+| `people`               | base de datos de personas y cargos para rótulos                                                          |
+| `settings`             | clave/valor con ámbito empresa/programa/escaleta                                                         |
 
 ### Colaboración y archivo
 
-| Entidad | Uso |
-|---|---|
-| `rundown_templates` | plantillas (News, Deportes, Magacín…) |
-| `fridge_items` (nevera) | líneas, temas e historias preconfiguradas |
-| `versions` | historial de versiones de escaletas y guiones |
-| `trash` | papelera con caducidad |
-| `chat_channels`, `messages` | chat por escaleta, directos entre usuarios |
-| `asrun_log` | **registro de emisión**: qué salió al aire y cuándo (útil para TV local, publicidad y auditoría) |
-| `audit_log` | quién cambió qué |
+| Entidad                     | Uso                                                                                              |
+| --------------------------- | ------------------------------------------------------------------------------------------------ |
+| `rundown_templates`         | plantillas (News, Deportes, Magacín…)                                                            |
+| `fridge_items` (nevera)     | líneas, temas e historias preconfiguradas                                                        |
+| `versions`                  | historial de versiones de escaletas y guiones                                                    |
+| `trash`                     | papelera con caducidad                                                                           |
+| `chat_channels`, `messages` | chat por escaleta, directos entre usuarios                                                       |
+| `asrun_log`                 | **registro de emisión**: qué salió al aire y cuándo (útil para TV local, publicidad y auditoría) |
+| `audit_log`                 | quién cambió qué                                                                                 |
 
 ### Equipos, media y otros
 
-| Entidad | Uso |
-|---|---|
-| `stations` | Stations registradas, estado, versión |
-| `devices` | CasparCG, mezcladores… con conexión |
-| `source_map` | CAM 1 → entrada 1 del mezclador, VTR 1 → CasparCG canal 1 capa 10 … |
-| `media_assets`, `media_renditions` | Fase II |
-| `ai_providers` | proveedor, modelo, clave cifrada |
-| `licenses` | licencias de Station |
-| Fase III | `projects`, `crew`, `call_sheets`, `guests`, `logistics`, `budgets`, `budget_lines`, `screens` |
+| Entidad                            | Uso                                                                                            |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `stations`                         | Stations registradas, estado, versión                                                          |
+| `devices`                          | CasparCG, mezcladores… con conexión                                                            |
+| `source_map`                       | CAM 1 → entrada 1 del mezclador, VTR 1 → CasparCG canal 1 capa 10 …                            |
+| `media_assets`, `media_renditions` | Fase II                                                                                        |
+| `ai_providers`                     | proveedor, modelo, clave cifrada                                                               |
+| `licenses`                         | licencias de Station                                                                           |
+| Fase III                           | `projects`, `crew`, `call_sheets`, `guests`, `logistics`, `budgets`, `budget_lines`, `screens` |
 
 ---
 
@@ -277,28 +277,28 @@ Paquete puro en `packages/core`, probado con tests deterministas.
 
 ### Definiciones
 
-| Término | Definición |
-|---|---|
-| Duración estimada | Introducida a mano o calculada: en ACTING/paso, por nº de palabras ÷ velocidad de lectura (3 palabras/s por defecto); en VTR = DUR. VTR (+ colas). |
-| Coleo | Segundos de seguridad tras el final de un media/VTR (columna COLEAs). Se muestra como `0:50 +5`. No suma a la duración de la línea: es margen por si el corte llega tarde. |
-| Duración real | Medida entre el GO que entra la línea y el GO que la saca. |
-| Hora prevista de inicio (front-time) | Hora inicio programa + Σ duraciones anteriores (reales en las emitidas, estimadas en las pendientes). |
-| Back-time | Hora fin programa − Σ duraciones restantes. Indica a qué hora debe empezar cada línea para acabar en hora. |
-| Descuadre | Hora fin prevista − hora fin programada. **+ (rojo)** = vamos largos; **− (verde)** = vamos cortos. |
-| Sumatorio tiempo VTR | Suma acumulada de duraciones de VTR. |
-| Línea flotante | Excluida del cálculo (ej. reserva). |
-| Hora fija (hard time) | Línea que debe empezar a una hora exacta. |
+| Término                              | Definición                                                                                                                                                                 |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Duración estimada                    | Introducida a mano o calculada: en ACTING/paso, por nº de palabras ÷ velocidad de lectura (3 palabras/s por defecto); en VTR = DUR. VTR (+ colas).                         |
+| Coleo                                | Segundos de seguridad tras el final de un media/VTR (columna COLEAs). Se muestra como `0:50 +5`. No suma a la duración de la línea: es margen por si el corte llega tarde. |
+| Duración real                        | Medida entre el GO que entra la línea y el GO que la saca.                                                                                                                 |
+| Hora prevista de inicio (front-time) | Hora inicio programa + Σ duraciones anteriores (reales en las emitidas, estimadas en las pendientes).                                                                      |
+| Back-time                            | Hora fin programa − Σ duraciones restantes. Indica a qué hora debe empezar cada línea para acabar en hora.                                                                 |
+| Descuadre                            | Hora fin prevista − hora fin programada. **+ (rojo)** = vamos largos; **− (verde)** = vamos cortos.                                                                        |
+| Sumatorio tiempo VTR                 | Suma acumulada de duraciones de VTR.                                                                                                                                       |
+| Línea flotante                       | Excluida del cálculo (ej. reserva).                                                                                                                                        |
+| Hora fija (hard time)                | Línea que debe empezar a una hora exacta.                                                                                                                                  |
 
 Se puede alternar la vista entre **hora real** y **hora estimada**.
 
 ### Modos de funcionamiento
 
-| Modo | Comportamiento |
-|---|---|
-| Manual | Solo avanza con GO. |
-| Automático | Cada línea pasa a la siguiente al cumplir su duración. |
-| Híbrido | Automático en las líneas marcadas (ej. VTR con autonext), manual en el resto. |
-| Evento | Arranca solo a la hora programada y respeta las horas fijas. |
+| Modo       | Comportamiento                                                                |
+| ---------- | ----------------------------------------------------------------------------- |
+| Manual     | Solo avanza con GO.                                                           |
+| Automático | Cada línea pasa a la siguiente al cumplir su duración.                        |
+| Híbrido    | Automático en las líneas marcadas (ej. VTR con autonext), manual en el resto. |
+| Evento     | Arranca solo a la hora programada y respeta las horas fijas.                  |
 
 ### Relojes (cabecera, como en la referencia)
 
@@ -349,12 +349,12 @@ Un VTR pasa solo a la línea siguiente al terminar su duración (**activado por 
 
 Cada línea tiene su guion, editable en un panel lateral o a pantalla completa.
 
-| Tipo | Color | Uso | Destino |
-|---|---|---|---|
-| **Paso** | 🟢 Verde | Lo que lee el presentador | Teleprompter, PDF de presentador |
-| **Off** | ⚫ Negro | Lo que se locuta en la pieza | PDF, exportación a edición o IA de voz |
-| **Rótulo** | 🔵 Azul | Bloque estructurado (no texto libre) | Lista de rótulos, CasparCG, PDF de rótulos |
-| Nota | Gris (opcional) | Indicaciones internas | No sale en prompter |
+| Tipo       | Color           | Uso                                  | Destino                                    |
+| ---------- | --------------- | ------------------------------------ | ------------------------------------------ |
+| **Paso**   | 🟢 Verde        | Lo que lee el presentador            | Teleprompter, PDF de presentador           |
+| **Off**    | ⚫ Negro        | Lo que se locuta en la pieza         | PDF, exportación a edición o IA de voz     |
+| **Rótulo** | 🔵 Azul         | Bloque estructurado (no texto libre) | Lista de rótulos, CasparCG, PDF de rótulos |
+| Nota       | Gris (opcional) | Indicaciones internas                | No sale en prompter                        |
 
 - Atajos para cambiar de tipo (ej. `Ctrl+1/2/3`).
 - Contador de palabras y **duración estimada** del paso según velocidad de lectura del presentador.
@@ -368,14 +368,14 @@ Cada línea tiene su guion, editable en un panel lateral o a pantalla completa.
 
 ### Tipos por defecto (editables en configuración)
 
-| Tipo | Nombre | Campos |
-|---|---|---|
-| TOT | Total | NOMBRE + CARGO |
-| LOC | Localizador | LOCALIZACIÓN, PROVINCIA |
-| INF | Informa | NOMBRE PERIODISTA + CÁMARA y/o EDITOR |
-| DAT | Fecha | FECHA |
-| BAN | Banner | LÍNEA 1 + LÍNEA 2 |
-| HIG | Highlights | LÍNEA 1 + LÍNEA 2 |
+| Tipo | Nombre      | Campos                                |
+| ---- | ----------- | ------------------------------------- |
+| TOT  | Total       | NOMBRE + CARGO                        |
+| LOC  | Localizador | LOCALIZACIÓN, PROVINCIA               |
+| INF  | Informa     | NOMBRE PERIODISTA + CÁMARA y/o EDITOR |
+| DAT  | Fecha       | FECHA                                 |
+| BAN  | Banner      | LÍNEA 1 + LÍNEA 2                     |
+| HIG  | Highlights  | LÍNEA 1 + LÍNEA 2                     |
 
 Cada tipo define: campos, obligatorios, **longitud máxima por campo**, plantilla de diseño y duración por defecto. Se pueden crear tipos nuevos.
 
@@ -389,11 +389,11 @@ Cada tipo define: campos, obligatorios, **longitud máxima por campo**, plantill
 
 ### Reglas de entrada y salida
 
-| Caso | Entrada | Salida |
-|---|---|---|
-| VTR con TC entrada y TC salida | Automática en TC entrada | Automática en TC salida |
-| VTR solo con TC entrada | Automática en TC entrada | Automática tras la duración por defecto (6 s) |
-| Cámara / directo (sin TC) | Manual ▶ | Manual ■ **o** automática tras la duración por defecto, según Configuración Master |
+| Caso                           | Entrada                  | Salida                                                                             |
+| ------------------------------ | ------------------------ | ---------------------------------------------------------------------------------- |
+| VTR con TC entrada y TC salida | Automática en TC entrada | Automática en TC salida                                                            |
+| VTR solo con TC entrada        | Automática en TC entrada | Automática tras la duración por defecto (6 s)                                      |
+| Cámara / directo (sin TC)      | Manual ▶                | Manual ■ **o** automática tras la duración por defecto, según Configuración Master |
 
 - Sincronizado con la **posición real del vídeo** en CasparCG, no con un reloj aparte.
 - Si el VTR se para o se salta, sus rótulos salen.
@@ -421,15 +421,15 @@ Cada tipo define: campos, obligatorios, **longitud máxima por campo**, plantill
 
 ### Salidas (páginas a pantalla completa por URL)
 
-| Salida | Contenido |
-|---|---|
-| Prompter | Texto del paso |
-| Presentador | Prompter + relojes + siguiente línea + mensajes del control |
-| Relojes | Relojes de escaleta/bloque/línea, configurables |
-| Agenda | Lista simplificada de la escaleta con horas |
-| Rótulos (preview) | Rótulo en aire y siguiente |
-| Multivista | Varias de las anteriores en cuadrícula |
-| Mensajes | Mensajes del control al plató (como stagetimer) |
+| Salida            | Contenido                                                   |
+| ----------------- | ----------------------------------------------------------- |
+| Prompter          | Texto del paso                                              |
+| Presentador       | Prompter + relojes + siguiente línea + mensajes del control |
+| Relojes           | Relojes de escaleta/bloque/línea, configurables             |
+| Agenda            | Lista simplificada de la escaleta con horas                 |
+| Rótulos (preview) | Rótulo en aire y siguiente                                  |
+| Multivista        | Varias de las anteriores en cuadrícula                      |
+| Mensajes          | Mensajes del control al plató (como stagetimer)             |
 
 Cada salida se abre con un **enlace con token** (sin usuario), revocable, para TV, tablets o mini-PC. Se pueden fijar en Station para que arranquen solas.
 
@@ -456,32 +456,32 @@ Cada salida se abre con un **enlace con token** (sin usuario), revocable, para T
 - Se anuncia en la red (mDNS) y detecta equipos.
 - Conexión a la nube **saliente** (no hay que abrir puertos en el router).
 - Actualizaciones desde la consola web (nunca en mitad de un directo).
-- **HTTPS en red local** (necesario para PWA): certificado real por Station con dominio propio, al estilo Plex (se renueva cuando hay internet); alternativa sin internet: autoridad de certificación local instalable. *(Riesgo técnico, §33)*
+- **HTTPS en red local** (necesario para PWA): certificado real por Station con dominio propio, al estilo Plex (se renueva cuando hay internet); alternativa sin internet: autoridad de certificación local instalable. _(Riesgo técnico, §33)_
 
 ### Requisitos mínimos
 
-| Uso | Equipo |
-|---|---|
-| Solo servidor local | PC i5 / 16 GB RAM / SSD 512 GB / red 1 Gb |
-| Station + CasparCG en el mismo PC (educación) | Además GPU dedicada; salida NDI o pantalla |
-| CasparCG profesional | PC aparte con GPU + Blackmagic DeckLink (salida SDI) |
+| Uso                                           | Equipo                                               |
+| --------------------------------------------- | ---------------------------------------------------- |
+| Solo servidor local                           | PC i5 / 16 GB RAM / SSD 512 GB / red 1 Gb            |
+| Station + CasparCG en el mismo PC (educación) | Además GPU dedicada; salida NDI o pantalla           |
+| CasparCG profesional                          | PC aparte con GPU + Blackmagic DeckLink (salida SDI) |
 
 ---
 
 ## 17. Mezcladores e integraciones
 
-| Integración | Fase | Uso |
-|---|---|---|
-| CasparCG | I (M7) | Rótulos, VTR |
-| OBS | I (M8, 1º) | Cambio de escena, inicio/fin de grabación y streaming |
-| vMix | I (M8, 2º) | Corte de entrada, títulos, streaming |
-| ATEM | I (M8, 3º) | Corte de fuente en GO, estado de PGM/PVW |
-| Bitfocus Companion / Stream Deck | I (M8) | GO, rótulos, prompter |
-| Vista presentador + control de streaming | II | Sobre OBS/vMix (RunFlow no emite vídeo) |
-| TriCaster, Ross, XPression, Chyron, Wirecast, XSplit, Autoscript | IV | Según demanda |
-| Iluminación (OSC, MIDI, sACN/Art-Net) | IV | Cues de luces |
-| Protocolo MOS | IV | Integración con sistemas broadcast |
-| API pública + webhooks | II | Integraciones de terceros |
+| Integración                                                      | Fase       | Uso                                                   |
+| ---------------------------------------------------------------- | ---------- | ----------------------------------------------------- |
+| CasparCG                                                         | I (M7)     | Rótulos, VTR                                          |
+| OBS                                                              | I (M8, 1º) | Cambio de escena, inicio/fin de grabación y streaming |
+| vMix                                                             | I (M8, 2º) | Corte de entrada, títulos, streaming                  |
+| ATEM                                                             | I (M8, 3º) | Corte de fuente en GO, estado de PGM/PVW              |
+| Bitfocus Companion / Stream Deck                                 | I (M8)     | GO, rótulos, prompter                                 |
+| Vista presentador + control de streaming                         | II         | Sobre OBS/vMix (RunFlow no emite vídeo)               |
+| TriCaster, Ross, XPression, Chyron, Wirecast, XSplit, Autoscript | IV         | Según demanda                                         |
+| Iluminación (OSC, MIDI, sACN/Art-Net)                            | IV         | Cues de luces                                         |
+| Protocolo MOS                                                    | IV         | Integración con sistemas broadcast                    |
+| API pública + webhooks                                           | II         | Integraciones de terceros                             |
 
 Orden dentro de M8: **OBS → vMix → ATEM**.
 
@@ -557,32 +557,32 @@ Vista alternativa de un evento para shows de ritmo rápido (música, galas):
 
 Logo y paleta en `docs/referencias/marca/`. Logo oficial: `runflow-logo.svg` (vectorial, color `#FAFAFA`, se recolorea por CSS). `runflow-logo-flat.svg` es un PNG dentro de un SVG: no usar para escalar.
 
-| Token | Valor | Uso |
-|---|---|---|
-| Naranja RunFlow | `#FF7A1A` | Acentos, selección, botones primarios, GO armado |
-| Amarillo | `#FFD24A` | Avisos, cuenta atrás próxima a 0, coleo |
-| Verde claro | `#A3C94A` | Correcto / listo, línea SIGUIENTE |
-| Verde oscuro | `#2F7D32` | Confirmaciones, estado "en línea" de equipos |
-| Antracita | `#1F2A2E` | Fondo de la aplicación (tema interior) |
-| Rejilla | `#434343` / `#999999` | Fondo y bordes de la escaleta (referencia) |
-| Texto | blanco / negro según celda | |
+| Token           | Valor                      | Uso                                              |
+| --------------- | -------------------------- | ------------------------------------------------ |
+| Naranja RunFlow | `#FF7A1A`                  | Acentos, selección, botones primarios, GO armado |
+| Amarillo        | `#FFD24A`                  | Avisos, cuenta atrás próxima a 0, coleo          |
+| Verde claro     | `#A3C94A`                  | Correcto / listo, línea SIGUIENTE                |
+| Verde oscuro    | `#2F7D32`                  | Confirmaciones, estado "en línea" de equipos     |
+| Antracita       | `#1F2A2E`                  | Fondo de la aplicación (tema interior)           |
+| Rejilla         | `#434343` / `#999999`      | Fondo y bordes de la escaleta (referencia)       |
+| Texto           | blanco / negro según celda |                                                  |
 
 **Tipografías:** Montserrat Bold/Black para logo, títulos y relojes grandes; Helvetica (con Arial de respaldo) para texto y rejilla. Cifras de relojes con ancho fijo (`tabular-nums`). Las fuentes van **incluidas en la app** (no desde CDN) para que funcionen sin internet en Station.
 
 **Tipos de línea** (colores de la referencia, editables):
 
-| Tipo | Color |
-|---|---|
-| ACTING | `#FFD966` |
-| TEMA | `#3C78D8` (texto blanco) |
-| VARIOS | `#95B3D7` |
-| VTR / TOTAL + COLAS | `#76923C` |
-| COLAS | `#C2D69B` |
-| MOCHILA | `#953734` |
-| FIBRA | `#D99594` |
-| GRAFISMO | `#46BDC6` (texto blanco) |
-| CAB + RAF | `#FF6D01` |
-| CONTI | `#000000` (texto blanco) |
+| Tipo                | Color                    |
+| ------------------- | ------------------------ |
+| ACTING              | `#FFD966`                |
+| TEMA                | `#3C78D8` (texto blanco) |
+| VARIOS              | `#95B3D7`                |
+| VTR / TOTAL + COLAS | `#76923C`                |
+| COLAS               | `#C2D69B`                |
+| MOCHILA             | `#953734`                |
+| FIBRA               | `#D99594`                |
+| GRAFISMO            | `#46BDC6` (texto blanco) |
+| CAB + RAF           | `#FF6D01`                |
+| CONTI               | `#000000` (texto blanco) |
 
 **Estados de línea:** C = CAE `#CC4125` · E = EMITIDO `#6FA8DC` · X = NO LISTO `#85200C` · A = FINAL `#93C47D` (siempre letra + color, nunca solo color).
 
@@ -629,36 +629,36 @@ Mejoras sobre la hoja, manteniendo su aspecto:
 
 ## 24. Mapa de pantallas
 
-| Pantalla | Fase/Hito |
-|---|---|
-| Login, recuperar contraseña, selector de empresa | M0 |
-| Inicio: escaletas de hoy, avisos, mensajes | M1 |
-| Escaletas: lista por programa y fecha | M1 |
-| **Escaleta** (rejilla + cabecera de relojes + panel lateral) | M1–M2 |
-| Editor de guion (panel y pantalla completa) | M3 |
-| Base de datos de personas y cargos | M3 |
-| Vista Directo / Realización (EN AIRE, SIGUIENTE, GO, rótulos) | M2, M7 |
-| Operador CG | M7 |
-| Control de prompter + salidas | M4 |
-| Nevera | M5 |
-| Archivo & Papelera, historial de versiones | M5 |
-| Plantillas de escaleta | M5 |
-| Chat | M5 |
-| Importar / Exportar / Imprimir | M5 |
-| Gestión de usuarios, perfiles y privilegios | M0–M5 |
-| Configuración de usuario | M0 |
-| Configuración global / programa / escaleta | M1→ |
-| Station: consola web | M6 |
-| Equipos y mapa de fuentes | M7–M8 |
-| Editor de plantillas de rótulos | M7 |
-| IA: proveedores y uso | M9 |
-| Media | F2 |
-| Fuentes / agencias | F2 |
-| Social Media | F3 |
-| Producción, presupuesto, hojas de llamada | F3 |
-| Pantallas / videowall | F3 |
-| Timeline horizontal | F4 |
-| Facturación y plan (SaaS) | Lanzamiento |
+| Pantalla                                                      | Fase/Hito   |
+| ------------------------------------------------------------- | ----------- |
+| Login, recuperar contraseña, selector de empresa              | M0          |
+| Inicio: escaletas de hoy, avisos, mensajes                    | M1          |
+| Escaletas: lista por programa y fecha                         | M1          |
+| **Escaleta** (rejilla + cabecera de relojes + panel lateral)  | M1–M2       |
+| Editor de guion (panel y pantalla completa)                   | M3          |
+| Base de datos de personas y cargos                            | M3          |
+| Vista Directo / Realización (EN AIRE, SIGUIENTE, GO, rótulos) | M2, M7      |
+| Operador CG                                                   | M7          |
+| Control de prompter + salidas                                 | M4          |
+| Nevera                                                        | M5          |
+| Archivo & Papelera, historial de versiones                    | M5          |
+| Plantillas de escaleta                                        | M5          |
+| Chat                                                          | M5          |
+| Importar / Exportar / Imprimir                                | M5          |
+| Gestión de usuarios, perfiles y privilegios                   | M0–M5       |
+| Configuración de usuario                                      | M0          |
+| Configuración global / programa / escaleta                    | M1→         |
+| Station: consola web                                          | M6          |
+| Equipos y mapa de fuentes                                     | M7–M8       |
+| Editor de plantillas de rótulos                               | M7          |
+| IA: proveedores y uso                                         | M9          |
+| Media                                                         | F2          |
+| Fuentes / agencias                                            | F2          |
+| Social Media                                                  | F3          |
+| Producción, presupuesto, hojas de llamada                     | F3          |
+| Pantallas / videowall                                         | F3          |
+| Timeline horizontal                                           | F4          |
+| Facturación y plan (SaaS)                                     | Lanzamiento |
 
 ---
 
@@ -666,23 +666,23 @@ Mejoras sobre la hoja, manteniendo su aspecto:
 
 Tres niveles; el inferior hereda y puede sobrescribir: **Empresa → Programa → Escaleta**. Configuración personal aparte.
 
-| Sección | Opciones |
-|---|---|
-| General | Idioma, zona horaria, formato de hora, tema interior/exterior |
-| Escaleta | Columnas y vistas por puesto, tipos de línea y colores, estados, numeración, modos de tiempo, autonext, media duración |
-| Guion | Colores paso/off/rótulo, velocidad de lectura (por presentador), estados de aprobación |
-| Rótulos | Tipos, campos, longitudes, plantillas, duración por defecto (6 s), **salida automática o manual en cámara (Master)**, capas |
-| Teleprompter | Fuente, tamaño, espejo, velocidad, control (teclado/pedal/tablet), seguir GO |
-| Directo / GO | Anti doble pulsación, preroll, armar/desarmar, ensayo, atajos, Stream Deck, puesto de GO |
-| Equipos (Station) | CasparCG (dirección, canales, capas), mezclador, mapa de fuentes, pruebas de conexión |
-| Salidas | Enlaces con token, diseños de relojes y presentador |
-| Usuarios y perfiles | Roles, permisos, vistas por defecto |
-| IA | Proveedores, claves, modelo, límites |
-| Plantillas y nevera | Plantillas de escaleta, líneas preconfiguradas |
-| Exportar e imprimir | Vistas prefijadas de PDF, cabeceras, logo |
-| Archivo | Retención de histórico (1 mes escaletas activas, 1 año archivo) y papelera |
-| Licencia y modo | Nube / híbrido / local, Stations asociadas, sincronización |
-| Personal | Datos, contraseña, vista por defecto, atajos, notificaciones |
+| Sección             | Opciones                                                                                                                    |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| General             | Idioma, zona horaria, formato de hora, tema interior/exterior                                                               |
+| Escaleta            | Columnas y vistas por puesto, tipos de línea y colores, estados, numeración, modos de tiempo, autonext, media duración      |
+| Guion               | Colores paso/off/rótulo, velocidad de lectura (por presentador), estados de aprobación                                      |
+| Rótulos             | Tipos, campos, longitudes, plantillas, duración por defecto (6 s), **salida automática o manual en cámara (Master)**, capas |
+| Teleprompter        | Fuente, tamaño, espejo, velocidad, control (teclado/pedal/tablet), seguir GO                                                |
+| Directo / GO        | Anti doble pulsación, preroll, armar/desarmar, ensayo, atajos, Stream Deck, puesto de GO                                    |
+| Equipos (Station)   | CasparCG (dirección, canales, capas), mezclador, mapa de fuentes, pruebas de conexión                                       |
+| Salidas             | Enlaces con token, diseños de relojes y presentador                                                                         |
+| Usuarios y perfiles | Roles, permisos, vistas por defecto                                                                                         |
+| IA                  | Proveedores, claves, modelo, límites                                                                                        |
+| Plantillas y nevera | Plantillas de escaleta, líneas preconfiguradas                                                                              |
+| Exportar e imprimir | Vistas prefijadas de PDF, cabeceras, logo                                                                                   |
+| Archivo             | Retención de histórico (1 mes escaletas activas, 1 año archivo) y papelera                                                  |
+| Licencia y modo     | Nube / híbrido / local, Stations asociadas, sincronización                                                                  |
+| Personal            | Datos, contraseña, vista por defecto, atajos, notificaciones                                                                |
 
 ---
 
@@ -725,13 +725,13 @@ Formatos: PDF, CSV, XLSX, JSON (copia completa). Importación desde CSV/XLSX con
 
 ## 29. Modelo de negocio
 
-| Plan | Para | Notas |
-|---|---|---|
-| Gratis | Probar | 1 programa, 3 usuarios, sin equipos. **Sin publicidad** |
-| Básico | Producciones pequeñas | Usuarios limitados, nube |
-| Profesional | TV local | Usuarios, Station, CasparCG, mezcladores, IA |
-| Educación | Escuelas y universidades | Precio reducido, muchas cuentas, clases/grupos |
-| Local | Sin nube | Licencia por estudio (anual), Station |
+| Plan        | Para                     | Notas                                                   |
+| ----------- | ------------------------ | ------------------------------------------------------- |
+| Gratis      | Probar                   | 1 programa, 3 usuarios, sin equipos. **Sin publicidad** |
+| Básico      | Producciones pequeñas    | Usuarios limitados, nube                                |
+| Profesional | TV local                 | Usuarios, Station, CasparCG, mezcladores, IA            |
+| Educación   | Escuelas y universidades | Precio reducido, muchas cuentas, clases/grupos          |
+| Local       | Sin nube                 | Licencia por estudio (anual), Station                   |
 
 Cobro con Stripe en el hito de lanzamiento.
 
@@ -784,65 +784,65 @@ Cobro con Stripe en el hito de lanzamiento.
 
 ### Fase I — Escaleta funcional (+ Station, CG y mezcladores)
 
-| Hito | Contenido | Hecho cuando… |
-|---|---|---|
-| **M0 Fundaciones** | Monorepo, CI, base de datos, login, empresas, usuarios, roles base, sistema de diseño, PWA instalable, despliegue en staging | Dos empresas no ven datos entre sí; se puede entrar y crear usuarios |
-| **M1 Escaleta en tiempo real** | Programas, escaletas, rejilla tipo hoja con aspecto de la referencia, tipos de línea, estados C/E/X/A, columnas y vistas, reordenar, colaboración y presencia, sin conexión en navegador | 3 navegadores editan la misma escaleta a la vez sin perder datos, también tras cortar la red |
-| **M2 Tiempos y directo básico** | Motor de tiempos, relojes de cabecera, 4 modos, horas fijas, flotantes, GO (sin equipos), EN AIRE/SIGUIENTE, autonext, as-run | Un directo simulado de 1 h cuadra tiempos al segundo y el as-run es correcto |
-| **M3 Guion y rótulos** | Editor colaborativo paso/off/rótulo/nota, rótulos estructurados con tipos y longitudes, TC `mm:ss`, base de datos de personas, duración por lectura | El paso sale bien separado del off; no se puede guardar un rótulo inválido |
-| **M4 Prompter y salidas** | Teleprompter con control remoto y espejo, salidas por token (presentador, relojes, agenda, mensajes, multivista), temporizadores | Prompter fluido en TV y tablet, sincronizado con el GO |
-| **M5 Colaboración y archivo** | Chat, plantillas, nevera, historial y papelera, importar/exportar, PDF con vistas, permisos completos, temas interior/exterior, atajos | Migrar la escaleta de referencia desde XLSX e imprimir sus vistas |
-| **M6 Station** | Servicio local con instalador (Win/Mac/Linux) y Docker, consola web, modo local y modo híbrido con sincronización, HTTPS local, licencias | Cortar internet en pleno directo simulado y que el estudio siga; al volver, todo fusionado |
-| **M7 RunFlow CG** | Driver CasparCG, plantillas HTML de los 6 tipos, editor de plantillas, rótulos manuales ▶/■ y automáticos por TC, playout de VTR con preroll, columna PLAY, GO con CasparCG | En CasparCG real: VTR con 2 rótulos por TC y un rótulo manual en cámara salen en su momento |
-| **M8 Mezcladores** | ATEM, OBS, vMix, mapa de fuentes, corte en GO, armar/ensayo, Companion/Stream Deck | GO pasa de CAM 1 a VTR (CasparCG + corte) en < 100 ms |
-| **M9 IA** | Capa multiproveedor, claves por empresa, funciones de redacción, Ollama local | Las funciones funcionan con al menos 2 proveedores y en local |
-| **Beta privada** | 1–2 TV locales o escuelas usando RunFlow en programas reales | Feedback recogido y errores críticos corregidos |
-| **Lanzamiento** | Planes, Stripe, registro autoservicio, web pública, documentación de usuario | Alta y pago sin intervención manual |
+| Hito                            | Contenido                                                                                                                                                                                | Hecho cuando…                                                                                |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| **M0 Fundaciones**              | Monorepo, CI, base de datos, login, empresas, usuarios, roles base, sistema de diseño, PWA instalable, despliegue en staging                                                             | Dos empresas no ven datos entre sí; se puede entrar y crear usuarios                         |
+| **M1 Escaleta en tiempo real**  | Programas, escaletas, rejilla tipo hoja con aspecto de la referencia, tipos de línea, estados C/E/X/A, columnas y vistas, reordenar, colaboración y presencia, sin conexión en navegador | 3 navegadores editan la misma escaleta a la vez sin perder datos, también tras cortar la red |
+| **M2 Tiempos y directo básico** | Motor de tiempos, relojes de cabecera, 4 modos, horas fijas, flotantes, GO (sin equipos), EN AIRE/SIGUIENTE, autonext, as-run                                                            | Un directo simulado de 1 h cuadra tiempos al segundo y el as-run es correcto                 |
+| **M3 Guion y rótulos**          | Editor colaborativo paso/off/rótulo/nota, rótulos estructurados con tipos y longitudes, TC `mm:ss`, base de datos de personas, duración por lectura                                      | El paso sale bien separado del off; no se puede guardar un rótulo inválido                   |
+| **M4 Prompter y salidas**       | Teleprompter con control remoto y espejo, salidas por token (presentador, relojes, agenda, mensajes, multivista), temporizadores                                                         | Prompter fluido en TV y tablet, sincronizado con el GO                                       |
+| **M5 Colaboración y archivo**   | Chat, plantillas, nevera, historial y papelera, importar/exportar, PDF con vistas, permisos completos, temas interior/exterior, atajos                                                   | Migrar la escaleta de referencia desde XLSX e imprimir sus vistas                            |
+| **M6 Station**                  | Servicio local con instalador (Win/Mac/Linux) y Docker, consola web, modo local y modo híbrido con sincronización, HTTPS local, licencias                                                | Cortar internet en pleno directo simulado y que el estudio siga; al volver, todo fusionado   |
+| **M7 RunFlow CG**               | Driver CasparCG, plantillas HTML de los 6 tipos, editor de plantillas, rótulos manuales ▶/■ y automáticos por TC, playout de VTR con preroll, columna PLAY, GO con CasparCG             | En CasparCG real: VTR con 2 rótulos por TC y un rótulo manual en cámara salen en su momento  |
+| **M8 Mezcladores**              | ATEM, OBS, vMix, mapa de fuentes, corte en GO, armar/ensayo, Companion/Stream Deck                                                                                                       | GO pasa de CAM 1 a VTR (CasparCG + corte) en < 100 ms                                        |
+| **M9 IA**                       | Capa multiproveedor, claves por empresa, funciones de redacción, Ollama local                                                                                                            | Las funciones funcionan con al menos 2 proveedores y en local                                |
+| **Beta privada**                | 1–2 TV locales o escuelas usando RunFlow en programas reales                                                                                                                             | Feedback recogido y errores críticos corregidos                                              |
+| **Lanzamiento**                 | Planes, Stripe, registro autoservicio, web pública, documentación de usuario                                                                                                             | Alta y pago sin intervención manual                                                          |
 
 ### Fase II — Escaleta + sistemas
 
-| Hito | Contenido |
-|---|---|
-| F2.1 Media | Subida, proxies, previsualización, organización, copia a CasparCG, TC sobre vídeo |
-| F2.2 Fuentes | RSS/agencias, a nevera/línea |
-| F2.3 Directo y streaming | Vista presentador avanzada, control de streaming en OBS/vMix |
-| F2.4 API pública | API REST + webhooks + módulo Companion propio |
+| Hito                     | Contenido                                                                         |
+| ------------------------ | --------------------------------------------------------------------------------- |
+| F2.1 Media               | Subida, proxies, previsualización, organización, copia a CasparCG, TC sobre vídeo |
+| F2.2 Fuentes             | RSS/agencias, a nevera/línea                                                      |
+| F2.3 Directo y streaming | Vista presentador avanzada, control de streaming en OBS/vMix                      |
+| F2.4 API pública         | API REST + webhooks + módulo Companion propio                                     |
 
-*(Orden de la Fase II revisable según el uso y el feedback de la beta.)*
+_(Orden de la Fase II revisable según el uso y el feedback de la beta.)_
 
 ### Fase III — Escaleta para todo
 
-| Hito | Contenido |
-|---|---|
-| F3.1 Producción | Tablero, calendario, personal, hojas de llamada, invitados, logística |
-| F3.2 Presupuesto | Partidas, previsto/real, informes |
-| F3.3 Pantallas | Gestor de contenidos de pantallas / videowall |
-| F3.4 Redes | Social media y rotulación de RRSS |
+| Hito             | Contenido                                                             |
+| ---------------- | --------------------------------------------------------------------- |
+| F3.1 Producción  | Tablero, calendario, personal, hojas de llamada, invitados, logística |
+| F3.2 Presupuesto | Partidas, previsto/real, informes                                     |
+| F3.3 Pantallas   | Gestor de contenidos de pantallas / videowall                         |
+| F3.4 Redes       | Social media y rotulación de RRSS                                     |
 
 ### Fase IV — Escaleta integrada
 
-| Hito | Contenido |
-|---|---|
-| F4.1 Timeline | Vista horizontal, pistas, shot list, cue list |
-| F4.2 Automatización avanzada | Conmutador de automatización, cortes editables en directo |
-| F4.3 Iluminación | OSC, MIDI, sACN/Art-Net |
-| F4.4 Otros sistemas | TriCaster, Ross, XPression, Chyron, Autoscript, MOS… según demanda |
+| Hito                         | Contenido                                                          |
+| ---------------------------- | ------------------------------------------------------------------ |
+| F4.1 Timeline                | Vista horizontal, pistas, shot list, cue list                      |
+| F4.2 Automatización avanzada | Conmutador de automatización, cortes editables en directo          |
+| F4.3 Iluminación             | OSC, MIDI, sACN/Art-Net                                            |
+| F4.4 Otros sistemas          | TriCaster, Ross, XPression, Chyron, Autoscript, MOS… según demanda |
 
 ---
 
 ## 33. Riesgos
 
-| Riesgo | Mitigación |
-|---|---|
-| Alcance enorme | Hitos cortos, beta temprana, priorizar por uso real |
-| HTTPS en red local (necesario para PWA) | Certificados tipo Plex + CA local de respaldo; probar pronto (M6) |
-| No puedo probar con equipos reales | Simuladores + checklist de pruebas en estudio en cada entrega |
-| Diferencias entre versiones de CasparCG | Soportar 2.3+ y probar con la versión del cliente |
-| Conflictos nube ↔ Station | CRDT para contenido; directo con autoridad única en Station |
-| Fiabilidad del directo | Modo ensayo, armado, avisos, el directo nunca se bloquea por un equipo |
-| APIs de agencias y redes de pago | Las aporta el cliente; empezar por RSS |
-| Coste de IA | Claves del cliente, límites y registro de consumo |
-| Datos personales | RGPD desde M0 |
+| Riesgo                                  | Mitigación                                                             |
+| --------------------------------------- | ---------------------------------------------------------------------- |
+| Alcance enorme                          | Hitos cortos, beta temprana, priorizar por uso real                    |
+| HTTPS en red local (necesario para PWA) | Certificados tipo Plex + CA local de respaldo; probar pronto (M6)      |
+| No puedo probar con equipos reales      | Simuladores + checklist de pruebas en estudio en cada entrega          |
+| Diferencias entre versiones de CasparCG | Soportar 2.3+ y probar con la versión del cliente                      |
+| Conflictos nube ↔ Station              | CRDT para contenido; directo con autoridad única en Station            |
+| Fiabilidad del directo                  | Modo ensayo, armado, avisos, el directo nunca se bloquea por un equipo |
+| APIs de agencias y redes de pago        | Las aporta el cliente; empezar por RSS                                 |
+| Coste de IA                             | Claves del cliente, límites y registro de consumo                      |
+| Datos personales                        | RGPD desde M0                                                          |
 
 ---
 
@@ -856,20 +856,20 @@ No hay preguntas pendientes.
 
 ## 35. Glosario
 
-| Término | Significado |
-|---|---|
-| Escaleta | Lista ordenada de eventos de un programa (rundown) |
-| Paso | Texto que lee el presentador (verde) |
-| Off | Texto locutado dentro de la pieza (negro) |
-| Rótulo | Grafismo con texto sobreimpresionado (azul en el guion) |
-| VTR | Pieza de vídeo |
-| Colas | Imágenes sin locución sobre las que habla el presentador |
-| Mochila | Unidad de directo móvil |
-| Fibra | Señal externa por fibra |
-| Nevera | Contenido preparado para usar más adelante |
-| GO / TAKE | Pasar a la siguiente línea y ejecutar sus acciones |
+| Término   | Significado                                               |
+| --------- | --------------------------------------------------------- |
+| Escaleta  | Lista ordenada de eventos de un programa (rundown)        |
+| Paso      | Texto que lee el presentador (verde)                      |
+| Off       | Texto locutado dentro de la pieza (negro)                 |
+| Rótulo    | Grafismo con texto sobreimpresionado (azul en el guion)   |
+| VTR       | Pieza de vídeo                                            |
+| Colas     | Imágenes sin locución sobre las que habla el presentador  |
+| Mochila   | Unidad de directo móvil                                   |
+| Fibra     | Señal externa por fibra                                   |
+| Nevera    | Contenido preparado para usar más adelante                |
+| GO / TAKE | Pasar a la siguiente línea y ejecutar sus acciones        |
 | Back-time | Hora a la que debe empezar cada línea para acabar en hora |
-| As-run | Registro de lo realmente emitido |
-| Station | Servicio local de RunFlow en el control |
-| CasparCG | Servidor gratuito de grafismo y playout |
-| PGM / PVW | Salida de programa / previo en el mezclador |
+| As-run    | Registro de lo realmente emitido                          |
+| Station   | Servicio local de RunFlow en el control                   |
+| CasparCG  | Servidor gratuito de grafismo y playout                   |
+| PGM / PVW | Salida de programa / previo en el mezclador               |

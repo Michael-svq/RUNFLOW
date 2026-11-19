@@ -1,0 +1,98 @@
+/*
+ * Tokens de diseño de RunFlow (PLAN §23).
+ * Marca: #FF7A1A #FFD24A #A3C94A #2F7D32 #1F2A2E · Montserrat + Helvetica.
+ * Tema "interior" (oscuro, por defecto) y "exterior" (claro, alto contraste).
+ */
+:root {
+  /* Marca */
+  --rf-orange: #ff7a1a;
+  --rf-yellow: #ffd24a;
+  --rf-green-light: #a3c94a;
+  --rf-green-dark: #2f7d32;
+  --rf-anthracite: #1f2a2e;
+  --rf-white: #fafafa;
+
+  /* Tipografía */
+  --rf-font-display: 'Montserrat', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --rf-font-body: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --rf-font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --rf-text-xs: 0.75rem;
+  --rf-text-sm: 0.8125rem;
+  --rf-text-md: 0.875rem;
+  --rf-text-lg: 1rem;
+  --rf-text-xl: 1.25rem;
+  --rf-text-2xl: 1.75rem;
+
+  /* Espaciado y forma */
+  --rf-space-1: 4px;
+  --rf-space-2: 8px;
+  --rf-space-3: 12px;
+  --rf-space-4: 16px;
+  --rf-space-5: 24px;
+  --rf-space-6: 32px;
+  --rf-space-7: 48px;
+  --rf-radius-sm: 4px;
+  --rf-radius-md: 6px;
+  --rf-radius-lg: 10px;
+  --rf-sidebar-width: 248px;
+  --rf-header-height: 52px;
+  --rf-focus: 0 0 0 2px var(--rf-bg), 0 0 0 4px var(--rf-orange);
+}
+
+/* Interior (oscuro) */
+:root,
+:root[data-theme='interior'] {
+  color-scheme: dark;
+  --rf-bg: #1f2a2e;
+  --rf-bg-sunken: #182125;
+  --rf-surface: #26343a;
+  --rf-surface-2: #2e3f46;
+  --rf-surface-hover: #344851;
+  --rf-border: #3b4d55;
+  --rf-border-strong: #52666f;
+  --rf-text: #fafafa;
+  --rf-text-muted: #a7b6bc;
+  --rf-text-faint: #7d8f96;
+  --rf-accent: #ff7a1a;
+  --rf-accent-hover: #ff8f3d;
+  --rf-accent-text: #ff9a52;
+  --rf-on-accent: #1f2a2e;
+  --rf-success: #a3c94a;
+  --rf-success-bg: rgb(163 201 74 / 0.14);
+  --rf-warning: #ffd24a;
+  --rf-warning-bg: rgb(255 210 74 / 0.14);
+  --rf-danger: #ff6b57;
+  --rf-danger-bg: rgb(255 107 87 / 0.14);
+  --rf-info: #8cc4ff;
+  --rf-info-bg: rgb(140 196 255 / 0.12);
+  --rf-shadow: 0 8px 28px rgb(0 0 0 / 0.45);
+}
+
+/* Exterior (claro, alto contraste para estudios con mucha luz) */
+:root[data-theme='exterior'] {
+  color-scheme: light;
+  --rf-bg: #f3f4f1;
+  --rf-bg-sunken: #e8eae5;
+  --rf-surface: #ffffff;
+  --rf-surface-2: #f7f8f5;
+  --rf-surface-hover: #eef0eb;
+  --rf-border: #c9cec6;
+  --rf-border-strong: #8d968f;
+  --rf-text: #12191b;
+  --rf-text-muted: #3f4b4f;
+  --rf-text-faint: #5f6b6f;
+  --rf-accent: #ff7a1a;
+  --rf-accent-hover: #f06a08;
+  --rf-accent-text: #a8460a;
+  --rf-on-accent: #12191b;
+  --rf-success: #2f7d32;
+  --rf-success-bg: rgb(47 125 50 / 0.12);
+  --rf-warning: #8a6400;
+  --rf-warning-bg: rgb(255 210 74 / 0.3);
+  --rf-danger: #b42318;
+  --rf-danger-bg: rgb(180 35 24 / 0.1);
+  --rf-info: #175cd3;
+  --rf-info-bg: rgb(23 92 211 / 0.08);
+  --rf-shadow: 0 8px 28px rgb(18 25 27 / 0.18);
+}

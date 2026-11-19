@@ -50,6 +50,12 @@ export async function startSession(
     ip: req.ip,
   });
   setSessionCookie(reply, deps, session.token, session.expiresAt);
+  await withUser(deps.db, userId, (tx) =>
+    tx
+      .update(users)
+      .set({ lastLoginAt: sql`now()` })
+      .where(eq(users.id, userId)),
+  );
   const [user] = await withUser(deps.db, userId, (tx) =>
     tx
       .select({
@@ -87,12 +93,6 @@ export async function authRoutes(app: FastifyInstance, deps: AppDeps): Promise<v
       if (!user || !ok) {
         throw new HttpError(401, 'invalid_credentials', 'Email o contraseña incorrectos');
       }
-      await withUser(deps.db, user.id, (tx) =>
-        tx
-          .update(users)
-          .set({ lastLoginAt: sql`now()` })
-          .where(eq(users.id, user.id)),
-      );
       return startSession(app, deps, req, reply, user.id, null);
     },
   );
