@@ -1,0 +1,24 @@
+{
+  "name": "runflow",
+  "private": true,
+  "version": "0.1.0",
+  "description": "RunFlow — escaletas, guiones, rótulos, teleprompter y producción",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel --filter @runflow/server --filter @runflow/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "test:e2e": "pnpm --filter @runflow/web test:e2e",
+    "db:generate": "pnpm --filter @runflow/db generate",
+    "db:migrate": "pnpm --filter @runflow/server migrate",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "3.6.2",
+    "typescript": "5.9.3"
+  }
+}
