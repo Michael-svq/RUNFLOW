@@ -3,6 +3,7 @@ import path from 'node:path';
 import cookie from '@fastify/cookie';
 import rateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
+import websocket from '@fastify/websocket';
 import Fastify, { type FastifyInstance } from 'fastify';
 import type { Db } from '@runflow/db';
 import type { ApiErrorBody } from '@runflow/core';
@@ -13,11 +14,16 @@ import { systemRoutes } from './routes/system';
 import { authRoutes } from './routes/auth';
 import { memberRoutes } from './routes/members';
 import { platformRoutes } from './routes/platform';
+import { rundownRoutes } from './routes/rundowns';
+import { collabRoutes } from './routes/collab';
+import { CollabServer } from './collab/collab-server';
 
 export interface AppDeps {
   db: Db;
   config: AppConfig;
   version: string;
+  /** Lo crea buildApp. */
+  collab?: CollabServer;
 }
 
 /** Cabecera que la web envía en toda petición que modifica datos (defensa CSRF). */
@@ -42,6 +48,9 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
 
   await app.register(cookie);
+  await app.register(websocket, { options: { maxPayload: 8 * 1024 * 1024 } });
+  deps.collab = new CollabServer(deps.db, app.log);
+  app.addHook('onClose', async () => deps.collab!.close());
   await app.register(rateLimit, {
     global: false,
     errorResponseBuilder: (_req, ctx) => ({
@@ -94,6 +103,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await authRoutes(app, deps);
   await memberRoutes(app, deps);
   await platformRoutes(app, deps);
+  await rundownRoutes(app, deps);
+  await collabRoutes(app, deps);
 
   const webDist = deps.config.webDist ? path.resolve(deps.config.webDist) : undefined;
   const serveWeb = !!webDist && existsSync(path.join(webDist, 'index.html'));

@@ -78,3 +78,89 @@ export type ChangePasswordInput = z.infer<typeof changePasswordInput>;
 
 export const setActiveOrgInput = z.object({ orgId: z.uuid() });
 export type SetActiveOrgInput = z.infer<typeof setActiveOrgInput>;
+
+/* ---------- Programas, escaletas y vistas (M1) ---------- */
+
+const clockSchema = z
+  .string()
+  .trim()
+  .regex(/^([01]?\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, 'Hora no válida (HH:MM)')
+  .transform((v) => {
+    const [h, m, s] = v.split(':');
+    return `${h!.padStart(2, '0')}:${m}:${s ?? '00'}`;
+  });
+
+const dateSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha no válida')
+  .refine((v) => !Number.isNaN(Date.parse(`${v}T00:00:00Z`)), 'Fecha no válida');
+
+export const programTypeSchema = z.enum([
+  'informativo',
+  'magacin',
+  'deportes',
+  'entretenimiento',
+  'evento',
+  'educativo',
+  'otro',
+]);
+
+export const createProgramInput = z.object({
+  name: trimmed(120),
+  type: programTypeSchema,
+  defaultStartTime: clockSchema.nullable().optional(),
+  defaultDurationMin: z.number().int().min(1, 'Mínimo 1 minuto').max(1440).nullable().optional(),
+});
+export type CreateProgramInput = z.infer<typeof createProgramInput>;
+
+export const updateProgramInput = createProgramInput
+  .partial()
+  .extend({ archived: z.boolean().optional() })
+  .refine((v) => Object.keys(v).length > 0, 'Nada que actualizar');
+export type UpdateProgramInput = z.infer<typeof updateProgramInput>;
+
+export const createRundownInput = z.object({
+  programId: z.uuid('Elige un programa'),
+  title: z.string().trim().max(160).optional(),
+  airDate: dateSchema,
+  startTime: clockSchema,
+  endTime: clockSchema,
+});
+export type CreateRundownInput = z.infer<typeof createRundownInput>;
+
+export const rundownStatusSchema = z.enum(['borrador', 'lista', 'en_aire', 'cerrada']);
+
+export const updateRundownInput = z
+  .object({
+    title: trimmed(160),
+    airDate: dateSchema,
+    startTime: clockSchema,
+    endTime: clockSchema,
+    status: rundownStatusSchema,
+  })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, 'Nada que actualizar');
+export type UpdateRundownInput = z.infer<typeof updateRundownInput>;
+
+export const listRundownsQuery = z.object({
+  from: dateSchema.optional(),
+  to: dateSchema.optional(),
+  programId: z.uuid().optional(),
+});
+
+export const viewColumnSchema = z.object({
+  key: z.string().min(1).max(40),
+  width: z.number().int().min(32).max(800),
+});
+
+export const saveViewInput = z.object({
+  name: trimmed(60),
+  shared: z.boolean().default(false),
+  columns: z
+    .array(viewColumnSchema)
+    .min(1, 'Elige al menos una columna')
+    .max(100)
+    .refine((cols) => new Set(cols.map((c) => c.key)).size === cols.length, 'Columnas repetidas'),
+});
+export type SaveViewInput = z.infer<typeof saveViewInput>;

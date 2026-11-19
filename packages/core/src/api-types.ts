@@ -72,3 +72,40 @@ export interface ApiErrorBody {
     fields?: Record<string, string>;
   };
 }
+
+export interface ProgramDto {
+  id: string;
+  name: string;
+  type: string;
+  defaultStartTime: string | null;
+  defaultDurationMin: number | null;
+  archived: boolean;
+}
+
+export interface RundownDto {
+  id: string;
+  programId: string;
+  programName: string;
+  title: string;
+  /** YYYY-MM-DD */
+  airDate: string;
+  /** HH:MM:SS */
+  startTime: string;
+  endTime: string;
+  status: 'borrador' | 'lista' | 'en_aire' | 'cerrada';
+  lineCount: number;
+  /** Suma de TIEMPO ESTIMADO de las líneas, en segundos. */
+  estimatedSeconds: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SavedViewDto {
+  id: string;
+  name: string;
+  shared: boolean;
+  ownerUserId: string | null;
+  columns: { key: string; width: number }[];
+  /** Quien la pide puede modificarla o borrarla. */
+  canEdit: boolean;
+}

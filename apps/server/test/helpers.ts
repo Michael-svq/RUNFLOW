@@ -1,12 +1,14 @@
 import pg from 'pg';
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify';
 import { createDb, type DbHandle } from '@runflow/db';
-import { buildApp } from '../src/app';
+import { buildApp, type AppDeps } from '../src/app';
+import type { CollabServer } from '../src/collab/collab-server';
 import { loadConfig } from '../src/config';
 
 export interface TestContext {
   app: FastifyInstance;
   handle: DbHandle;
+  collab: CollabServer;
   close(): Promise<void>;
 }
 
@@ -18,11 +20,13 @@ export async function createTestContext(env: Record<string, string> = {}): Promi
     ...env,
   });
   const handle = createDb(config.databaseUrl, { max: 4 });
-  const app = await buildApp({ db: handle.db, config, version: 'test' });
+  const deps: AppDeps = { db: handle.db, config, version: 'test' };
+  const app = await buildApp(deps);
   await app.ready();
   return {
     app,
     handle,
+    collab: deps.collab!,
     async close() {
       await app.close();
       await handle.close();
@@ -35,7 +39,7 @@ export async function resetDb(): Promise<void> {
   const client = new pg.Client({ connectionString: process.env.TEST_OWNER_URL });
   await client.connect();
   await client.query(
-    'truncate table audit_log, sessions, memberships, roles, users, organizations restart identity cascade',
+    'truncate table views, rundown_lines, rundowns, programs, audit_log, sessions, memberships, roles, users, organizations restart identity cascade',
   );
   await client.end();
 }

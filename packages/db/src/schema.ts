@@ -2,14 +2,26 @@ import { sql } from 'drizzle-orm';
 import {
   bigserial,
   boolean,
+  customType,
+  date,
   index,
+  integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
+  time,
   timestamp,
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+
+/** Binario (estado del documento Yjs). */
+const bytea = customType<{ data: Uint8Array; driverData: Buffer }>({
+  dataType: () => 'bytea',
+  toDriver: (value) => Buffer.from(value),
+  fromDriver: (value) => new Uint8Array(value),
+});
 
 /*
  * Esquema de M0. Toda tabla de negocio lleva org_id y está protegida por
@@ -130,4 +142,92 @@ export const auditLog = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index('audit_log_org_created_idx').on(t.orgId, t.createdAt)],
+);
+
+/* ---------- M1: programas, escaletas y vistas ---------- */
+
+export const programs = pgTable(
+  'programs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    /** informativo | magacin | deportes | entretenimiento | evento | educativo | otro */
+    type: text('type').notNull().default('informativo'),
+    defaultStartTime: time('default_start_time'),
+    defaultDurationMin: integer('default_duration_min'),
+    archived: boolean('archived').notNull().default(false),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [uniqueIndex('programs_org_name_idx').on(t.orgId, sql`lower(${t.name})`)],
+);
+
+export const rundowns = pgTable(
+  'rundowns',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    programId: uuid('program_id')
+      .notNull()
+      .references(() => programs.id, { onDelete: 'restrict' }),
+    title: text('title').notNull(),
+    airDate: date('air_date', { mode: 'string' }).notNull(),
+    startTime: time('start_time').notNull(),
+    endTime: time('end_time').notNull(),
+    /** borrador | lista | en_aire | cerrada */
+    status: text('status').notNull().default('borrador'),
+    /** Estado completo del documento colaborativo (Yjs). */
+    ydoc: bytea('ydoc'),
+    lineCount: integer('line_count').notNull().default(0),
+    estimatedSeconds: integer('estimated_seconds').notNull().default(0),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    /** Borrado lógico (papelera, M5). */
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+  },
+  (t) => [index('rundowns_org_date_idx').on(t.orgId, t.airDate)],
+);
+
+/** Proyección relacional de las líneas (búsquedas, listados, informes, PDF). */
+export const rundownLines = pgTable(
+  'rundown_lines',
+  {
+    rundownId: uuid('rundown_id')
+      .notNull()
+      .references(() => rundowns.id, { onDelete: 'cascade' }),
+    id: text('id').notNull(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull(),
+    num: text('num').notNull().default(''),
+    type: text('type').notNull().default(''),
+    cells: jsonb('cells')
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+  },
+  (t) => [primaryKey({ columns: [t.rundownId, t.id] })],
+);
+
+/** Vistas guardadas de la escaleta: personales (owner) o compartidas (owner null). */
+export const views = pgTable(
+  'views',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    ownerUserId: uuid('owner_user_id').references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    columns: jsonb('columns').$type<{ key: string; width: number }[]>().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index('views_org_idx').on(t.orgId)],
 );
