@@ -34,6 +34,10 @@ export const DEFAULT_ROLES: DefaultRole[] = [
       'templates.manage',
       'program.configure',
       'media.manage',
+      'production.view',
+      'production.manage',
+      'budget.view',
+      'budget.manage',
     ],
   },
   {
@@ -46,7 +50,14 @@ export const DEFAULT_ROLES: DefaultRole[] = [
     key: 'realizador',
     name: 'Realizador',
     description: 'Ejecuta el directo',
-    permissions: [...VIEW, 'rundown.edit_cells', 'live.go', 'cg.fire', 'prompter.control'],
+    permissions: [
+      ...VIEW,
+      'rundown.edit_cells',
+      'live.go',
+      'cg.fire',
+      'prompter.control',
+      'production.view',
+    ],
   },
   {
     key: 'operador_cg',
@@ -70,7 +81,13 @@ export const DEFAULT_ROLES: DefaultRole[] = [
     key: 'produccion',
     name: 'Producción',
     description: 'Invitados, teléfonos, sets y logística',
-    permissions: [...VIEW, 'rundown.edit_cells', 'budget.view'],
+    permissions: [
+      ...VIEW,
+      'rundown.edit_cells',
+      'production.view',
+      'production.manage',
+      'budget.view',
+    ],
   },
   {
     key: 'profesor',
@@ -88,6 +105,8 @@ export const DEFAULT_ROLES: DefaultRole[] = [
       'cg.fire',
       'prompter.control',
       'media.manage',
+      'production.view',
+      'production.manage',
     ],
   },
   {

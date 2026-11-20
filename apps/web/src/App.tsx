@@ -25,6 +25,8 @@ import { SignupPage } from './pages/SignupPage';
 import { SourcesPage } from './pages/SourcesPage';
 import { MediaPage } from './pages/MediaPage';
 import { HelpPage } from './pages/HelpPage';
+import { ProductionPage } from './pages/ProductionPage';
+import { CallReplyPage, CallSheetPage } from './pages/CallSheetPage';
 import { useCan, useMe } from './auth/session';
 
 function RequireUsersPermission() {
@@ -37,6 +39,10 @@ function RequireStationPermission() {
 
 function RequireConfigPermission() {
   return useCan('org.configure') ? <ConfigPage /> : <Navigate to="/inicio" replace />;
+}
+
+function RequireProductionPermission() {
+  return useCan('production.view') ? <ProductionPage /> : <Navigate to="/inicio" replace />;
 }
 
 function RequirePlatformAdmin() {
@@ -59,9 +65,11 @@ export function App() {
       {/* Salidas por enlace: sin usuario. */}
       <Route path="/salida/:token" element={<OutputPage />} />
       <Route path="/ayuda" element={<HelpPage />} />
+      <Route path="/convocatoria/:token" element={<CallReplyPage />} />
       <Route element={<RequireOrg />}>
         <Route path="/escaletas/:id/prompter" element={<PrompterPage />} />
         <Route path="/escaletas/:id/imprimir" element={<PrintPage />} />
+        <Route path="/produccion/:id/hoja" element={<CallSheetPage />} />
         <Route element={<AppLayout />}>
           <Route index element={<Navigate to="/inicio" replace />} />
           <Route path="/inicio" element={<HomePage />} />
@@ -74,6 +82,7 @@ export function App() {
           <Route path="/archivo" element={<ArchivePage />} />
           <Route path="/station" element={<RequireStationPermission />} />
           <Route path="/configuracion" element={<RequireConfigPermission />} />
+          <Route path="/produccion" element={<RequireProductionPermission />} />
           <Route path="/escaletas/:id" element={<RundownPage />} />
           <Route path="/plataforma" element={<RequirePlatformAdmin />} />
           {NAV_ITEMS.filter((i) => i.milestone).map((item) => (

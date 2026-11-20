@@ -13,24 +13,25 @@ Web (PWA) multiempresa en la nube y funcionamiento local con **RunFlow Station**
 
 ## Estado
 
-| Hito                                                                                      | Estado    |
-| ----------------------------------------------------------------------------------------- | --------- |
-| M0 Fundaciones (monorepo, base de datos, entrar, empresas, usuarios, roles, diseño, PWA)  | ✅        |
-| M1 Escaleta en tiempo real (colaboración, sin conexión, vistas)                           | ✅        |
-| M2 Tiempos y directo (GO, autonext, eventos a hora fija, as-run)                          | ✅        |
-| M3 Guion y rótulos (editor colaborativo, TOT/LOC/INF/DAT/BAN/HIG, TC)                     | ✅        |
-| M4 Teleprompter y salidas por enlace                                                      | ✅        |
-| M5 Chat, plantillas, nevera, versiones, papelera, importar/exportar, PDF                  | ✅        |
-| M6 RunFlow Station (servidor local, modo híbrido con la nube, licencias)                  | ✅        |
-| M7 RunFlow CG (CasparCG: rótulos ▶/■ y por TC, VTR, plantillas, configuración)           | ✅        |
-| M8 Mezcladores (OBS, vMix, ATEM), mapa de fuentes y mando (Companion, Stream Deck)        | ✅        |
-| M9 IA (Anthropic, OpenAI, Gemini, Mistral, Ollama en local) en el guion                   | ✅        |
-| Lanzamiento: planes, Stripe, registro autoservicio, portada pública y ayuda               | ✅        |
-| F2.2 Fuentes: RSS/Atom de agencias y medios a la nevera o a la escaleta                   | ✅        |
-| F2.3 Directo y streaming: emitir y grabar en OBS, vMix y ATEM; reloj de bloque en salidas | ✅        |
-| F2.4 API pública REST, tokens con permisos y webhooks firmados                            | ✅        |
-| F2.1 Media: subir, previsualizar, marcar TC, proxies y copia a CasparCG                   | ✅        |
-| Beta privada (equipos reales) y Fase III (producción)                                     | Siguiente |
+| Hito                                                                                           | Estado    |
+| ---------------------------------------------------------------------------------------------- | --------- |
+| M0 Fundaciones (monorepo, base de datos, entrar, empresas, usuarios, roles, diseño, PWA)       | ✅        |
+| M1 Escaleta en tiempo real (colaboración, sin conexión, vistas)                                | ✅        |
+| M2 Tiempos y directo (GO, autonext, eventos a hora fija, as-run)                               | ✅        |
+| M3 Guion y rótulos (editor colaborativo, TOT/LOC/INF/DAT/BAN/HIG, TC)                          | ✅        |
+| M4 Teleprompter y salidas por enlace                                                           | ✅        |
+| M5 Chat, plantillas, nevera, versiones, papelera, importar/exportar, PDF                       | ✅        |
+| M6 RunFlow Station (servidor local, modo híbrido con la nube, licencias)                       | ✅        |
+| M7 RunFlow CG (CasparCG: rótulos ▶/■ y por TC, VTR, plantillas, configuración)                | ✅        |
+| M8 Mezcladores (OBS, vMix, ATEM), mapa de fuentes y mando (Companion, Stream Deck)             | ✅        |
+| M9 IA (Anthropic, OpenAI, Gemini, Mistral, Ollama en local) en el guion                        | ✅        |
+| Lanzamiento: planes, Stripe, registro autoservicio, portada pública y ayuda                    | ✅        |
+| F2.2 Fuentes: RSS/Atom de agencias y medios a la nevera o a la escaleta                        | ✅        |
+| F2.3 Directo y streaming: emitir y grabar en OBS, vMix y ATEM; reloj de bloque en salidas      | ✅        |
+| F2.4 API pública REST, tokens con permisos y webhooks firmados                                 | ✅        |
+| F2.1 Media: subir, previsualizar, marcar TC, proxies y copia a CasparCG                        | ✅        |
+| F3.1 Producción: calendario, personal, hojas de llamada con confirmación, invitados, logística | ✅        |
+| Beta privada (equipos reales) y resto de la Fase III                                           | Siguiente |
 
 ## Estructura
 

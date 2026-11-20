@@ -1,0 +1,233 @@
+/* 11 Producción (F3.1) y presupuesto (F3.2). */
+
+.rf-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  border-bottom: 1px solid var(--rf-border);
+  margin-bottom: var(--rf-space-3);
+}
+.rf-page-header .rf-tabs {
+  margin-bottom: 0;
+}
+.rf-tabs__tab {
+  border: 0;
+  background: none;
+  color: var(--rf-text-muted);
+  font: inherit;
+  font-weight: 600;
+  padding: var(--rf-space-2) var(--rf-space-3);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+.rf-tabs__tab:hover {
+  color: var(--rf-text);
+}
+.rf-tabs__tab.is-active {
+  color: var(--rf-text);
+  border-bottom-color: var(--rf-accent);
+}
+
+.rf-input--sm,
+.rf-select--sm {
+  padding: 4px 6px;
+  font-size: var(--rf-text-sm);
+  min-width: 0;
+  width: 100%;
+}
+
+.rf-prod {
+  display: grid;
+  grid-template-columns: minmax(300px, 400px) minmax(0, 1fr);
+  gap: var(--rf-space-4);
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .rf-prod {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.rf-prod__month {
+  display: flex;
+  align-items: center;
+  gap: var(--rf-space-2);
+  flex-wrap: wrap;
+}
+.rf-prod__month h2 {
+  margin: 0;
+  min-width: 10ch;
+  text-align: center;
+}
+.rf-prod__month .rf-btn--primary {
+  margin-left: auto;
+}
+.rf-prod__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+  margin: var(--rf-space-3) 0;
+}
+.rf-prod__weekday {
+  text-align: center;
+  font-size: var(--rf-text-xs);
+  color: var(--rf-text-muted);
+  font-weight: 700;
+}
+.rf-prod__day {
+  min-height: 64px;
+  background: var(--rf-bg-sunken);
+  border-radius: var(--rf-radius-sm);
+  padding: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+.rf-prod__day.is-out {
+  opacity: 0.45;
+}
+.rf-prod__day.is-today .rf-prod__daynum {
+  background: var(--rf-accent);
+  color: var(--rf-on-accent);
+  border-radius: 999px;
+}
+.rf-prod__daynum {
+  font-size: var(--rf-text-xs);
+  font-variant-numeric: tabular-nums;
+  align-self: flex-start;
+  padding: 0 5px;
+}
+.rf-prod__chip {
+  border: 0;
+  border-left: 3px solid var(--rf-text-muted);
+  background: var(--rf-surface-2);
+  color: var(--rf-text);
+  font: inherit;
+  font-size: var(--rf-text-xs);
+  text-align: left;
+  padding: 1px 4px;
+  border-radius: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.rf-prod__chip--directo {
+  border-left-color: #cc4125;
+}
+.rf-prod__chip--grabacion {
+  border-left-color: var(--rf-orange);
+}
+.rf-prod__chip--ensayo {
+  border-left-color: var(--rf-yellow);
+}
+.rf-prod__chip--reunion {
+  border-left-color: #6fa8dc;
+}
+.rf-prod__chip--viaje {
+  border-left-color: var(--rf-green-light);
+}
+.rf-prod__chip.is-cancelled {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+.rf-prod__chip.is-selected {
+  outline: 2px solid var(--rf-accent);
+}
+.rf-prod__eventhead {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--rf-space-3);
+  flex-wrap: wrap;
+}
+.rf-prod__eventhead h2 {
+  margin: 0;
+}
+.rf-prod__eventhead p {
+  margin: 4px 0;
+}
+.rf-prod__notes {
+  white-space: pre-wrap;
+  background: var(--rf-bg-sunken);
+  padding: var(--rf-space-2) var(--rf-space-3);
+  border-radius: var(--rf-radius-sm);
+}
+.rf-prod__table td {
+  vertical-align: middle;
+}
+.rf-prod__table .rf-input--sm {
+  min-width: 9rem;
+}
+.rf-prod__table .rf-select--sm {
+  min-width: 8.5rem;
+}
+a.rf-btn {
+  text-decoration: none;
+}
+.rf-prod__actions {
+  white-space: nowrap;
+}
+.rf-prod__add {
+  flex-wrap: wrap;
+}
+.rf-prod__logistics {
+  list-style: none;
+  margin: 0 0 var(--rf-space-3);
+  padding: 0;
+  display: grid;
+  gap: var(--rf-space-1);
+}
+.rf-prod__logistics li {
+  display: flex;
+  align-items: center;
+  gap: var(--rf-space-2);
+  flex-wrap: wrap;
+  padding: var(--rf-space-1) 0;
+  border-bottom: 1px solid var(--rf-border);
+}
+.rf-prod__logistics li.is-done span {
+  text-decoration: line-through;
+  color: var(--rf-text-muted);
+}
+.rf-prod__logistics li > .rf-btn {
+  margin-left: auto;
+}
+.rf-table tr.is-muted td {
+  opacity: 0.55;
+}
+
+/* Hoja de llamada (impresión) y confirmación pública */
+.rf-callsheet h2 {
+  font-size: 1rem;
+  margin: 16px 0 6px;
+}
+.rf-callsheet .rf-print__notes {
+  white-space: pre-wrap;
+}
+.rf-callreply {
+  max-width: 520px;
+  margin: 40px auto;
+  padding: 0 var(--rf-space-4);
+}
+.rf-callreply dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+}
+.rf-callreply dt {
+  color: var(--rf-text-muted);
+}
+.rf-callreply dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.rf-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--rf-accent-text);
+  text-decoration: underline;
+  cursor: pointer;
+}

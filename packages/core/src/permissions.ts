@@ -17,7 +17,10 @@ export const PERMISSIONS = {
   'program.configure': 'Configurar programas',
   'org.configure': 'Configurar la empresa',
   'users.manage': 'Gestionar usuarios',
+  'production.view': 'Ver producción (calendario, hojas de llamada, invitados)',
+  'production.manage': 'Gestionar producción (convocatorias, personal, invitados, logística)',
   'budget.view': 'Ver presupuestos',
+  'budget.manage': 'Gestionar presupuestos',
   'station.admin': 'Administrar Station',
 } as const;
 

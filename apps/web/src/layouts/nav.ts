@@ -23,4 +23,5 @@ export const NAV_ITEMS: NavItem[] = [
   { number: '08', path: '/perfil', label: 'nav.profile' },
   { number: '09', path: '/station', label: 'nav.station', permission: 'station.admin' },
   { number: '10', path: '/configuracion', label: 'nav.config', permission: 'org.configure' },
+  { number: '11', path: '/produccion', label: 'nav.production', permission: 'production.view' },
 ];

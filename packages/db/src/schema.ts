@@ -593,3 +593,129 @@ export const media = pgTable(
   },
   (t) => [index('media_org_folder_idx').on(t.orgId, t.folder)],
 );
+
+/* ---------- F3.1 Producción ---------- */
+
+/** Convocatorias del calendario de producción (directos, grabaciones, ensayos…). */
+export const productionEvents = pgTable(
+  'production_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    programId: uuid('program_id').references(() => programs.id, { onDelete: 'set null' }),
+    rundownId: uuid('rundown_id').references(() => rundowns.id, { onDelete: 'set null' }),
+    title: text('title').notNull(),
+    /** directo | grabacion | ensayo | reunion | viaje | otro */
+    kind: text('kind').notNull().default('grabacion'),
+    /** previsto | confirmado | cancelado */
+    status: text('status').notNull().default('previsto'),
+    startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
+    endsAt: timestamp('ends_at', { withTimezone: true }),
+    location: text('location').notNull().default(''),
+    notes: text('notes').notNull().default(''),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index('production_events_org_starts_idx').on(t.orgId, t.startsAt)],
+);
+
+/** Directorio de personal (con o sin cuenta en RunFlow). */
+export const crewMembers = pgTable(
+  'crew_members',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    /** Puesto habitual (cámara, realización, sonido…). */
+    role: text('role').notNull().default(''),
+    phone: text('phone').notNull().default(''),
+    email: text('email').notNull().default(''),
+    notes: text('notes').notNull().default(''),
+    active: boolean('active').notNull().default(true),
+    createdAt: createdAt(),
+  },
+  (t) => [index('crew_members_org_idx').on(t.orgId)],
+);
+
+/** Hoja de llamada: quién, de qué y a qué hora en cada convocatoria. */
+export const eventCalls = pgTable(
+  'event_calls',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    eventId: uuid('event_id')
+      .notNull()
+      .references(() => productionEvents.id, { onDelete: 'cascade' }),
+    crewId: uuid('crew_id')
+      .notNull()
+      .references(() => crewMembers.id, { onDelete: 'cascade' }),
+    role: text('role').notNull().default(''),
+    callAt: timestamp('call_at', { withTimezone: true }),
+    /** pendiente | confirmado | rechazado */
+    status: text('status').notNull().default('pendiente'),
+    reply: text('reply').notNull().default(''),
+    respondedAt: timestamp('responded_at', { withTimezone: true }),
+    /** Enlace de confirmación sin cuenta. */
+    token: text('token').notNull().unique(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('event_calls_event_idx').on(t.eventId),
+    uniqueIndex('event_calls_event_crew_idx').on(t.eventId, t.crewId),
+  ],
+);
+
+export const guests = pgTable(
+  'guests',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    eventId: uuid('event_id')
+      .notNull()
+      .references(() => productionEvents.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    description: text('description').notNull().default(''),
+    phone: text('phone').notNull().default(''),
+    email: text('email').notNull().default(''),
+    arrivalAt: timestamp('arrival_at', { withTimezone: true }),
+    makeupAt: timestamp('makeup_at', { withTimezone: true }),
+    setAt: timestamp('set_at', { withTimezone: true }),
+    /** pendiente | confirmado | llegado | cancelado */
+    status: text('status').notNull().default('pendiente'),
+    notes: text('notes').notNull().default(''),
+    createdAt: createdAt(),
+  },
+  (t) => [index('guests_event_idx').on(t.eventId)],
+);
+
+export const logisticsItems = pgTable(
+  'logistics_items',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    eventId: uuid('event_id')
+      .notNull()
+      .references(() => productionEvents.id, { onDelete: 'cascade' }),
+    /** transporte | catering | escenografia | maquillaje | tecnico | otro */
+    category: text('category').notNull().default('otro'),
+    description: text('description').notNull(),
+    provider: text('provider').notNull().default(''),
+    at: timestamp('at', { withTimezone: true }),
+    assignee: text('assignee').notNull().default(''),
+    done: boolean('done').notNull().default(false),
+    notes: text('notes').notNull().default(''),
+    createdAt: createdAt(),
+  },
+  (t) => [index('logistics_items_event_idx').on(t.eventId)],
+);

@@ -33,6 +33,7 @@ import { billingRoutes } from './routes/billing';
 import { sourceRoutes } from './routes/sources';
 import { publicApiRoutes } from './routes/public-api';
 import { mediaRoutes } from './routes/media';
+import { productionRoutes } from './routes/production';
 import { MediaStore } from './media/store';
 import { WebhookDispatcher } from './api/webhooks';
 import { SourcePoller } from './sources/poller';
@@ -230,6 +231,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await publicApiRoutes(app, deps);
   deps.media = new MediaStore(deps.config.dataDir);
   await mediaRoutes(app, deps);
+  await productionRoutes(app, deps);
   deps.sources = new SourcePoller(deps.db, app.log, {
     intervalMs: deps.config.sourcesPollMs,
     allowPrivate: deps.config.sourcesAllowPrivate,

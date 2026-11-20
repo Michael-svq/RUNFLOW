@@ -69,6 +69,17 @@ const SECTIONS: { id: string; title: string; items: string[] }[] = [
     ],
   },
   {
+    id: 'produccion',
+    title: 'Producción',
+    items: [
+      'En 11 Producción, la pestaña Personal es el directorio del equipo (con o sin cuenta en RunFlow).',
+      'En el calendario, «Nueva convocatoria» (o doble clic en un día) crea un directo, grabación o ensayo; se puede enlazar a su escaleta.',
+      'En Equipo se convoca a cada persona con su puesto y hora de citación; «Copiar enlace», WhatsApp o Email le envían un enlace para confirmar sin cuenta.',
+      'Invitados (llegada, maquillaje, set) y Logística (transporte, catering, escenografía…) se marcan según avanzan; todo se actualiza para el equipo cada pocos segundos.',
+      '«Hoja de llamada» abre la versión para imprimir o guardar en PDF; «Duplicar» copia la convocatoria a otra fecha con el mismo equipo.',
+    ],
+  },
+  {
     id: 'station',
     title: 'RunFlow Station',
     items: [
