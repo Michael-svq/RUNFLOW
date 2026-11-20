@@ -2,6 +2,7 @@ import { Navigate, Outlet, useLocation } from 'react-router';
 import { errorMessage } from '../api/client';
 import { useMe, useSetupStatus } from '../auth/session';
 import { FullScreenError, FullScreenLoader } from './FullScreen';
+import { LandingPage } from '../pages/LandingPage';
 
 /**
  * Decide adónde va el usuario según su sesión:
@@ -18,6 +19,8 @@ export function RequireOrg() {
     return <FullScreenError message={errorMessage(me.error)} onRetry={() => me.refetch()} />;
   if (me.data === null) {
     if (setup.data?.needsSetup) return <Navigate to="/configuracion-inicial" replace />;
+    // Portada pública para quien llega a la raíz sin sesión.
+    if (location.pathname === '/') return <LandingPage />;
     const next = location.pathname + location.search;
     return (
       <Navigate to={`/entrar${next !== '/' ? `?next=${encodeURIComponent(next)}` : ''}`} replace />

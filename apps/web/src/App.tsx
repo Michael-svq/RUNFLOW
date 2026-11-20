@@ -21,6 +21,8 @@ import { SetupPage } from './pages/SetupPage';
 import { UsersPage } from './pages/UsersPage';
 import { StationPage } from './pages/StationPage';
 import { ConfigPage } from './pages/ConfigPage';
+import { SignupPage } from './pages/SignupPage';
+import { HelpPage } from './pages/HelpPage';
 import { useCan, useMe } from './auth/session';
 
 function RequireUsersPermission() {
@@ -46,6 +48,7 @@ export function App() {
       <Route element={<RequireAnonymous />}>
         <Route path="/entrar" element={<LoginPage />} />
         <Route path="/configuracion-inicial" element={<SetupPage />} />
+        <Route path="/registro" element={<SignupPage />} />
       </Route>
       <Route element={<RequireSession />}>
         <Route path="/cambiar-contrasena" element={<ChangePasswordPage />} />
@@ -53,6 +56,7 @@ export function App() {
       </Route>
       {/* Salidas por enlace: sin usuario. */}
       <Route path="/salida/:token" element={<OutputPage />} />
+      <Route path="/ayuda" element={<HelpPage />} />
       <Route element={<RequireOrg />}>
         <Route path="/escaletas/:id/prompter" element={<PrompterPage />} />
         <Route path="/escaletas/:id/imprimir" element={<PrintPage />} />

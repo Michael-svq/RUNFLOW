@@ -14,6 +14,7 @@ import { Alert, Badge, Button, SelectField, Spinner, TextField } from '@runflow/
 import { api, errorMessage } from '../api/client';
 import { PageHeader } from '../components/PageHeader';
 import { AiConfig } from './AiConfig';
+import { BillingConfig } from './BillingConfig';
 
 /*
  * 10 Configuración (nivel Master de la empresa): rótulos y directo, diseño de
@@ -50,6 +51,7 @@ export function ConfigPage() {
         <Alert tone="error">{errorMessage(settings.error)}</Alert>
       ) : (
         <>
+          <BillingConfig />
           <LiveSettings settings={settings.data} />
           <DesignEditor settings={settings.data} />
           <Devices />

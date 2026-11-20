@@ -37,21 +37,27 @@ docker compose --env-file .env.compose exec db pg_dump -U runflow runflow > runf
 
 Ver `.env.example`. Las importantes:
 
-| Variable             | Uso                                                           |
-| -------------------- | ------------------------------------------------------------- |
-| `DATABASE_URL`       | Conexión de la aplicación (rol sin privilegios, sujeto a RLS) |
-| `DATABASE_OWNER_URL` | Conexión del propietario, solo para migraciones               |
-| `RUNFLOW_MODE`       | `cloud` o `station`                                           |
-| `COOKIE_SECURE`      | `true` detrás de HTTPS                                        |
-| `TRUST_PROXY`        | `true` si hay un proxy inverso delante                        |
-| `AUTH_RATE_LIMIT`    | Intentos por minuto en login (10)                             |
-| `DATA_DIR`           | Carpeta de datos (licencia, clave maestra); `/data` en Docker |
-| `SECRET_KEY`         | Clave maestra de cifrado (claves de IA); si no, en `DATA_DIR` |
-| `PUBLIC_URL`         | Dirección con la que CasparCG ve este servidor (plantillas)   |
-| `CLOUD_URL`          | Station híbrida: dirección de la nube                         |
-| `STATION_TOKEN`      | Station híbrida: token creado en la nube                      |
-| `TLS_CERT_FILE`      | HTTPS directo (Station): certificado PEM                      |
-| `TLS_KEY_FILE`       | HTTPS directo (Station): clave PEM                            |
+| Variable                | Uso                                                           |
+| ----------------------- | ------------------------------------------------------------- |
+| `DATABASE_URL`          | Conexión de la aplicación (rol sin privilegios, sujeto a RLS) |
+| `DATABASE_OWNER_URL`    | Conexión del propietario, solo para migraciones               |
+| `RUNFLOW_MODE`          | `cloud` o `station`                                           |
+| `COOKIE_SECURE`         | `true` detrás de HTTPS                                        |
+| `TRUST_PROXY`           | `true` si hay un proxy inverso delante                        |
+| `AUTH_RATE_LIMIT`       | Intentos por minuto en login (10)                             |
+| `DATA_DIR`              | Carpeta de datos (licencia, clave maestra); `/data` en Docker |
+| `SECRET_KEY`            | Clave maestra de cifrado (claves de IA); si no, en `DATA_DIR` |
+| `PUBLIC_URL`            | Dirección pública (redirecciones de Stripe, plantillas CG)    |
+| `PLAN_LIMITS`           | `true` en la nube SaaS: aplica los límites de cada plan       |
+| `SIGNUP_ENABLED`        | `true` en la nube SaaS: registro autoservicio en `/registro`  |
+| `STRIPE_SECRET_KEY`     | Cobro con Stripe (clave secreta)                              |
+| `STRIPE_WEBHOOK_SECRET` | Secreto del webhook `POST /api/billing/webhook`               |
+| `STRIPE_PRICE_BASIC`    | Id del precio (suscripción) del plan Básico                   |
+| `STRIPE_PRICE_PRO`      | Id del precio (suscripción) del plan Profesional              |
+| `CLOUD_URL`             | Station híbrida: dirección de la nube                         |
+| `STATION_TOKEN`         | Station híbrida: token creado en la nube                      |
+| `TLS_CERT_FILE`         | HTTPS directo (Station): certificado PEM                      |
+| `TLS_KEY_FILE`          | HTTPS directo (Station): clave PEM                            |
 
 ## RunFlow Station
 
@@ -147,3 +153,21 @@ pnpm --filter @runflow/server license issue ~/claves-runflow/license-private.pem
 El certificado propio de la Station hace que cada navegador pida confiar en él una vez
 (necesario para instalar la PWA desde otros equipos; por `http://` la web funciona igual,
 sin instalarse). Con un certificado propio del centro, usa `TLS_CERT_FILE` y `TLS_KEY_FILE`.
+
+## Nube SaaS: planes y cobro
+
+1. En Stripe crea dos productos con precio recurrente (Básico y Profesional) y pon sus ids en
+   `STRIPE_PRICE_BASIC` y `STRIPE_PRICE_PRO`; la clave secreta en `STRIPE_SECRET_KEY`.
+2. Crea un webhook a `https://<tu-dominio>/api/billing/webhook` con los eventos
+   `checkout.session.completed`, `customer.subscription.updated` y
+   `customer.subscription.deleted`; su secreto en `STRIPE_WEBHOOK_SECRET`.
+3. Activa el portal de cliente de Stripe (cambio de plan, facturas, baja).
+4. `PLAN_LIMITS=true`, `SIGNUP_ENABLED=true` y `PUBLIC_URL=https://<tu-dominio>`.
+
+La portada pública (`/`) muestra los planes con los precios de Stripe; cada empresa contrata y
+gestiona su plan en **10 Configuración → Plan y facturación**. Educación y Local se asignan a
+mano desde **Plataforma**. Sin `PLAN_LIMITS` (instalación propia o Station) no hay límites de
+plan ni sección de facturación.
+
+Pendiente para el alta pública: verificación del email (necesita un proveedor de email
+transaccional) y textos legales (condiciones y privacidad).

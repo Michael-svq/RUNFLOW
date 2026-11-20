@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { loginInput, type MeResponse } from '@runflow/core';
 import { Alert, Button, TextField } from '@runflow/ui';
 import { api } from '../api/client';
-import { useApplyMe } from '../auth/session';
+import { useApplyMe, useSetupStatus } from '../auth/session';
 import { t } from '../i18n';
 import { useFormState, validate } from '../lib/forms';
 import { AuthLayout } from '../layouts/AuthLayout';
@@ -20,6 +20,7 @@ export function LoginPage() {
   const applyMe = useApplyMe();
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const status = useSetupStatus(true);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -58,6 +59,14 @@ export function LoginPage() {
         <Button type="submit" variant="primary" block loading={form.submitting}>
           {t('login.submit')}
         </Button>
+        <p className="rf-small rf-muted rf-auth__links">
+          {status.data?.signupEnabled && (
+            <>
+              ¿Aún no tienes cuenta? <Link to="/registro">Créala gratis</Link> ·{' '}
+            </>
+          )}
+          <Link to="/ayuda">Ayuda</Link>
+        </p>
       </form>
     </AuthLayout>
   );

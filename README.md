@@ -24,7 +24,8 @@ Web (PWA) multiempresa en la nube y funcionamiento local con **RunFlow Station**
 | M7 RunFlow CG (CasparCG: rótulos ▶/■ y por TC, VTR, plantillas, configuración)          | ✅        |
 | M8 Mezcladores (OBS, vMix, ATEM), mapa de fuentes y mando (Companion, Stream Deck)       | ✅        |
 | M9 IA (Anthropic, OpenAI, Gemini, Mistral, Ollama en local) en el guion                  | ✅        |
-| Beta y lanzamiento (planes, pagos, staging)                                              | Siguiente |
+| Lanzamiento: planes, Stripe, registro autoservicio, portada pública y ayuda              | ✅        |
+| Beta privada (equipos reales) y Fase II                                                  | Siguiente |
 
 ## Estructura
 

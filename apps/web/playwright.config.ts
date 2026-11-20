@@ -1,3 +1,4 @@
+import os from 'node:os';
 import path from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
 
@@ -42,6 +43,8 @@ export default defineConfig({
       WEB_DIST: path.resolve(import.meta.dirname, 'dist'),
       LOG_LEVEL: 'warn',
       AUTH_RATE_LIMIT: '1000',
+      SIGNUP_ENABLED: 'true',
+      DATA_DIR: path.join(os.tmpdir(), 'runflow-e2e-data'),
     },
   },
 });

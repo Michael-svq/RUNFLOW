@@ -13,4 +13,5 @@ test-results/
 
 # Datos locales de instalaciones de prueba (licencia, fecha de instalación)
 apps/server/data/
+apps/web/data/
 out/

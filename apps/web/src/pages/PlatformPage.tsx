@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createOrgInput, type PlatformOrgDto } from '@runflow/core';
+import { createOrgInput, PLANS, type PlatformOrgDto } from '@runflow/core';
 import { Alert, Badge, Button, Dialog, Spinner, TextField } from '@runflow/ui';
 import { api, errorMessage } from '../api/client';
 import { PageHeader } from '../components/PageHeader';
@@ -61,7 +61,23 @@ export function PlatformPage() {
                     <div className="rf-muted rf-small">{o.slug}</div>
                   </td>
                   <td>
-                    <Badge>{o.plan}</Badge>
+                    <select
+                      className="rf-select"
+                      aria-label={`Plan de ${o.name}`}
+                      value={o.plan}
+                      onChange={async (e) => {
+                        await api
+                          .patch(`/api/platform/orgs/${o.id}/plan`, { plan: e.target.value })
+                          .catch(() => undefined);
+                        void qc.invalidateQueries({ queryKey: orgsKey });
+                      }}
+                    >
+                      {PLANS.map((p) => (
+                        <option key={p.key} value={p.key}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
                   </td>
                   <td>
                     <Badge>{o.mode}</Badge>
