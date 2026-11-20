@@ -32,6 +32,12 @@ const SAMPLE: Record<string, Record<string, string>> = {
   DAT: { f0: '20 de noviembre de 2026' },
   BAN: { f0: 'El Gobierno aprueba los presupuestos', f1: 'Más inversión en educación y sanidad' },
   HIG: { f0: '3.000 millones', f1: 'para vivienda pública' },
+  RRS: {
+    f0: 'Lucía Romero',
+    f1: '@luciaromero',
+    f2: '¡Qué gran gala de fin de curso! Enhorabuena a todo el equipo #Gala2026',
+    f3: 'Bluesky',
+  },
 };
 
 export function ConfigPage() {

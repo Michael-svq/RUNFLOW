@@ -389,3 +389,47 @@ a.rf-btn {
   border-radius: 50%;
   background: #cc4125;
 }
+
+/* Social Media (F3.4) */
+.rf-social__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--rf-space-2);
+}
+.rf-social__post {
+  display: grid;
+  gap: var(--rf-space-2);
+}
+.rf-social__meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--rf-space-2);
+  flex-wrap: wrap;
+}
+.rf-social__text {
+  margin: 4px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.rf-social__media {
+  max-width: 220px;
+  max-height: 160px;
+  border-radius: var(--rf-radius-sm);
+  object-fit: cover;
+}
+.rf-social__snippet {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.rf-error-text {
+  color: var(--rf-danger);
+}
+.rf-sources__list .rf-form {
+  border-top: 1px solid var(--rf-border);
+  padding-top: var(--rf-space-3);
+  margin-top: var(--rf-space-3);
+}

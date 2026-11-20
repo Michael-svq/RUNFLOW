@@ -70,6 +70,16 @@ body.preview { background: repeating-conic-gradient(#2a3438 0% 25%, #222b2f 0% 5
 .align-center .hig { left: 50%; transform: translateX(-50%); align-items: center; }
 .hig .l1 { background: var(--text); color: var(--secondary); font-size: 5vh; padding: 1vh 2vw; box-shadow: 1vh 1vh 0 var(--primary); }
 .hig .l2 { color: var(--text); font-size: 3.2vh; padding: 1.2vh 2vw 0; text-shadow: 0 .3vh .8vh rgba(0,0,0,.6); }
+
+/* Redes sociales: tarjeta con autor, usuario, texto y red */
+.rrs { bottom: var(--bottom); left: var(--margin); width: 46vw; background: var(--secondary); border-left: .9vh solid var(--primary); padding: 1.6vh 1.8vw; }
+.align-right .rrs { left: auto; right: var(--margin); }
+.align-center .rrs { left: 50%; transform: translateX(-50%); }
+.rrs .head { display: flex; align-items: baseline; gap: 1vw; min-width: 0; }
+.rrs .l1 { font-size: 3vh; }
+.rrs .l2 { font-size: 2.3vh; color: var(--primary); }
+.rrs .net { margin-left: auto; background: var(--primary); color: var(--accent-text); font-weight: 900; font-size: 1.8vh; letter-spacing: .1em; padding: .3vh .8vw; text-transform: uppercase; white-space: nowrap; }
+.rrs .txt { font-size: 2.8vh; font-weight: 500; line-height: 1.3; margin-top: 1vh; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 `;
 
 const LAYOUTS: Record<string, string> = {
@@ -79,6 +89,7 @@ const LAYOUTS: Record<string, string> = {
   DAT: `<div class="box dat"><div class="tag anim" data-bug></div><div class="l2 anim d1" data-f="f0"></div></div>`,
   BAN: `<div class="box ban"><div class="l1 anim" data-f="f0"></div><div class="l2 anim d1" data-f="f1"></div></div>`,
   HIG: `<div class="box hig"><div class="l1 anim" data-f="f0"></div><div class="l2 anim d1" data-f="f1"></div></div>`,
+  RRS: `<div class="box rrs anim"><div class="head"><div class="l1" data-f="f0"></div><div class="l2" data-f="f1"></div><div class="net" data-f="f3"></div></div><div class="txt d1" data-f="f2"></div></div>`,
 };
 
 const SCRIPT = `

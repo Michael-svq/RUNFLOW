@@ -119,7 +119,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 describe('RunFlow CG', () => {
   it('sirve las plantillas HTML de los 6 tipos y la fuente', async () => {
-    for (const type of ['TOT', 'LOC', 'INF', 'DAT', 'BAN', 'HIG']) {
+    for (const type of ['TOT', 'LOC', 'INF', 'DAT', 'BAN', 'HIG', 'RRS']) {
       const res = await ctx.app.inject({ method: 'GET', url: `/cg/templates/${type}.html` });
       expect(res.statusCode).toBe(200);
       expect(res.body).toContain('window.update');

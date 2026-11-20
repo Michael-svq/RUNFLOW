@@ -83,6 +83,15 @@ const SECTIONS: { id: string; title: string; items: string[] }[] = [
     ],
   },
   {
+    id: 'redes',
+    title: 'Redes sociales',
+    items: [
+      'En 03 Social Media añade hasta 6 búsquedas (#hashtag o @cuenta) de Bluesky, Mastodon, X o YouTube; los mensajes de WhatsApp de la audiencia se añaden a mano.',
+      'Aprueba o descarta lo que llega; «Rotular…» lo lleva a una escaleta como rótulo de redes (RRS).',
+      'En la escaleta, la pestaña «Redes» del panel añade una publicación aprobada a la línea seleccionada; sale con ▶/■ como cualquier rótulo.',
+    ],
+  },
+  {
     id: 'station',
     title: 'RunFlow Station',
     items: [

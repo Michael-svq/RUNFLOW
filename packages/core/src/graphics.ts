@@ -68,6 +68,17 @@ export const GRAPHIC_TYPES: GraphicType[] = [
       { key: 'f1', label: 'LÍNEA 2', maxLength: 60, required: false },
     ],
   },
+  {
+    key: 'RRS',
+    name: 'Redes sociales',
+    description: 'Publicación de redes: autor, usuario, texto y red',
+    fields: [
+      { key: 'f0', label: 'NOMBRE', maxLength: 40, required: true },
+      { key: 'f1', label: '@USUARIO', maxLength: 40, required: false },
+      { key: 'f2', label: 'TEXTO', maxLength: 280, required: true },
+      { key: 'f3', label: 'RED', maxLength: 20, required: false },
+    ],
+  },
 ];
 
 export const GRAPHIC_TYPE_BY_KEY: Record<string, GraphicType> = Object.fromEntries(

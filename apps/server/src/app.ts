@@ -36,6 +36,8 @@ import { mediaRoutes } from './routes/media';
 import { productionRoutes } from './routes/production';
 import { budgetRoutes } from './routes/budget';
 import { screenRoutes } from './routes/screens';
+import { socialRoutes } from './routes/social';
+import { SocialPoller, socialOptions } from './social/poller';
 import { ScreensManager } from './screens/manager';
 import { MediaStore } from './media/store';
 import { WebhookDispatcher } from './api/webhooks';
@@ -63,6 +65,7 @@ export interface AppDeps {
   webhooks?: WebhookDispatcher;
   media?: MediaStore;
   screens?: ScreensManager;
+  social?: SocialPoller;
 }
 
 /** Cabecera que la web envía en toda petición que modifica datos (defensa CSRF). */
@@ -154,6 +157,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     deps.cg!.close();
     deps.mixers!.close();
     deps.sources?.close();
+    deps.social?.close();
     deps.live!.close();
     await deps.collab!.close();
   });
@@ -240,6 +244,12 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await productionRoutes(app, deps);
   await budgetRoutes(app, deps);
   await screenRoutes(app, deps);
+  await socialRoutes(app, deps);
+  deps.social = new SocialPoller(deps.db, () => deps.secrets!, app.log, {
+    ...socialOptions(deps.config),
+    allowPrivate: deps.config.sourcesAllowPrivate,
+    intervalMs: deps.config.socialPollMs,
+  });
   deps.sources = new SourcePoller(deps.db, app.log, {
     intervalMs: deps.config.sourcesPollMs,
     allowPrivate: deps.config.sourcesAllowPrivate,

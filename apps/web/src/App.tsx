@@ -28,6 +28,7 @@ import { HelpPage } from './pages/HelpPage';
 import { ProductionPage } from './pages/ProductionPage';
 import { CallReplyPage, CallSheetPage } from './pages/CallSheetPage';
 import { ScreenPage } from './pages/ScreenPage';
+import { SocialPage } from './pages/SocialPage';
 import { useCan, useMe } from './auth/session';
 
 function RequireUsersPermission() {
@@ -80,6 +81,7 @@ export function App() {
           <Route path="/escaletas" element={<RundownsPage />} />
           <Route path="/nevera" element={<FridgePage />} />
           <Route path="/fuentes" element={<SourcesPage />} />
+          <Route path="/social" element={<SocialPage />} />
           <Route path="/media" element={<MediaPage />} />
           <Route path="/archivo" element={<ArchivePage />} />
           <Route path="/station" element={<RequireStationPermission />} />

@@ -256,6 +256,7 @@ export const GRAPHIC_LAYER: Record<string, keyof CasparConfig['layers']> = {
   DAT: 'logo',
   BAN: 'banner',
   HIG: 'banner',
+  RRS: 'banner',
 };
 
 /* ---------- Horario de rótulos ---------- */

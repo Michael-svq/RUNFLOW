@@ -167,6 +167,20 @@ export function clearScript(doc: Y.Doc, lineId: string, origin?: unknown): void 
   if (fragment.length) doc.transact(() => fragment.delete(0, fragment.length), origin);
 }
 
+function toNode(b: ScriptBlock): Y.XmlElement {
+  if (b.kind === 'rotulo') {
+    const el = new Y.XmlElement('rotulo');
+    for (const k of ['id', 'type', 'f0', 'f1', 'f2', 'f3', 'tcIn', 'tcOut'] as const) {
+      if (b[k]) el.setAttribute(k, b[k]);
+    }
+    return el;
+  }
+  const p = new Y.XmlElement('paragraph');
+  p.setAttribute('kind', b.kind);
+  if (b.text) p.insert(0, [new Y.XmlText(b.text)]);
+  return p;
+}
+
 /** Construye un guion (pruebas, importación y plantillas). */
 export function writeScript(
   doc: Y.Doc,
@@ -177,21 +191,19 @@ export function writeScript(
   doc.transact(() => {
     const fragment = getScriptFragment(doc, lineId);
     fragment.delete(0, fragment.length);
-    fragment.insert(
-      0,
-      blocks.map((b) => {
-        if (b.kind === 'rotulo') {
-          const el = new Y.XmlElement('rotulo');
-          for (const k of ['id', 'type', 'f0', 'f1', 'f2', 'f3', 'tcIn', 'tcOut'] as const) {
-            if (b[k]) el.setAttribute(k, b[k]);
-          }
-          return el;
-        }
-        const p = new Y.XmlElement('paragraph');
-        p.setAttribute('kind', b.kind);
-        if (b.text) p.insert(0, [new Y.XmlText(b.text)]);
-        return p;
-      }),
-    );
+    fragment.insert(0, blocks.map(toNode));
+  }, origin);
+}
+
+/** Añade bloques al final del guion de una línea (p. ej. un rótulo de redes). */
+export function appendBlocks(
+  doc: Y.Doc,
+  lineId: string,
+  blocks: ScriptBlock[],
+  origin?: unknown,
+): void {
+  doc.transact(() => {
+    const fragment = getScriptFragment(doc, lineId);
+    fragment.insert(fragment.length, blocks.map(toNode));
   }, origin);
 }

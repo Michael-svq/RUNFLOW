@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 import { deleteLines, duplicateLine, insertLine } from './rundown-doc';
-import { countWords, getScriptFragment, lineScript, readScript, writeScript } from './script';
+import {
+  appendBlocks,
+  countWords,
+  getScriptFragment,
+  lineScript,
+  readScript,
+  writeScript,
+} from './script';
 
 describe('guion', () => {
   it('separa paso, off, notas y rótulos, y calcula la lectura', () => {
@@ -95,5 +102,28 @@ describe('guion', () => {
     Y.applyUpdate(a, Y.encodeStateAsUpdate(b, Y.encodeStateVector(a)));
     expect(lineScript(a, id).paso).toEqual(['Cero Uno dos']);
     expect(lineScript(b, id).paso).toEqual(['Cero Uno dos']);
+  });
+
+  it('añade bloques al final sin tocar el guion', () => {
+    const doc = new Y.Doc();
+    const id = insertLine(doc);
+    writeScript(doc, id, [{ kind: 'paso', text: 'Hola.' }]);
+    appendBlocks(doc, id, [
+      {
+        kind: 'rotulo',
+        id: 'g1',
+        type: 'RRS',
+        f0: 'Lucía',
+        f1: '@lucia',
+        f2: 'Gran gala',
+        f3: 'Bluesky',
+        tcIn: '',
+        tcOut: '',
+      },
+    ]);
+    const blocks = readScript(getScriptFragment(doc, id));
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0]).toEqual({ kind: 'paso', text: 'Hola.' });
+    expect(blocks[1]).toMatchObject({ kind: 'rotulo', type: 'RRS', f2: 'Gran gala' });
   });
 });

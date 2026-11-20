@@ -30,4 +30,6 @@ await deps
 deps.stationSync?.start();
 // Fuentes RSS de las empresas.
 deps.sources?.start();
+// Búsquedas de redes sociales.
+deps.social?.start();
 app.log.info(`RunFlow (${config.mode}) escuchando en ${config.host}:${config.port}`);

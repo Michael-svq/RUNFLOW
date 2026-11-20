@@ -46,6 +46,7 @@ export default defineConfig({
       SIGNUP_ENABLED: 'true',
       SOURCES_ALLOW_PRIVATE: 'true',
       SOURCES_POLL_MS: '0',
+      SOCIAL_POLL_MS: '0',
       DATA_DIR: path.join(os.tmpdir(), 'runflow-e2e-data'),
     },
   },

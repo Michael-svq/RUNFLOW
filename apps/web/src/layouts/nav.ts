@@ -15,7 +15,7 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { number: '01', path: '/fuentes', label: 'nav.sources' },
   { number: '02', path: '/nevera', label: 'nav.fridge' },
-  { number: '03', path: '/social', label: 'nav.social', milestone: 'Fase III' },
+  { number: '03', path: '/social', label: 'nav.social' },
   { number: '04', path: '/escaletas', label: 'nav.rundowns' },
   { number: '05', path: '/media', label: 'nav.media' },
   { number: '06', path: '/archivo', label: 'nav.archive' },

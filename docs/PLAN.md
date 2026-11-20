@@ -3,7 +3,7 @@
 > Sistema de escaletas, guiones, rótulos, teleprompter y producción para TV local, educación y eventos.
 > Web (PWA) multiempresa en la nube **y** funcionamiento local sin conexión mediante **RunFlow Station**.
 
-Estado: **M0 a M9 y lanzamiento terminados** (falta: publicar staging, que necesita un servidor; probar M7–M8 con equipos reales y M9 con claves reales; verificación de email y textos legales). Fase II terminada: **F2.1 Media**, **F2.2 Fuentes**, **F2.3 Directo y streaming** y **F2.4 API pública**. Fase III: **F3.1 Producción**, **F3.2 Presupuesto** y **F3.3 Pantallas** hechos. Siguiente: **beta privada** y el resto de la **Fase III**. Documento vivo: se actualiza en cada hito.
+Estado: **M0 a M9 y lanzamiento terminados** (falta: publicar staging, que necesita un servidor; probar M7–M8 con equipos reales y M9 con claves reales; verificación de email y textos legales). Fase II terminada: **F2.1 Media**, **F2.2 Fuentes**, **F2.3 Directo y streaming** y **F2.4 API pública**. Fase III terminada: **F3.1 Producción**, **F3.2 Presupuesto**, **F3.3 Pantallas** y **F3.4 Redes**. Siguiente: **beta privada** y la **Fase IV**. Documento vivo: se actualiza en cada hito.
 
 ---
 
@@ -246,15 +246,15 @@ Todas las tablas de negocio llevan `org_id` y se protegen con **Row Level Securi
 
 ### Equipos, media y otros
 
-| Entidad                            | Uso                                                                                                        |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `stations`                         | Stations registradas, estado, versión                                                                      |
-| `devices`                          | CasparCG, mezcladores… con conexión                                                                        |
-| `source_map`                       | CAM 1 → entrada 1 del mezclador, VTR 1 → CasparCG canal 1 capa 10 …                                        |
-| `media_assets`, `media_renditions` | Fase II                                                                                                    |
-| `ai_providers`                     | proveedor, modelo, clave cifrada                                                                           |
-| `licenses`                         | licencias de Station                                                                                       |
-| Fase III                           | `production_events`, `crew_members`, `event_calls`, `guests`, `logistics_items`, `budget_lines`, `screens` |
+| Entidad                            | Uso                                                                                                                                                         |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `stations`                         | Stations registradas, estado, versión                                                                                                                       |
+| `devices`                          | CasparCG, mezcladores… con conexión                                                                                                                         |
+| `source_map`                       | CAM 1 → entrada 1 del mezclador, VTR 1 → CasparCG canal 1 capa 10 …                                                                                         |
+| `media_assets`, `media_renditions` | Fase II                                                                                                                                                     |
+| `ai_providers`                     | proveedor, modelo, clave cifrada                                                                                                                            |
+| `licenses`                         | licencias de Station                                                                                                                                        |
+| Fase III                           | `production_events`, `crew_members`, `event_calls`, `guests`, `logistics_items`, `budget_lines`, `screens`, `screen_scenes`, `social_feeds`, `social_posts` |
 
 ---
 

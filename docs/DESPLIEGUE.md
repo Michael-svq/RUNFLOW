@@ -59,6 +59,7 @@ Ver `.env.example`. Las importantes:
 | `TLS_CERT_FILE`         | HTTPS directo (Station): certificado PEM                      |
 | `TLS_KEY_FILE`          | HTTPS directo (Station): clave PEM                            |
 | `MEDIA_MAX_MB`          | Tamaño máximo por fichero en 05 Media (4096)                  |
+| `SOCIAL_POLL_MS`        | Lectura de búsquedas de redes en ms (120000; 0 = a mano)      |
 | `MEDIA_PROXIES`         | `false` para no generar vistas previas ligeras con ffmpeg     |
 
 ## RunFlow Station

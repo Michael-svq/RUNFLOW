@@ -29,7 +29,7 @@ En una Station enlazada, ajustes y equipos se configuran en la nube y la Station
 
 ## Plantillas
 
-Seis plantillas HTML (TOT, LOC, INF, DAT, BAN, HIG) servidas en `/cg/templates/<TIPO>.html`.
+Siete plantillas HTML (TOT, LOC, INF, DAT, BAN, HIG y RRS de redes sociales) servidas en `/cg/templates/<TIPO>.html`.
 RunFlow las lanza con `CG <canal>-<capa> ADD 1 "<url>" 1 "<json>"`; el JSON lleva los textos y
 el **diseño de la empresa** (colores, tipografía, alineación, márgenes, animación, mosca), que se
 edita en Configuración con una vista previa que usa la misma plantilla. También aceptan datos

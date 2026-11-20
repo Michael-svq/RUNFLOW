@@ -218,6 +218,20 @@
       "when": 1795163248671,
       "tag": "0030_screens_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1795176817816,
+      "tag": "0031_social",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1795176818414,
+      "tag": "0032_social_rls",
+      "breakpoints": true
     }
   ]
 }

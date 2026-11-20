@@ -787,3 +787,55 @@ export const screenScenes = pgTable(
   },
   (t) => [uniqueIndex('screen_scenes_org_key_idx').on(t.orgId, t.key)],
 );
+
+/* ---------- F3.4 Redes ---------- */
+
+/** Búsquedas automáticas en redes (hashtag, cuenta o vídeo). */
+export const socialFeeds = pgTable(
+  'social_feeds',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    /** bluesky | mastodon | x | youtube */
+    network: text('network').notNull(),
+    query: text('query').notNull(),
+    instance: text('instance').notNull().default(''),
+    /** Clave de la API cifrada (X, YouTube). */
+    apiKeyEnc: text('api_key_enc'),
+    enabled: boolean('enabled').notNull().default(true),
+    lastFetchedAt: timestamp('last_fetched_at', { withTimezone: true }),
+    lastError: text('last_error'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('social_feeds_org_idx').on(t.orgId)],
+);
+
+/** Publicaciones recogidas o escritas a mano, con su moderación. */
+export const socialPosts = pgTable(
+  'social_posts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    feedId: uuid('feed_id').references(() => socialFeeds.id, { onDelete: 'set null' }),
+    network: text('network').notNull(),
+    /** Id en la red (vacío en las manuales). */
+    externalId: text('external_id'),
+    author: text('author').notNull(),
+    handle: text('handle').notNull().default(''),
+    text: text('text').notNull(),
+    url: text('url').notNull().default(''),
+    mediaUrl: text('media_url').notNull().default(''),
+    postedAt: timestamp('posted_at', { withTimezone: true }),
+    /** nuevo | aprobado | descartado */
+    status: text('status').notNull().default('nuevo'),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('social_posts_org_status_idx').on(t.orgId, t.status, t.createdAt),
+    uniqueIndex('social_posts_org_ext_idx').on(t.orgId, t.network, t.externalId),
+  ],
+);

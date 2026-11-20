@@ -10,6 +10,7 @@ Web (PWA) multiempresa en la nube y funcionamiento local con **RunFlow Station**
 - Mezcladores y mando: [`docs/MEZCLADORES.md`](docs/MEZCLADORES.md)
 - Inteligencia artificial: [`docs/IA.md`](docs/IA.md)
 - API pública y webhooks: [`docs/API.md`](docs/API.md)
+- Redes sociales: [`docs/REDES.md`](docs/REDES.md)
 
 ## Estado
 
@@ -33,6 +34,7 @@ Web (PWA) multiempresa en la nube y funcionamiento local con **RunFlow Station**
 | F3.1 Producción: calendario, personal, hojas de llamada con confirmación, invitados, logística | ✅        |
 | F3.2 Presupuesto: partidas por programa o convocatoria, previsto/real, desviación y CSV        | ✅        |
 | F3.3 Pantallas / videowall: pantallas por enlace, escenas a mano o con PANTALLAS en el GO      | ✅        |
+| F3.4 Redes: Bluesky, Mastodon, X, YouTube y WhatsApp; moderación y rótulo RRS                  | ✅        |
 | Beta privada (equipos reales) y resto de la Fase III                                           | Siguiente |
 
 ## Estructura

@@ -43,6 +43,12 @@ const envSchema = z.object({
   SOURCES_POLL_MS: z.coerce.number().int().min(0).default(300_000),
   /** Permite leer fuentes de la red interna (en una Station siempre). */
   SOURCES_ALLOW_PRIVATE: bool.default(false),
+  /** Cada cuánto se leen las búsquedas de redes sociales (ms; 0 = no se leen solas). */
+  SOCIAL_POLL_MS: z.coerce.number().int().min(0).default(120_000),
+  /** Direcciones de las API de redes (solo para pruebas o proxies). */
+  SOCIAL_BLUESKY_API: z.preprocess(emptyToUndefined, z.string().url().optional()),
+  SOCIAL_X_API: z.preprocess(emptyToUndefined, z.string().url().optional()),
+  SOCIAL_YOUTUBE_API: z.preprocess(emptyToUndefined, z.string().url().optional()),
   /** Nube SaaS: aplica los límites de cada plan (usuarios, programas, equipos, IA). */
   PLAN_LIMITS: bool.default(false),
   /** Nube SaaS: cualquiera puede crear una empresa desde /registro. */
@@ -88,6 +94,8 @@ export interface AppConfig {
   mediaMaxMb: number;
   mediaProxies: boolean;
   sourcesAllowPrivate: boolean;
+  socialPollMs: number;
+  socialBases: { bluesky?: string; x?: string; youtube?: string };
   signupEnabled: boolean;
   stripe:
     | {
@@ -144,6 +152,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     mediaMaxMb: e.MEDIA_MAX_MB,
     mediaProxies: e.MEDIA_PROXIES,
     sourcesAllowPrivate: e.SOURCES_ALLOW_PRIVATE || e.RUNFLOW_MODE === 'station',
+    socialPollMs: e.SOCIAL_POLL_MS,
+    socialBases: {
+      bluesky: e.SOCIAL_BLUESKY_API,
+      x: e.SOCIAL_X_API,
+      youtube: e.SOCIAL_YOUTUBE_API,
+    },
     signupEnabled: e.SIGNUP_ENABLED,
     stripe: e.STRIPE_SECRET_KEY
       ? {

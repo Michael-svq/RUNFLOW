@@ -5,12 +5,15 @@ import type * as Y from 'yjs';
 import {
   formatDuration,
   lineTypeLabel,
+  socialGraphicFields,
   type ChatMessageDto,
   type FridgeItemDto,
+  type SocialPostDto,
   type SourceItemDto,
   type VersionDto,
 } from '@runflow/core';
 import {
+  appendBlocks,
   getScriptFragment,
   insertLine,
   readScript,
@@ -434,6 +437,100 @@ export function SourcesTab({
               {canInsert && (
                 <Button size="sm" onClick={() => insert(i)}>
                   Insertar
+                </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** Pestaña «Redes»: publicaciones aprobadas como rótulo RRS (F3.4). */
+export function SocialTab({
+  doc,
+  selectedLineId,
+  insertIndex,
+  canAppend,
+  canInsert,
+  onInserted,
+}: {
+  doc: Y.Doc;
+  selectedLineId: string | null;
+  insertIndex: number;
+  canAppend: boolean;
+  canInsert: boolean;
+  onInserted: (lineId: string) => void;
+}) {
+  const [q, setQ] = useState('');
+  const posts = useQuery({
+    queryKey: ['social-posts', 'aprobado', q],
+    queryFn: async () => {
+      const params = new URLSearchParams({ status: 'aprobado', limit: '50' });
+      if (q.trim()) params.set('q', q.trim());
+      return (await api.get<{ posts: SocialPostDto[] }>(`/api/social/posts?${params}`)).posts;
+    },
+    refetchInterval: 30_000,
+  });
+
+  const rotular = (p: SocialPostDto) => {
+    const block = {
+      kind: 'rotulo' as const,
+      id: globalThis.crypto.randomUUID(),
+      type: 'RRS',
+      ...socialGraphicFields(p),
+      tcIn: '',
+      tcOut: '',
+    };
+    let id = selectedLineId && canAppend ? selectedLineId : '';
+    doc.transact(() => {
+      if (!id)
+        id = insertLine(
+          doc,
+          {
+            index: insertIndex,
+            cells: { tipo: 'GRAFISMO', nombre: `RRSS ${p.handle || p.author}`.slice(0, 80) },
+          },
+          LOCAL_ORIGIN,
+        );
+      appendBlocks(doc, id, [block], LOCAL_ORIGIN);
+    }, LOCAL_ORIGIN);
+    onInserted(id);
+  };
+  const can = (selectedLineId && canAppend) || canInsert;
+
+  return (
+    <div className="rf-sidelist">
+      <input
+        className="rf-input"
+        placeholder="Buscar en las redes…"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        aria-label="Buscar en las redes"
+      />
+      {posts.isPending ? (
+        <Spinner label="Cargando…" />
+      ) : posts.isError ? (
+        <Alert tone="error">{errorMessage(posts.error)}</Alert>
+      ) : posts.data.length === 0 ? (
+        <p className="rf-muted rf-small">
+          No hay publicaciones aprobadas. Se moderan en 03 Social Media.
+        </p>
+      ) : (
+        <ul className="rf-sidelist__items">
+          {posts.data.map((p) => (
+            <li key={p.id}>
+              <div>
+                <strong>{p.author}</strong>{' '}
+                <span className="rf-muted rf-small">
+                  {p.handle && `@${p.handle.replace(/^@/, '')}`}
+                </span>
+                <div className="rf-small rf-social__snippet">{p.text}</div>
+              </div>
+              {can && (
+                <Button size="sm" onClick={() => rotular(p)}>
+                  {selectedLineId && canAppend ? 'Rotular aquí' : 'Rotular'}
                 </Button>
               )}
             </li>

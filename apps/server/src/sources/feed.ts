@@ -130,17 +130,22 @@ export function parseFeed(xml: string): FeedItem[] {
   return items.slice(0, 200);
 }
 
-export async function fetchFeed(url: string, opts: { allowPrivate: boolean }): Promise<FeedItem[]> {
+/**
+ * GET con protección SSRF: comprueba cada destino (también tras redirecciones),
+ * con tiempo y tamaño máximos. Devuelve el cuerpo como texto.
+ */
+export async function safeGetText(
+  url: string,
+  opts: { allowPrivate: boolean; headers?: Record<string, string>; maxBytes?: number },
+): Promise<string> {
+  const max = opts.maxBytes ?? MAX_BYTES;
   let current = url;
   let res: Response | undefined;
   // Las redirecciones se siguen a mano para comprobar cada destino.
   for (let hop = 0; hop < 4; hop++) {
     if (!opts.allowPrivate) await assertPublicUrl(current);
     res = await fetch(current, {
-      headers: {
-        'user-agent': 'RunFlow/1.0 (lector de fuentes)',
-        accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*',
-      },
+      headers: { 'user-agent': 'RunFlow/1.0', ...opts.headers },
       redirect: 'manual',
       signal: AbortSignal.timeout(15_000),
     });
@@ -154,8 +159,19 @@ export async function fetchFeed(url: string, opts: { allowPrivate: boolean }): P
   if (!res || (res.status >= 300 && res.status < 400)) throw new Error('Demasiadas redirecciones');
   if (!res.ok) throw new Error(`La fuente respondió ${res.status}`);
   const length = Number(res.headers.get('content-length') ?? 0);
-  if (length > MAX_BYTES) throw new Error('La fuente es demasiado grande');
+  if (length > max) throw new Error('La respuesta es demasiado grande');
   const body = await res.text();
-  if (body.length > MAX_BYTES) throw new Error('La fuente es demasiado grande');
+  if (body.length > max) throw new Error('La respuesta es demasiado grande');
+  return body;
+}
+
+export async function fetchFeed(url: string, opts: { allowPrivate: boolean }): Promise<FeedItem[]> {
+  const body = await safeGetText(url, {
+    allowPrivate: opts.allowPrivate,
+    headers: {
+      'user-agent': 'RunFlow/1.0 (lector de fuentes)',
+      accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*',
+    },
+  });
   return parseFeed(body);
 }

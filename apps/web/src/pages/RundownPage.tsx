@@ -54,6 +54,7 @@ import {
   VersionsTab,
   fridgeKey,
   SourcesTab,
+  SocialTab,
 } from '../rundown/panels';
 import { CgBar, CgProvider, GraphicsCell, PlayCell, useCgContextValue } from '../rundown/cg';
 import { useScriptColumns } from '../script/useScripts';
@@ -171,7 +172,7 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
       return true;
     }
   });
-  type PanelTab = 'guion' | 'chat' | 'nevera' | 'fuentes' | 'versiones';
+  type PanelTab = 'guion' | 'chat' | 'nevera' | 'fuentes' | 'redes' | 'versiones';
   const [panelTab, setPanelTab] = useState<PanelTab>('guion');
   const chat = useChat(rundown.id, session?.provider, scriptOpen && panelTab === 'chat');
   const openPanel = (tab: PanelTab) => {
@@ -619,6 +620,7 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
                       ['chat', chat.unread ? `Chat (${chat.unread})` : 'Chat'],
                       ['nevera', 'Nevera'],
                       ['fuentes', 'Fuentes'],
+                      ['redes', 'Redes'],
                       ['versiones', 'Versiones'],
                     ] as [PanelTab, string][]
                   ).map(([tab, label]) => (
@@ -671,6 +673,20 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
                           ? lines.findIndex((l) => l.id === selectedLine.id) + 1
                           : lines.length
                       }
+                      canInsert={editable && canEditStructure}
+                      onInserted={(id) => setSelectedLineId(id)}
+                    />
+                  )}
+                  {panelTab === 'redes' && session && (
+                    <SocialTab
+                      doc={session.doc}
+                      selectedLineId={selectedLine?.id ?? null}
+                      insertIndex={
+                        selectedLine
+                          ? lines.findIndex((l) => l.id === selectedLine.id) + 1
+                          : lines.length
+                      }
+                      canAppend={editable && canEditScript}
                       canInsert={editable && canEditStructure}
                       onInserted={(id) => setSelectedLineId(id)}
                     />
