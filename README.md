@@ -9,6 +9,7 @@ Web (PWA) multiempresa en la nube y funcionamiento local con **RunFlow Station**
 - RunFlow CG y CasparCG: [`docs/CASPARCG.md`](docs/CASPARCG.md)
 - Mezcladores y mando: [`docs/MEZCLADORES.md`](docs/MEZCLADORES.md)
 - Inteligencia artificial: [`docs/IA.md`](docs/IA.md)
+- API pública y webhooks: [`docs/API.md`](docs/API.md)
 
 ## Estado
 

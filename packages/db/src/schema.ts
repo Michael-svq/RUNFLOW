@@ -520,3 +520,48 @@ export const sourceItems = pgTable(
     index('source_items_org_date_idx').on(t.orgId, t.publishedAt),
   ],
 );
+
+/** Tokens de la API pública (F2.4); solo se guarda su hash. */
+export const apiTokens = pgTable(
+  'api_tokens',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    tokenHash: text('token_hash').notNull().unique(),
+    /** read | live | write */
+    scopes: jsonb('scopes')
+      .notNull()
+      .default(sql`'["read"]'::jsonb`),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+    createdAt: createdAt(),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  },
+  (t) => [index('api_tokens_org_idx').on(t.orgId)],
+);
+
+/** Webhooks (F2.4): avisos firmados a otros sistemas. */
+export const webhooks = pgTable(
+  'webhooks',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    url: text('url').notNull(),
+    /** Secreto de firma, cifrado. */
+    secretEnc: text('secret_enc').notNull(),
+    events: jsonb('events')
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    enabled: boolean('enabled').notNull().default(true),
+    lastStatus: integer('last_status'),
+    lastError: text('last_error'),
+    lastDeliveryAt: timestamp('last_delivery_at', { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [index('webhooks_org_idx').on(t.orgId)],
+);

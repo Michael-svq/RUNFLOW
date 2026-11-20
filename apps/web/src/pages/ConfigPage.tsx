@@ -14,6 +14,7 @@ import { Alert, Badge, Button, SelectField, Spinner, TextField } from '@runflow/
 import { api, errorMessage } from '../api/client';
 import { PageHeader } from '../components/PageHeader';
 import { AiConfig } from './AiConfig';
+import { ApiConfig } from './ApiConfig';
 import { BillingConfig } from './BillingConfig';
 
 /*
@@ -56,6 +57,7 @@ export function ConfigPage() {
           <DesignEditor settings={settings.data} />
           <Devices />
           <AiConfig settings={settings.data} />
+          <ApiConfig />
         </>
       )}
     </>

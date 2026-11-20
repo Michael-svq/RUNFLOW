@@ -31,6 +31,8 @@ import { SecretBox } from './services/secrets';
 import { aiRoutes } from './routes/ai';
 import { billingRoutes } from './routes/billing';
 import { sourceRoutes } from './routes/sources';
+import { publicApiRoutes } from './routes/public-api';
+import { WebhookDispatcher } from './api/webhooks';
 import { SourcePoller } from './sources/poller';
 import { cgRoutes } from './routes/cg';
 import { readFileSync } from 'node:fs';
@@ -52,6 +54,7 @@ export interface AppDeps {
   secrets?: SecretBox;
   /** Lectura periódica de fuentes RSS (la arranca index.ts). */
   sources?: SourcePoller;
+  webhooks?: WebhookDispatcher;
 }
 
 /** Cabecera que la web envía en toda petición que modifica datos (defensa CSRF). */
@@ -101,10 +104,19 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
   deps.mixers = new MixerManager(deps.db, deps.collab, app.log);
   // Con cada cambio del directo: CasparCG y mezcladores a la vez.
+  deps.webhooks = new WebhookDispatcher(deps.db, () => deps.secrets!, deps.collab, app.log, {
+    allowPrivate: deps.config.sourcesAllowPrivate || deps.config.env === 'test',
+  });
+  deps.cg.onGraphic = (rundownId, orgId, event, data) =>
+    deps.webhooks!.emit(orgId, event === 'in' ? 'graphic.in' : 'graphic.out', {
+      rundownId,
+      ...data,
+    });
   deps.live.onChange = (rundownId, orgId, prev, next) => {
     const goAt = Date.now();
     deps.mixers!.onLive(rundownId, orgId, prev, next, goAt);
     deps.cg!.onLive(rundownId, orgId, prev, next);
+    deps.webhooks!.onLive(rundownId, orgId, prev, next);
   };
   const { mode, cloudUrl, stationToken } = deps.config;
   if (mode === 'station' && cloudUrl && stationToken) {
@@ -150,7 +162,9 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     if (!req.url.startsWith('/api/')) return;
     // El mando por enlace (Companion, Stream Deck) no usa cookies: su token es la credencial.
     const tokenOnly =
-      req.url.startsWith('/api/public/control/') || req.url.startsWith('/api/billing/webhook');
+      req.url.startsWith('/api/public/control/') ||
+      req.url.startsWith('/api/billing/webhook') ||
+      req.url.startsWith('/api/v1/');
     if (!SAFE_METHODS.has(req.method)) {
       // Una cabecera propia obliga a una petición de origen cruzado a pasar el
       // control CORS (que no permitimos), así que bloquea CSRF.
@@ -210,6 +224,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await aiRoutes(app, deps);
   await billingRoutes(app, deps);
   await sourceRoutes(app, deps);
+  await publicApiRoutes(app, deps);
   deps.sources = new SourcePoller(deps.db, app.log, {
     intervalMs: deps.config.sourcesPollMs,
     allowPrivate: deps.config.sourcesAllowPrivate,

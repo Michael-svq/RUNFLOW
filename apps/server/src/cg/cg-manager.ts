@@ -125,6 +125,15 @@ const isVtr = (line: LineSnapshot | undefined): boolean =>
 export class CgManager {
   private readonly orgs = new Map<string, Promise<OrgCg>>();
   private readonly rundowns = new Map<string, RundownCg>();
+  /** Aviso de rótulos que entran o salen (webhooks, F2.4). */
+  onGraphic:
+    | ((
+        rundownId: string,
+        orgId: string,
+        event: 'in' | 'out',
+        data: { graphicId: string; lineId: string; type: string; auto: boolean },
+      ) => void)
+    | undefined;
 
   constructor(
     private readonly db: Db,
@@ -558,6 +567,12 @@ export class CgManager {
     };
     delete rc.state.done[graphicId];
     this.armOut(rc, org, graphicId, opts.outAt);
+    this.onGraphic?.(rc.rundownId, rc.orgId, 'in', {
+      graphicId,
+      lineId,
+      type: graphic.type,
+      auto: opts.auto,
+    });
   }
 
   private async outGraphic(
@@ -576,6 +591,12 @@ export class CgManager {
     }
     delete rc.state.graphics[graphicId];
     rc.state.done[graphicId] = Date.now();
+    this.onGraphic?.(rc.rundownId, rc.orgId, 'out', {
+      graphicId,
+      lineId: g.lineId,
+      type: g.type,
+      auto: g.auto,
+    });
   }
 
   /** ▶ manual de un rótulo. */
