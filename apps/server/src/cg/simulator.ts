@@ -75,6 +75,8 @@ export class CasparSimulator {
       clips?: SimClip[];
       /** Puerto UDP al que enviar la posición de los clips (OSC). */
       oscPort?: number;
+      /** Equipo al que enviar el OSC (por defecto, el propio). */
+      oscHost?: string;
       version?: string;
     } = {},
   ) {}
@@ -83,9 +85,9 @@ export class CasparSimulator {
     return this.options.clips ?? [];
   }
 
-  async start(port = 0): Promise<number> {
+  async start(port = 0, host = '127.0.0.1'): Promise<number> {
     this.server = net.createServer((socket) => this.onSocket(socket));
-    await new Promise<void>((resolve) => this.server!.listen(port, '127.0.0.1', resolve));
+    await new Promise<void>((resolve) => this.server!.listen(port, host, resolve));
     this.port = (this.server.address() as net.AddressInfo).port;
     if (this.options.oscPort) {
       this.osc = dgram.createSocket('udp4');
@@ -260,7 +262,7 @@ export class CasparSimulator {
         pos,
         clip?.duration ?? 0,
       ]);
-      this.osc.send(msg, this.options.oscPort, '127.0.0.1');
+      this.osc.send(msg, this.options.oscPort, this.options.oscHost ?? '127.0.0.1');
     }
   }
 }

@@ -1,0 +1,77 @@
+# Estudio virtual de RunFlow: todo dentro de Docker y solo accesible desde
+# este ordenador (no cambia nada de tu equipo).
+#
+#   Windows: doble clic en Estudio-RunFlow.bat
+#   Otros:   ./estudio.sh
+#
+# - RunFlow:            http://localhost:3000  (demo@runflow.test / runflow-demo)
+# - Monitor de programa: http://localhost:8090 (cámaras, vídeos y rótulos)
+#
+# El CasparCG y el OBS del estudio son simulados y ya están conectados. Para usar
+# los tuyos de verdad, ver docs/ESTUDIO.md.
+name: runflow-estudio
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: runflow
+      POSTGRES_PASSWORD: estudio-propietario
+      POSTGRES_DB: runflow
+      RUNFLOW_APP_DB_PASSWORD: estudio-aplicacion
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./deploy/postgres-init.sh:/docker-entrypoint-initdb.d/10-runflow.sh:ro
+      - ./deploy/runflow-init.sql.tpl:/docker-entrypoint-initdb.d/runflow-init.sql.tpl:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U runflow']
+      interval: 3s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://runflow_app:estudio-aplicacion@db:5432/runflow
+      DATABASE_OWNER_URL: postgres://runflow:estudio-propietario@db:5432/runflow
+      DATABASE_APP_ROLE: runflow_app
+      RUNFLOW_MODE: cloud
+      COOKIE_SECURE: 'false'
+      TRUST_PROXY: 'false'
+      PUBLIC_URL: http://localhost:3000
+      # Datos de ejemplo y equipos del estudio virtual la primera vez.
+      DEMO_SEED: 'true'
+      DEMO_STUDIO_HOST: estudio
+      # Permite llamar a equipos de la red local (sistemas, fuentes, redes).
+      SOURCES_ALLOW_PRIVATE: 'true'
+    volumes:
+      - app-data:/data
+    ports:
+      - '127.0.0.1:3000:3000'
+      # OSC de un CasparCG real instalado en este ordenador (posición de los vídeos).
+      - '127.0.0.1:6250:6250/udp'
+
+  estudio:
+    build: .
+    restart: unless-stopped
+    command: ['node', 'dist/studio.js']
+    environment:
+      OSC_HOST: app
+      OSC_PORT: '6250'
+      RUNFLOW_URL: http://localhost:3000
+    ports:
+      - '127.0.0.1:8090:8090'
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:8090/health || exit 1']
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  db-data:
+  app-data:

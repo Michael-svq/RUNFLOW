@@ -73,3 +73,14 @@ jobs:
           name: playwright-report
           path: apps/web/playwright-report
           retention-days: 7
+
+  docker:
+    # La imagen que usan la nube, la Station en Docker y el estudio virtual.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construir la imagen
+        run: docker build -t runflow-ci .
+      - name: Validar el estudio virtual
+        run: docker compose -f docker-compose.estudio.yml config --quiet

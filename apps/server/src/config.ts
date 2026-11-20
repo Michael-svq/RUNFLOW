@@ -46,6 +46,10 @@ const envSchema = z.object({
   /** Correo saliente: smtp(s)://usuario:clave@servidor:puerto (sin él, se escribe en el registro). */
   SMTP_URL: z.preprocess(emptyToUndefined, z.string().optional()),
   MAIL_FROM: z.string().default('RunFlow <no-reply@runflow.local>'),
+  /** Estudio virtual: crea datos de ejemplo si la instalación está vacía. */
+  DEMO_SEED: bool.default(false),
+  /** Estudio virtual: nombre del equipo con el CasparCG y el OBS simulados. */
+  DEMO_STUDIO_HOST: z.string().default('estudio'),
   /** Datos del titular para los textos legales (aviso legal, privacidad). */
   LEGAL_OWNER: z.string().default(''),
   LEGAL_TAX_ID: z.string().default(''),
@@ -109,6 +113,7 @@ export interface AppConfig {
   mailFrom: string;
   requireEmailVerification: boolean;
   legal: { owner: string; taxId: string; address: string; email: string };
+  demo: { seed: boolean; studioHost: string };
   socialBases: { bluesky?: string; x?: string; youtube?: string };
   signupEnabled: boolean;
   stripe:
@@ -170,6 +175,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     smtpUrl: e.SMTP_URL,
     mailFrom: e.MAIL_FROM,
     requireEmailVerification: e.REQUIRE_EMAIL_VERIFICATION,
+    demo: { seed: e.DEMO_SEED, studioHost: e.DEMO_STUDIO_HOST },
     legal: {
       owner: e.LEGAL_OWNER,
       taxId: e.LEGAL_TAX_ID,

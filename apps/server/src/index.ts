@@ -1,6 +1,7 @@
 import { createDb } from '@runflow/db';
 import { buildApp, type AppDeps } from './app';
 import { loadConfig, loadDotEnv } from './config';
+import { DEMO_ACCOUNT, seedDemo } from './demo/seed';
 
 loadDotEnv();
 const config = loadConfig();
@@ -32,4 +33,19 @@ deps.stationSync?.start();
 deps.sources?.start();
 // Búsquedas de redes sociales.
 deps.social?.start();
+// Estudio virtual: datos de ejemplo la primera vez.
+if (config.demo.seed) {
+  try {
+    const created = await seedDemo(app, deps, {
+      studioHost: config.demo.studioHost,
+      runflowUrl: config.publicUrl ?? `http://localhost:${config.port}`,
+    });
+    if (created)
+      app.log.info(
+        `Estudio virtual listo: entra con ${DEMO_ACCOUNT.email} / ${DEMO_ACCOUNT.password}`,
+      );
+  } catch (err) {
+    app.log.error({ err }, 'No se pudieron crear los datos de ejemplo');
+  }
+}
 app.log.info(`RunFlow (${config.mode}) escuchando en ${config.host}:${config.port}`);

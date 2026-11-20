@@ -111,12 +111,19 @@ export class ObsSimulator {
   private wss: WebSocketServer | undefined;
   port = 0;
 
-  constructor(private readonly options: { password?: string; scenes?: string[] } = {}) {}
+  constructor(
+    private readonly options: {
+      password?: string;
+      scenes?: string[];
+      port?: number;
+      host?: string;
+    } = {},
+  ) {}
 
   async start(): Promise<number> {
     this.wss = new WebSocketServer({
-      port: 0,
-      host: '127.0.0.1',
+      port: this.options.port ?? 0,
+      host: this.options.host ?? '127.0.0.1',
       // obs-websocket-js pide el subprotocolo JSON.
       handleProtocols: (protocols) =>
         protocols.has('obswebsocket.json') ? 'obswebsocket.json' : false,

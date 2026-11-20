@@ -1,0 +1,9 @@
+# Saltos de línea LF en todo (Docker y los scripts .sh los necesitan), salvo
+# los lanzadores de Windows.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.png binary
+*.jpg binary
+*.woff2 binary
+*.ttf binary

@@ -4,7 +4,12 @@ import { defineConfig } from 'tsup';
 // Un único bundle con los paquetes del monorepo incluidos: base para el
 // contenedor de la nube y para RunFlow Station.
 export default defineConfig({
-  entry: { index: 'src/index.ts', migrate: 'src/migrate-cli.ts', license: 'src/license-cli.ts' },
+  entry: {
+    index: 'src/index.ts',
+    migrate: 'src/migrate-cli.ts',
+    license: 'src/license-cli.ts',
+    studio: 'src/demo/studio.ts',
+  },
   format: ['esm'],
   platform: 'node',
   target: 'node22',
