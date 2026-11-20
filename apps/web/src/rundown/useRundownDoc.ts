@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import * as decoding from 'lib0/decoding';
+import type { LiveState } from '@runflow/core';
+import { api } from '../api/client';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
@@ -21,6 +24,8 @@ export interface RundownSession {
   doc: Y.Doc;
   provider: WebsocketProvider;
   undo: Y.UndoManager;
+  /** Aplica un estado del directo recibido por REST (respuesta a una orden). */
+  applyLive: (live: LiveState) => void;
 }
 
 const PRESENCE_COLORS = [
@@ -78,6 +83,7 @@ export function useRundownSession(
   const [session, setSession] = useState<RundownSession | null>(null);
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
   const [loaded, setLoaded] = useState(false);
+  const [live, setLive] = useState<LiveState | null>(null);
 
   useEffect(() => {
     const doc = new Y.Doc();
@@ -88,6 +94,20 @@ export function useRundownSession(
       captureTimeout: 500,
     });
     let alive = true;
+    let lastSeq = -1;
+    const applyLive = (next: LiveState) => {
+      if (!alive || next.seq < lastSeq) return;
+      lastSeq = next.seq;
+      setLive(next);
+    };
+    // Estado del directo: llega por el WebSocket (mensaje 100) y al abrir por REST.
+    provider.messageHandlers[100] = (_encoder: unknown, decoder: decoding.Decoder) => {
+      applyLive(JSON.parse(decoding.readVarString(decoder)) as LiveState);
+    };
+    void api
+      .get<{ live: LiveState }>(`/api/rundowns/${rundownId}/live`)
+      .then((r) => applyLive(r.live))
+      .catch(() => undefined);
     void local.whenSynced.then(() => alive && setLoaded(true));
     provider.on('sync', (synced: boolean) => {
       if (synced && alive) setLoaded(true);
@@ -124,7 +144,7 @@ export function useRundownSession(
     window.addEventListener('offline', goOffline);
     window.addEventListener('online', goOnline);
     if (!navigator.onLine) goOffline();
-    setSession({ doc, provider, undo });
+    setSession({ doc, provider, undo, applyLive });
     return () => {
       window.removeEventListener('offline', goOffline);
       window.removeEventListener('online', goOnline);
@@ -135,11 +155,12 @@ export function useRundownSession(
       doc.destroy();
       setSession(null);
       setLoaded(false);
+      setLive(null);
       setStatus('connecting');
     };
   }, [orgId, rundownId, user.id, user.name]);
 
-  return { session, status, loaded };
+  return { session, status, loaded, live };
 }
 
 /* ---------- Líneas (instantánea reactiva) ---------- */

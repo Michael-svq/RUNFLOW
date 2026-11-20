@@ -99,6 +99,9 @@ importers:
       '@tanstack/react-query':
         specifier: 5.108.1
         version: 5.108.1(@types/react@19.2.18)(react@19.2.9)
+      lib0:
+        specifier: 0.2.120
+        version: 0.2.120
       react:
         specifier: 19.2.9
         version: 19.2.9

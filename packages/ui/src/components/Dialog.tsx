@@ -39,7 +39,7 @@ export function Dialog({ open, title, onClose, children, footer }: DialogProps) 
               type="button"
               className="rf-btn rf-btn--ghost rf-btn--sm"
               onClick={onClose}
-              aria-label="Cerrar"
+              aria-label="Cerrar ventana"
             >
               ✕
             </button>

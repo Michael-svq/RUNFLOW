@@ -39,6 +39,20 @@ export interface CellRef {
   col: string;
 }
 
+export interface RowInfo {
+  /** Estado en el directo. */
+  state: 'played' | 'onAir' | 'next' | 'pending' | 'floating';
+  /** Valores de las columnas calculadas (HORA, BACK TIME…). */
+  computed: Record<string, string>;
+}
+
+export interface ExtraMenuItem {
+  label: string;
+  hint?: string;
+  danger?: boolean;
+  onClick(): void;
+}
+
 interface Props {
   lines: LineSnapshot[];
   columns: GridColumn[];
@@ -48,6 +62,12 @@ interface Props {
   actions: GridActions;
   onColumnsChange(columns: ViewColumn[]): void;
   onCursor(cell: CellRef | null): void;
+  /** Estado de directo y columnas calculadas por línea. */
+  rowInfo?: Map<string, RowInfo>;
+  /** Opciones adicionales del menú contextual (directo, flotante, hora fija…). */
+  extraMenu?: (ctx: { lineIds: string[]; focusLineId: string | null }) => ExtraMenuItem[];
+  /** La barra espaciadora queda reservada para el GO. */
+  reserveSpace?: boolean;
 }
 
 interface Pos {
@@ -80,6 +100,9 @@ export function RundownGrid({
   actions,
   onColumnsChange,
   onCursor,
+  rowInfo,
+  extraMenu,
+  reserveSpace,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [anchor, setAnchor] = useState<CellRef | null>(null);
@@ -184,6 +207,7 @@ export function RundownGrid({
   function startEdit(ref: CellRef, initial?: string) {
     if (!canEditCells) return;
     const col = columns[colIndex.get(ref.col)!]!.def;
+    if (col.kind === 'computed') return;
     const line = lines[rowIndex.get(ref.lineId)!]!;
     setEditing({ ...ref, draft: initial ?? editValue(col, line.cells[ref.col]), invalid: false });
   }
@@ -226,6 +250,7 @@ export function RundownGrid({
       for (let c = range.c1; c <= range.c2; c++) {
         const line = lines[r]!;
         const key = columns[c]!.def.key;
+        if (columns[c]!.def.kind === 'computed') continue;
         if (line.cells[key] !== undefined) changes.push({ id: line.id, key, value: null });
       }
     }
@@ -239,7 +264,12 @@ export function RundownGrid({
       const row: string[] = [];
       for (let c = range.c1; c <= range.c2; c++) {
         const col = columns[c]!.def;
-        row.push(displayValue(col, lines[r]!.cells[col.key]));
+        const line = lines[r]!;
+        row.push(
+          col.kind === 'computed'
+            ? (rowInfo?.get(line.id)?.computed[col.key] ?? '')
+            : displayValue(col, line.cells[col.key]),
+        );
       }
       rows.push(row);
     }
@@ -262,7 +292,7 @@ export function RundownGrid({
       if (!id) return;
       row.forEach((raw, j) => {
         const col = columns[start.c + j]?.def;
-        if (!col) return;
+        if (!col || col.kind === 'computed') return;
         const parsed = parseInput(col, raw);
         if (parsed.ok) changes.push({ id, key: col.key, value: parsed.value });
       });
@@ -418,6 +448,7 @@ export function RundownGrid({
         break;
     }
     // Escribir directamente sobre la celda empieza la edición.
+    if (key === ' ' && reserveSpace) return; // GO
     if (key.length === 1 && !mod && !e.altKey && canEditCells) {
       e.preventDefault();
       const col = columns[focusPos.c]!.def;
@@ -613,6 +644,7 @@ export function RundownGrid({
               <Row
                 key={line.id}
                 line={line}
+                info={rowInfo?.get(line.id)}
                 rowNumber={r}
                 columns={columns}
                 pinnedLeft={pinnedLeft}
@@ -659,6 +691,28 @@ export function RundownGrid({
           style={{ left: menu.x, top: menu.y }}
           onClick={(e) => e.stopPropagation()}
         >
+          {extraMenu &&
+            (() => {
+              const items = extraMenu({ lineIds: menuLines, focusLineId: focus?.lineId ?? null });
+              if (!items.length) return null;
+              return (
+                <>
+                  {items.map((it) => (
+                    <MenuItem
+                      key={it.label}
+                      label={it.label}
+                      hint={it.hint}
+                      danger={it.danger}
+                      onClick={() => {
+                        setMenu(null);
+                        it.onClick();
+                      }}
+                    />
+                  ))}
+                  <li role="separator" className="rf-menu__sep" />
+                </>
+              );
+            })()}
           {canEditStructure && (
             <>
               <MenuItem
@@ -753,6 +807,7 @@ function MenuItem({
 
 interface RowProps {
   line: LineSnapshot;
+  info: RowInfo | undefined;
   rowNumber: number;
   columns: GridColumn[];
   pinnedLeft: (number | undefined)[];
@@ -779,12 +834,14 @@ interface RowProps {
 }
 
 const Row = memo(function Row(props: RowProps) {
-  const { line, rowNumber, columns, pinnedLeft, selC1, selC2, focusCol, editing } = props;
+  const { line, info, rowNumber, columns, pinnedLeft, selC1, selC2, focusCol, editing } = props;
   return (
     <tr
       role="row"
       data-line-id={line.id}
+      data-state={info?.state}
       className={[
+        info && `is-${info.state}`,
         props.dropBefore && 'is-drop-before',
         props.dropAfter && 'is-drop-after',
         props.dragging && 'is-dragging',
@@ -868,7 +925,20 @@ const Row = memo(function Row(props: RowProps) {
                     ⋮⋮
                   </span>
                 )}
-                <span className="rf-cell__text">{displayValue(c.def, value)}</span>
+                <span className="rf-cell__text">
+                  {c.def.kind === 'computed'
+                    ? (info?.computed[key] ?? '')
+                    : displayValue(c.def, value)}
+                </span>
+                {key === 'num' && info?.state === 'onAir' && (
+                  <span className="rf-row-tag rf-row-tag--onair">EN AIRE</span>
+                )}
+                {key === 'num' && info?.state === 'next' && (
+                  <span className="rf-row-tag rf-row-tag--next">SIG.</span>
+                )}
+                {key === 'num' && info?.state === 'floating' && (
+                  <span className="rf-row-tag">FLOT.</span>
+                )}
                 {others && (
                   <span className="rf-cell__presence" style={{ background: others[0]!.color }}>
                     {others.map((o) => o.name.split(' ')[0]).join(', ')}

@@ -5,7 +5,16 @@
  * por empresa y programa (M5).
  */
 
-export type ColumnKind = 'status' | 'number' | 'type' | 'text' | 'duration' | 'seconds' | 'select';
+/** `computed`: la calcula el motor de tiempos (no se edita). */
+export type ColumnKind =
+  | 'status'
+  | 'number'
+  | 'type'
+  | 'text'
+  | 'duration'
+  | 'seconds'
+  | 'select'
+  | 'computed';
 
 export interface SelectOption {
   value: string;
@@ -243,6 +252,38 @@ export const COLUMNS: ColumnDef[] = [
     width: 140,
   },
   { key: 'camara', label: 'CÁMARA', description: 'Cámara', kind: 'text', width: 90 },
+  {
+    key: 'sum_vtr',
+    label: 'SUMATORIO TIEMPO VTR',
+    description: 'Suma acumulada de DUR. VTR (calculada)',
+    kind: 'computed',
+    width: 92,
+    align: 'right',
+  },
+  {
+    key: 'hora',
+    label: 'HORA',
+    description: 'Hora prevista de inicio (real en lo emitido; calculada)',
+    kind: 'computed',
+    width: 84,
+    align: 'right',
+  },
+  {
+    key: 'back',
+    label: 'BACK TIME',
+    description: 'Hora a la que debe empezar para acabar en hora (calculada)',
+    kind: 'computed',
+    width: 84,
+    align: 'right',
+  },
+  {
+    key: 'real',
+    label: 'TIEMPO REAL',
+    description: 'Duración real de lo emitido; transcurrido en la línea en aire (calculada)',
+    kind: 'computed',
+    width: 84,
+    align: 'right',
+  },
 ];
 
 export const COLUMN_BY_KEY: Record<string, ColumnDef> = Object.fromEntries(
@@ -284,6 +325,7 @@ export const BUILTIN_VIEWS: BuiltinView[] = [
     'observaciones',
     'dur_vtr',
     'pie',
+    'hora',
   ]),
   view('builtin:realizacion', 'Realización', [
     'estado',
@@ -303,6 +345,9 @@ export const BUILTIN_VIEWS: BuiltinView[] = [
     'son',
     'ob_real',
     'camara',
+    'hora',
+    'real',
+    'back',
   ]),
   view('builtin:produccion', 'Producción', [
     'estado',
@@ -316,6 +361,7 @@ export const BUILTIN_VIEWS: BuiltinView[] = [
     'ventana',
     'telefonos',
     'observaciones',
+    'hora',
   ]),
   view('builtin:tecnica', 'Técnica', [
     'estado',
@@ -330,6 +376,8 @@ export const BUILTIN_VIEWS: BuiltinView[] = [
     'dur_vtr',
     'coleo',
     'son',
+    'sum_vtr',
+    'hora',
   ]),
 ];
 

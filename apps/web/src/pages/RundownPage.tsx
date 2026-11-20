@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router';
 import {
@@ -18,14 +18,31 @@ import {
   moveLine,
   renumber,
   setCells,
-  summarize,
 } from '@runflow/sync';
 import { Alert, Badge, Button, Dialog, SelectField, Spinner, TextField } from '@runflow/ui';
 import { api, ApiError, errorMessage } from '../api/client';
 import { useCan, useSession } from '../auth/session';
 import { locale, t } from '../i18n';
 import { useFormState, validate } from '../lib/forms';
-import { RundownGrid, type CellRef, type GridActions } from '../rundown/RundownGrid';
+import {
+  RundownGrid,
+  type CellRef,
+  type ExtraMenuItem,
+  type GridActions,
+} from '../rundown/RundownGrid';
+import {
+  AsrunDialog,
+  HardTimeDialog,
+  LiveBar,
+  LiveClocks,
+  readKeyboardPref,
+  useClockFormat,
+  useLiveCommands,
+  useRowInfo,
+  useTiming,
+} from '../rundown/live';
+import { useServerNow } from '../rundown/useServerClock';
+import { LINE_FLAGS } from '@runflow/core';
 import {
   LOCAL_ORIGIN,
   colorFor,
@@ -74,14 +91,48 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
   const canEditCellsPerm = useCan('rundown.edit_cells');
   const canEditStructure = useCan('rundown.edit_structure');
   const canShare = useCan('program.configure');
+  const canGo = useCan('live.go');
   const canEditCells = canEditCellsPerm || canEditStructure;
   const user = useMemo(() => ({ id: me.user.id, name: me.user.name }), [me.user.id, me.user.name]);
-  const { session, status, loaded } = useRundownSession(org.id, rundown.id, user);
+  const { session, status, loaded, live } = useRundownSession(org.id, rundown.id, user);
   const lines = useLines(session?.doc);
   const presence = usePresence(session?.provider);
   const undoState = useUndoState(session?.undo);
   const views = useViews(org.id, org.role.key);
-  const [dialog, setDialog] = useState<'columns' | 'saveView' | 'meta' | 'shortcuts' | null>(null);
+  const [dialog, setDialog] = useState<
+    'columns' | 'saveView' | 'meta' | 'shortcuts' | 'asrun' | null
+  >(null);
+  const [hardTimeFor, setHardTimeFor] = useState<string | null>(null);
+  const [liveError, setLiveError] = useState<string | null>(null);
+  const [keyboardGo, setKeyboardGo] = useState(readKeyboardPref);
+
+  // Tiempos: relojes cada 250 ms, columnas calculadas cada segundo.
+  const now = useServerNow(250);
+  const nowSecond = Math.floor(now / 1000) * 1000;
+  const timing = useTiming(lines, rundown, live, nowSecond);
+  const clock = useClockFormat(rundown.timezone);
+  const rowInfo = useRowInfo(timing, clock);
+
+  const showLiveError = useCallback((message: string) => {
+    setLiveError(message);
+    setTimeout(() => setLiveError((m) => (m === message ? null : m)), 4000);
+  }, []);
+  const commands = useLiveCommands(rundown.id, live, session?.applyLive, showLiveError);
+
+  // Barra espaciadora = GO (si se activa), salvo escribiendo en un campo.
+  useEffect(() => {
+    if (!canGo || !keyboardGo) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== 'Space' || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(el.tagName)))
+        return;
+      e.preventDefault();
+      void commands.go();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [canGo, keyboardGo, commands]);
 
   const actions: GridActions = useMemo(() => {
     const doc = session?.doc;
@@ -105,7 +156,7 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
   const gridColumns = views.columns
     .map((c) => ({ def: COLUMN_BY_KEY[c.key]!, width: c.width }))
     .filter((c) => c.def);
-  const summary = summarize(lines);
+  const summary = { lineCount: lines.length, estimatedSeconds: timing.totalEstimated };
   const planned = plannedSeconds(rundown.startTime, rundown.endTime);
   const editable = canEditCells && status !== 'denied' && status !== 'deleted';
   const people = useMemo(() => {
@@ -114,6 +165,73 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
     seen.delete(me.user.id);
     return [...seen.values()];
   }, [presence, me.user.id]);
+
+  const extraMenu = useCallback(
+    ({
+      lineIds,
+      focusLineId,
+    }: {
+      lineIds: string[];
+      focusLineId: string | null;
+    }): ExtraMenuItem[] => {
+      const items: ExtraMenuItem[] = [];
+      const focusLine = lines.find((l) => l.id === focusLineId);
+      if (canGo && focusLine && lineIds.length === 1) {
+        items.push({
+          label: 'Fijar como siguiente',
+          onClick: () => void commands.setNext(focusLine.id),
+        });
+        if (live?.next)
+          items.push({
+            label: 'Quitar siguiente elegida',
+            onClick: () => void commands.setNext(null),
+          });
+      }
+      if (editable && lineIds.length > 0 && session) {
+        const selected = lines.filter((l) => lineIds.includes(l.id));
+        const allFloating = selected.every((l) => l.cells[LINE_FLAGS.floating] === '1');
+        items.push({
+          label: allFloating ? 'Quitar flotante' : 'Marcar como flotante',
+          onClick: () =>
+            actions.setCells(
+              selected.map((l) => ({
+                id: l.id,
+                key: LINE_FLAGS.floating,
+                value: allFloating ? null : '1',
+              })),
+            ),
+        });
+        if (focusLine) {
+          const hard = String(focusLine.cells[LINE_FLAGS.hardTime] ?? '');
+          items.push({
+            label: hard ? `Hora fija: ${hard}…` : 'Hora fija…',
+            onClick: () => setHardTimeFor(focusLine.id),
+          });
+          const auto = focusLine.cells[LINE_FLAGS.autonext];
+          const mark = (v: unknown) => (auto === v ? ' ✓' : '');
+          items.push(
+            {
+              label: `Autonext: según el tipo${mark(undefined)}`,
+              onClick: () =>
+                actions.setCells([{ id: focusLine.id, key: LINE_FLAGS.autonext, value: null }]),
+            },
+            {
+              label: `Autonext: siempre${mark('1')}`,
+              onClick: () =>
+                actions.setCells([{ id: focusLine.id, key: LINE_FLAGS.autonext, value: '1' }]),
+            },
+            {
+              label: `Autonext: nunca${mark('0')}`,
+              onClick: () =>
+                actions.setCells([{ id: focusLine.id, key: LINE_FLAGS.autonext, value: '0' }]),
+            },
+          );
+        }
+      }
+      return items;
+    },
+    [lines, canGo, commands, live?.next, editable, session, actions],
+  );
 
   const dateRaw = new Intl.DateTimeFormat(locale, {
     weekday: 'long',
@@ -154,6 +272,18 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
         </div>
       </div>
 
+      <LiveClocks rundown={rundown} timing={timing} live={live} lines={lines} now={now} />
+      <LiveBar
+        live={live}
+        lines={lines}
+        timing={timing}
+        commands={commands}
+        canGo={canGo && status !== 'denied' && status !== 'deleted'}
+        error={liveError}
+        onShowAsrun={() => setDialog('asrun')}
+        keyboard={keyboardGo}
+        onKeyboardChange={setKeyboardGo}
+      />
       <div className="rf-toolbar" role="toolbar" aria-label="Escaleta">
         <label className="rf-toolbar__view">
           <span className="rf-visually-hidden">{t('grid.view')}</span>
@@ -306,6 +436,9 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
           actions={actions}
           onColumnsChange={views.setColumns}
           onCursor={onCursor}
+          rowInfo={rowInfo}
+          extraMenu={extraMenu}
+          reserveSpace={canGo && keyboardGo}
         />
       )}
 
@@ -338,6 +471,18 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
       )}
       {dialog === 'meta' && <MetaDialog rundown={rundown} onClose={() => setDialog(null)} />}
       {dialog === 'shortcuts' && <ShortcutsDialog onClose={() => setDialog(null)} />}
+      {dialog === 'asrun' && <AsrunDialog rundown={rundown} onClose={() => setDialog(null)} />}
+      {hardTimeFor && (
+        <HardTimeDialog
+          current={String(
+            lines.find((l) => l.id === hardTimeFor)?.cells[LINE_FLAGS.hardTime] ?? '',
+          )}
+          onSave={(value) =>
+            actions.setCells([{ id: hardTimeFor, key: LINE_FLAGS.hardTime, value }])
+          }
+          onClose={() => setHardTimeFor(null)}
+        />
+      )}
     </div>
   );
 }
@@ -630,7 +775,8 @@ const SHORTCUTS: [string, string][] = [
   ['Ctrl+D', 'Duplicar la línea'],
   ['Alt+↑ / Alt+↓', 'Subir o bajar la línea'],
   ['Ctrl+Supr', 'Borrar las líneas seleccionadas'],
-  ['Clic derecho', 'Menú de la línea'],
+  ['Clic derecho', 'Menú de la línea (siguiente, flotante, hora fija, autonext)'],
+  ['Espacio', 'GO (si activas «Espacio = GO» en la barra de directo)'],
 ];
 
 function ShortcutsDialog({ onClose }: { onClose: () => void }) {
