@@ -294,6 +294,52 @@ export class MixerManager {
     this.collab.broadcastCustom(rundownId, MSG_MIXER, rm.state);
   }
 
+  /**
+   * Corte a una fuente concreta (cue de cámara del timeline, F4.2). Devuelve
+   * los mezcladores que tienen esa fuente en su mapa; lanza error si ninguno.
+   */
+  async cutSource(
+    rundownId: string,
+    orgId: string,
+    lineId: string,
+    source: string,
+  ): Promise<number> {
+    let rm = this.rundowns.get(rundownId);
+    if (!rm || rm.orgId !== orgId) {
+      rm = { orgId, state: initialMixerState(), queue: Promise.resolve() };
+      this.rundowns.set(rundownId, rm);
+    }
+    const r = rm;
+    const run = r.queue.then(async () => {
+      const start = Date.now();
+      const list = await this.org(orgId);
+      r.state.devices = this.deviceMap(list);
+      const inputs: Record<string, string> = {};
+      for (const m of list) {
+        const input = mapSource(m.sources, source);
+        if (input) inputs[m.id] = input;
+      }
+      const targets = list.filter((m) => inputs[m.id]);
+      if (!targets.length) throw new Error(`Ningún mezclador tiene la fuente «${source}»`);
+      const results = await Promise.allSettled(targets.map((m) => m.driver.cut(inputs[m.id]!)));
+      const failed = results
+        .map((res, i) =>
+          res.status === 'rejected'
+            ? `${targets[i]!.name}: ${(res.reason as Error).message}`
+            : null,
+        )
+        .filter(Boolean);
+      r.state.program = { lineId, source, inputs };
+      r.state.warning = failed.length ? failed.join(' · ') : null;
+      r.state.lastCutMs = Date.now() - start;
+      this.collab.broadcastCustom(rundownId, MSG_MIXER, r.state);
+      if (failed.length === targets.length) throw new Error(failed.join(' · '));
+      return targets.length;
+    });
+    r.queue = run.catch(() => undefined);
+    return run;
+  }
+
   close(): void {
     clearInterval(this.pollTimer);
     this.rundowns.clear();

@@ -119,8 +119,19 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
   const canTemplates = useCan('templates.manage');
   const user = useMemo(() => ({ id: me.user.id, name: me.user.name }), [me.user.id, me.user.name]);
   const canFire = useCan('cg.fire');
-  const { session, status, loaded, live, stage, setStage, cg, setCg, mixers, setMixers } =
-    useRundownSession(org.id, rundown.id, user);
+  const {
+    session,
+    status,
+    loaded,
+    live,
+    stage,
+    setStage,
+    cg,
+    setCg,
+    mixers,
+    setMixers,
+    automation,
+  } = useRundownSession(org.id, rundown.id, user);
   const lines = useLines(session?.doc);
   const presence = usePresence(session?.provider);
   const undoState = useUndoState(session?.undo);
@@ -646,6 +657,7 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
                 canEdit={editable && (canEditCells || canEditStructure)}
                 selectedLineId={selectedLineId}
                 onSelectLine={setSelectedLineId}
+                automation={automation}
               />
             ) : layout === 'cues' && session ? (
               <CueList

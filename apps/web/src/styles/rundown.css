@@ -1175,3 +1175,21 @@ tr:hover .rf-drag-handle {
   border-left: 3px solid #000;
   border-radius: 0 3px 3px 0;
 }
+.rf-timeline__fired {
+  font-size: var(--rf-text-sm);
+  padding: 2px 8px;
+  border-left: 3px solid var(--rf-green-light);
+  background: var(--rf-bg-sunken);
+}
+.rf-timeline__fired.is-error {
+  border-left-color: var(--rf-danger);
+  color: var(--rf-danger);
+}
+.rf-timeline__cue.is-done {
+  outline: 2px solid var(--rf-green-light);
+  outline-offset: -2px;
+}
+.rf-timeline__cue.is-error {
+  outline: 2px solid var(--rf-danger);
+  outline-offset: -2px;
+}

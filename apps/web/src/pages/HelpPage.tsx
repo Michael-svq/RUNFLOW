@@ -46,6 +46,7 @@ const SECTIONS: { id: string; title: string; items: string[] }[] = [
       'En la escaleta, «Timeline» muestra las líneas en horizontal según sus horas, con pistas de cámaras, VTR, rótulos, letras, FX, luces, audio y notas.',
       'Haz clic en una pista para añadir un cue en ese momento de la línea (tiempo en m:ss:ff, con fotogramas); clic en un cue para editarlo o borrarlo.',
       '«Cue list» los ordena por hora; eligiendo la pista Cámaras es la shot list. En directo se ve el cabezal y el siguiente cue con su cuenta atrás.',
+      'Automatización: con «Armar equipos» (y fuera de ensayo), los cues se ejecutan solos a su tiempo: Cámaras y VTR cortan el mezclador a la fuente del cue, Rótulos lanza el rótulo nº N del guion y Luces dispara la mesa. Si cambias un cue en pleno directo, se reprograma al momento.',
     ],
   },
   {

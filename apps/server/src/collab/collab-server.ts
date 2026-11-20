@@ -120,10 +120,10 @@ class SharedDoc {
   /** Avisa (agrupado) de que han cambiado las líneas, p. ej. para reprogramar el autonext. */
   private notifyChange(): void {
     clearTimeout(this.changeTimer);
-    this.changeTimer = setTimeout(
-      () => this.server.onDocChanged?.(this.rundownId, this.orgId),
-      300,
-    );
+    this.changeTimer = setTimeout(() => {
+      this.server.onDocChanged?.(this.rundownId, this.orgId);
+      for (const fn of this.server.docChangeListeners) fn(this.rundownId, this.orgId);
+    }, 300);
   }
 
   broadcast(message: Uint8Array, except?: unknown): void {
@@ -283,6 +283,8 @@ export class CollabServer {
   ) => Promise<{ type: number; payload: unknown } | null>)[] = [];
   /** Aviso de cambios en las líneas de una escaleta. */
   onDocChanged?: (rundownId: string, orgId: string) => void;
+  /** Más interesados en los cambios del documento (automatización de cues). */
+  readonly docChangeListeners: ((rundownId: string, orgId: string) => void)[] = [];
 
   constructor(
     private readonly db: Db,

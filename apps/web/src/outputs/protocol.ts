@@ -10,6 +10,8 @@ export const MSG_STAGE = 102;
 export const MSG_CG = 105;
 /** Estado de los mezcladores (programa, equipos, latencia del corte). */
 export const MSG_MIXER = 106;
+/** Cues del timeline ejecutados por la automatización (F4.2). */
+export const MSG_AUTOMATION = 107;
 export const MSG_OUTPUT_SETTINGS = 103;
 
 export function onCustom<T>(

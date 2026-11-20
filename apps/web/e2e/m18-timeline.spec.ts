@@ -94,4 +94,7 @@ test('F4.1: timeline con cues, cue list y directo', async ({ page, request }) =>
   await page.getByRole('button', { name: 'GO', exact: true }).click();
   await expect(page.locator('.rf-timeline__playhead')).toBeVisible();
   await expect(page.locator('.rf-timeline__next')).toContainText('CAM 1 PG');
+  // La automatización lo ejecuta a su tiempo (sin armar: solo aviso).
+  await expect(page.getByTestId('last-cue')).toContainText('CAM 1 PG', { timeout: 8000 });
+  await expect(page.getByTestId('last-cue')).toContainText('sin armar');
 });

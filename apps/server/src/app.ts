@@ -39,6 +39,7 @@ import { screenRoutes } from './routes/screens';
 import { socialRoutes } from './routes/social';
 import { SocialPoller, socialOptions } from './social/poller';
 import { ScreensManager } from './screens/manager';
+import { CueRunner } from './automation/cue-runner';
 import { MediaStore } from './media/store';
 import { WebhookDispatcher } from './api/webhooks';
 import { SourcePoller } from './sources/poller';
@@ -65,6 +66,7 @@ export interface AppDeps {
   webhooks?: WebhookDispatcher;
   media?: MediaStore;
   screens?: ScreensManager;
+  cues?: CueRunner;
   social?: SocialPoller;
 }
 
@@ -116,6 +118,36 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   deps.mixers = new MixerManager(deps.db, deps.collab, app.log);
   // Con cada cambio del directo: CasparCG y mezcladores a la vez.
   deps.screens = new ScreensManager(deps.db, deps.collab, app.log);
+  // F4.2 Automatización: cues del timeline ejecutados en directo.
+  deps.cues = new CueRunner(deps.collab, app.log);
+  const cutCue = async (ctx: {
+    rundownId: string;
+    orgId: string;
+    lineId: string;
+    cue: { target: string; label: string };
+  }) => {
+    const source = (ctx.cue.target || ctx.cue.label).trim();
+    if (!source) throw new Error('El cue no dice a qué fuente cortar');
+    await deps.mixers!.cutSource(ctx.rundownId, ctx.orgId, ctx.lineId, source);
+    return true;
+  };
+  deps.cues.executors.camara = cutCue;
+  deps.cues.executors.vtr = cutCue;
+  deps.cues.executors.rotulos = async ({ rundownId, orgId, cue, graphics }) => {
+    const ref = (cue.target || '1').trim();
+    const n = /^\d+$/.test(ref) ? Number(ref) : 0;
+    const graphic = n ? graphics[n - 1] : graphics.find((g) => g.id === ref);
+    if (!graphic) throw new Error(`No hay rótulo ${ref} en el guion de la línea`);
+    const actor = { orgId, userId: '' };
+    await deps.cg!.take(actor, rundownId, graphic.id);
+    if (cue.duration > 0) {
+      setTimeout(
+        () => void deps.cg!.out(actor, rundownId, graphic.id).catch(() => undefined),
+        cue.duration * 1000,
+      ).unref?.();
+    }
+    return true;
+  };
   deps.webhooks = new WebhookDispatcher(deps.db, () => deps.secrets!, deps.collab, app.log, {
     allowPrivate: deps.config.sourcesAllowPrivate || deps.config.env === 'test',
   });
@@ -130,6 +162,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     deps.cg!.onLive(rundownId, orgId, prev, next);
     deps.webhooks!.onLive(rundownId, orgId, prev, next);
     deps.screens!.onLive(rundownId, orgId, prev, next);
+    deps.cues!.onLive(rundownId, orgId, prev, next);
   };
   const { mode, cloudUrl, stationToken } = deps.config;
   if (mode === 'station' && cloudUrl && stationToken) {
@@ -158,6 +191,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     deps.mixers!.close();
     deps.sources?.close();
     deps.social?.close();
+    deps.cues?.close();
     deps.live!.close();
     await deps.collab!.close();
   });

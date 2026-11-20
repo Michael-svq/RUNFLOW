@@ -1,7 +1,21 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import * as decoding from 'lib0/decoding';
-import type { CgState, LiveState, MixerState, PrompterState, StageMessage } from '@runflow/core';
-import { MSG_CG, MSG_MIXER, MSG_PROMPTER, MSG_STAGE, onCustom } from '../outputs/protocol';
+import type {
+  AutomationState,
+  CgState,
+  LiveState,
+  MixerState,
+  PrompterState,
+  StageMessage,
+} from '@runflow/core';
+import {
+  MSG_AUTOMATION,
+  MSG_CG,
+  MSG_MIXER,
+  MSG_PROMPTER,
+  MSG_STAGE,
+  onCustom,
+} from '../outputs/protocol';
 import { api } from '../api/client';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import { WebsocketProvider } from 'y-websocket';
@@ -89,6 +103,7 @@ export function useRundownSession(
   const [stage, setStage] = useState<StageMessage | null>(null);
   const [cg, setCg] = useState<CgState | null>(null);
   const [mixers, setMixers] = useState<MixerState | null>(null);
+  const [automation, setAutomation] = useState<AutomationState | null>(null);
 
   useEffect(() => {
     const doc = new Y.Doc();
@@ -114,6 +129,7 @@ export function useRundownSession(
     // RunFlow CG: por el WebSocket (mensaje 105) y al abrir por REST.
     onCustom<CgState>(provider, MSG_CG, (c) => alive && setCg(c));
     onCustom<MixerState>(provider, MSG_MIXER, (m) => alive && setMixers(m));
+    onCustom<AutomationState>(provider, MSG_AUTOMATION, (a) => alive && setAutomation(a));
     void api
       .get<{ cg: CgState }>(`/api/rundowns/${rundownId}/cg`)
       .then((r) => alive && setCg((prev) => prev ?? r.cg))
@@ -172,6 +188,7 @@ export function useRundownSession(
       setLive(null);
       setCg(null);
       setMixers(null);
+      setAutomation(null);
       setStatus('connecting');
     };
   }, [orgId, rundownId, user.id, user.name]);
@@ -188,6 +205,7 @@ export function useRundownSession(
     setCg,
     mixers,
     setMixers,
+    automation,
   };
 }
 

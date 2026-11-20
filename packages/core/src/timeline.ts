@@ -104,3 +104,23 @@ export function placeCues(
 export function nextCue(placed: PlacedCue[], nowMs: number, track?: CueTrack): PlacedCue | null {
   return placed.find((c) => c.absAt >= nowMs && (!track || c.track === track)) ?? null;
 }
+
+/* ---------- F4.2 Automatización ---------- */
+
+/** Cue ejecutado en directo (lo emite el servidor por el WebSocket, mensaje 107). */
+export interface FiredCue {
+  cueId: string;
+  lineId: string;
+  track: CueTrack;
+  label: string;
+  target: string;
+  /** Epoch ms en que se ejecutó. */
+  at: number;
+  /** Se mandó a un equipo (false = solo aviso: ensayo, sin armar o pista sin equipo). */
+  executed: boolean;
+  error: string | null;
+}
+
+export interface AutomationState {
+  fired: FiredCue[];
+}

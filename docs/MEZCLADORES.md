@@ -63,3 +63,10 @@ entre dos GO (700 ms) también protege el mando.
 
 `apps/server/src/mixers/` incluye OBS y vMix simulados (los usan las pruebas); el ATEM se
 prueba con un sustituto de `atem-connection`. Falta la prueba con equipos reales.
+
+## Cortes desde el timeline (F4.2)
+
+Además del corte con cada GO (columna FUENTE), los cues de la pista **Cámaras** (y **VTR**) del
+timeline cortan a la fuente escrita en su «Dato para automatizar» (o, si está vacío, en su texto)
+al llegar su tiempo dentro de la línea en aire. Solo con **Armar equipos** y fuera de ensayo; si
+ningún mezclador tiene esa fuente en su mapa, el cue queda marcado con ⚠ en el timeline.

@@ -9,6 +9,7 @@ import {
   parseCueTime,
   placeCues,
   type Cue,
+  type AutomationState,
   type CueTrack,
   type LiveState,
   type PlacedCue,
@@ -70,6 +71,7 @@ export function TimelineView({
   canEdit,
   selectedLineId,
   onSelectLine,
+  automation,
 }: {
   doc: Y.Doc;
   lines: LineSnapshot[];
@@ -78,6 +80,7 @@ export function TimelineView({
   now: number;
   clock: (epoch: number) => string;
   canEdit: boolean;
+  automation: AutomationState | null;
   selectedLineId: string | null;
   onSelectLine: (id: string) => void;
 }) {
@@ -124,6 +127,8 @@ export function TimelineView({
   };
 
   const next = onAir ? nextCue(placed, now) : null;
+  const fired = new Map((automation?.fired ?? []).map((f) => [f.cueId, f]));
+  const last = automation?.fired[0];
 
   return (
     <div className="rf-timeline">
@@ -156,6 +161,24 @@ export function TimelineView({
             Siguiente cue: <strong>{next.label || TRACK_BY_KEY[next.track].label}</strong> (
             {TRACK_BY_KEY[next.track].label}) en{' '}
             <span className="rf-tabular">{formatCueTime((next.absAt - now) / 1000)}</span>
+          </span>
+        )}
+        {last && onAir && (
+          <span
+            className={`rf-timeline__fired${last.error ? ' is-error' : ''}`}
+            data-testid="last-cue"
+            title={last.error ?? undefined}
+          >
+            Último cue: {last.label || TRACK_BY_KEY[last.track].label}{' '}
+            {last.error
+              ? `⚠ ${last.error}`
+              : last.executed
+                ? '✓ ejecutado'
+                : live?.rehearsal
+                  ? '· ensayo'
+                  : live?.armed
+                    ? '· aviso'
+                    : '· sin armar'}
           </span>
         )}
         {canEdit && (
@@ -227,7 +250,7 @@ export function TimelineView({
                       type="button"
                       className={`rf-timeline__cue${c.duration ? '' : ' is-instant'}${
                         c.absAt < now && onAir ? ' is-past' : ''
-                      }`}
+                      }${fired.get(c.id)?.error ? ' is-error' : fired.get(c.id)?.executed ? ' is-done' : ''}`}
                       style={{
                         left: x(c.absAt),
                         width: c.duration ? Math.max(8, c.duration * zoom) : undefined,
@@ -372,10 +395,14 @@ function CueDialog({
           maxLength={200}
           hint={
             form.track === 'camara'
-              ? 'Fuente del mezclador (p. ej. CAM 2), para cortar sola en el directo.'
-              : form.track === 'luces'
-                ? 'Número de cue de la mesa de luces.'
-                : 'Lo que necesite el equipo que lo ejecute.'
+              ? 'Fuente del mezclador (p. ej. CAM 2): con los equipos armados corta sola en el directo.'
+              : form.track === 'vtr'
+                ? 'Fuente del mezclador del VTR (p. ej. VTR 1).'
+                : form.track === 'rotulos'
+                  ? 'Nº del rótulo en el guion de la línea (1, 2…); sale solo con los equipos armados.'
+                  : form.track === 'luces'
+                    ? 'Número de cue de la mesa de luces.'
+                    : 'Lo que necesite el equipo que lo ejecute.'
           }
           onChange={(e) => setForm({ ...form, target: e.target.value })}
         />
