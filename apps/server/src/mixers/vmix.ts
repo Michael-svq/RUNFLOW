@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import net from 'node:net';
-import type { VmixConfig } from '@runflow/core';
+import type { StreamAction, VmixConfig } from '@runflow/core';
 import type { MixerDriver } from './driver';
 
 /*
@@ -136,6 +136,24 @@ export class VmixDriver extends EventEmitter implements MixerDriver {
     await this.send(`FUNCTION ${fn} Input=${encodeURIComponent(input)}${duration}`);
   }
 
+  async output(action: StreamAction): Promise<void> {
+    const fn = {
+      startStream: 'StartStreaming',
+      stopStream: 'StopStreaming',
+      startRecord: 'StartRecording',
+      stopRecord: 'StopRecording',
+    }[action];
+    await this.send(`FUNCTION ${fn}`);
+  }
+
+  async outputStatus(): Promise<{ streaming: boolean; recording: boolean }> {
+    const xml = await this.send('XML');
+    return {
+      streaming: /<streaming>True<\/streaming>/i.test(xml),
+      recording: /<recording>True<\/recording>/i.test(xml),
+    };
+  }
+
   async inputs(): Promise<string[]> {
     const xml = await this.send('XML');
     return [...xml.matchAll(/<input [^>]*number="(\d+)"[^>]*title="([^"]*)"/g)].map(
@@ -148,6 +166,8 @@ export class VmixDriver extends EventEmitter implements MixerDriver {
 export class VmixSimulator {
   readonly received: { at: number; line: string }[] = [];
   program: string | null = null;
+  streaming = false;
+  recording = false;
   private server: net.Server | undefined;
   private sockets = new Set<net.Socket>();
   port = 0;
@@ -168,9 +188,13 @@ export class VmixSimulator {
           this.received.push({ at: Date.now(), line });
           if (line === 'VERSION') socket.write('VERSION OK 27.0.0.49\r\n');
           else if (line === 'XML') {
-            const xml =
-              '<vmix><inputs><input key="a" number="1" title="CAM 1"/><input key="b" number="2" title="VTR"/></inputs></vmix>';
+            const xml = `<vmix><inputs><input key="a" number="1" title="CAM 1"/><input key="b" number="2" title="VTR"/></inputs><recording>${this.recording ? 'True' : 'False'}</recording><streaming>${this.streaming ? 'True' : 'False'}</streaming></vmix>`;
             socket.write(`XML ${Buffer.byteLength(xml)}\r\n${xml}`);
+          } else if (/^FUNCTION (Start|Stop)(Streaming|Recording)$/.test(line)) {
+            const [, verb, what] = /^FUNCTION (Start|Stop)(Streaming|Recording)$/.exec(line)!;
+            if (what === 'Streaming') this.streaming = verb === 'Start';
+            else this.recording = verb === 'Start';
+            socket.write('FUNCTION OK Completed\r\n');
           } else if (line.startsWith('FUNCTION ')) {
             const input = /Input=([^&\s]+)/.exec(line)?.[1];
             if (input) this.program = decodeURIComponent(input);

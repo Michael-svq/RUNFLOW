@@ -12,6 +12,7 @@ import {
   type LiveState,
   type MixerState,
   type ObsConfig,
+  type StreamAction,
   type VmixConfig,
 } from '@runflow/core';
 import { readLines } from '@runflow/sync';
@@ -57,6 +58,9 @@ export function createDriver(kind: DeviceKind, config: unknown): MixerDriver | n
 export class MixerManager {
   private readonly orgs = new Map<string, Promise<Mixer[]>>();
   private readonly rundowns = new Map<string, RundownMixer>();
+  /** Emisión y grabación de cada mezclador, por empresa (F2.3). */
+  private readonly outputs = new Map<string, MixerState['outputs']>();
+  private readonly pollTimer: NodeJS.Timeout;
 
   constructor(
     private readonly db: Db,
@@ -67,6 +71,54 @@ export class MixerManager {
       type: MSG_MIXER,
       payload: await this.snapshot(rundownId, orgId),
     }));
+    this.pollTimer = setInterval(() => void this.pollOutputs(), 5000);
+    this.pollTimer.unref();
+  }
+
+  /** Estado de emisión y grabación de los mezcladores de las empresas en directo. */
+  private async pollOutputs(): Promise<void> {
+    const orgIds = new Set([...this.rundowns.values()].map((r) => r.orgId));
+    for (const orgId of orgIds) await this.refreshOutputs(orgId).catch(() => undefined);
+  }
+
+  async refreshOutputs(orgId: string): Promise<MixerState['outputs']> {
+    const list = await this.org(orgId);
+    const next: MixerState['outputs'] = {};
+    for (const m of list) {
+      if (!m.driver.connected) continue;
+      try {
+        next[m.id] = await m.driver.outputStatus();
+      } catch {
+        // sin datos de este equipo
+      }
+    }
+    const changed = JSON.stringify(next) !== JSON.stringify(this.outputs.get(orgId) ?? {});
+    this.outputs.set(orgId, next);
+    if (changed) {
+      for (const [rundownId, rm] of this.rundowns) {
+        if (rm.orgId !== orgId) continue;
+        rm.state.outputs = next;
+        this.collab.broadcastCustom(rundownId, MSG_MIXER, rm.state);
+      }
+    }
+    return next;
+  }
+
+  /** Empezar o parar la emisión en streaming o la grabación (F2.3). */
+  async stream(
+    orgId: string,
+    rundownId: string,
+    action: StreamAction,
+    deviceId?: string,
+  ): Promise<MixerState> {
+    const list = await this.org(orgId);
+    const target = deviceId
+      ? list.find((m) => m.id === deviceId)
+      : list.find((m) => m.driver.connected);
+    if (!target) throw new Error('No hay ningún mezclador conectado');
+    await target.driver.output(action);
+    await this.refreshOutputs(orgId);
+    return this.snapshot(rundownId, orgId);
   }
 
   private org(orgId: string): Promise<Mixer[]> {
@@ -145,7 +197,7 @@ export class MixerManager {
     const list = await this.org(orgId);
     const rm = this.rundowns.get(rundownId);
     const base = rm && rm.orgId === orgId ? rm.state : initialMixerState();
-    return { ...base, devices: this.deviceMap(list) };
+    return { ...base, devices: this.deviceMap(list), outputs: this.outputs.get(orgId) ?? {} };
   }
 
   /** Entradas o escenas de un mezclador (para el mapa de fuentes). */
@@ -243,6 +295,7 @@ export class MixerManager {
   }
 
   close(): void {
+    clearInterval(this.pollTimer);
     this.rundowns.clear();
     for (const entry of this.orgs.values()) {
       void entry.then((list) => list.forEach((m) => m.driver.close())).catch(() => undefined);

@@ -217,13 +217,24 @@ export interface MixerState {
   /** Latencia (ms) del último corte, del GO a la respuesta del mezclador. */
   lastCutMs: number | null;
   warning: string | null;
+  /** Emisión en streaming y grabación de cada mezclador (F2.3). */
+  outputs: Record<string, { streaming: boolean; recording: boolean }>;
 }
+
+export const STREAM_ACTIONS = ['startStream', 'stopStream', 'startRecord', 'stopRecord'] as const;
+export type StreamAction = (typeof STREAM_ACTIONS)[number];
+export const streamInput = z.object({
+  action: z.enum(STREAM_ACTIONS),
+  /** Sin equipo: el primero que lo permita. */
+  deviceId: z.uuid().optional(),
+});
 
 export const initialMixerState = (): MixerState => ({
   devices: {},
   program: null,
   lastCutMs: null,
   warning: null,
+  outputs: {},
 });
 
 export interface DeviceStatus {

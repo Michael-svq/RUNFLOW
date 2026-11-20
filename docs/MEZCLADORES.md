@@ -30,6 +30,15 @@ los valores de un equipo ya guardado.
   solo.
 - La barra muestra la fuente en programa (`PGM CAM 1`) y la latencia del último corte.
 
+## Emisión en streaming y grabación (F2.3)
+
+En la barra de equipos de la escaleta, quien puede dar GO tiene **Emitir / Cortar emisión** (con
+confirmación) y **Grabar / Parar grabación** para cada mezclador: OBS (`StartStream`,
+`StartRecord`…), vMix (`StartStreaming`, `StartRecording`…) y ATEM con streaming o grabación
+(ATEM Mini Pro/Extreme). El estado (EN EMISIÓN, ● REC) se consulta cada 5 s y queda en el
+registro de auditoría. La configuración de la emisión (servidor, clave) se hace en el propio
+mezclador.
+
 ## Mando por enlace (Companion, Stream Deck, tablet)
 
 En **Salidas → Tipo: Mando** se crea un enlace con token (solo quien puede dar GO; revocable).

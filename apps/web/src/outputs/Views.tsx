@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import {
+  currentBlockClock,
   formatDuration,
   isFloating,
   lineColeo,
@@ -62,6 +63,7 @@ export function ClocksView({
 }) {
   const clock = useClockFormat(rundown.timezone);
   const info = onAirInfo(lines, live, now);
+  const block = live ? currentBlockClock(lines as TimingLine[], live, now) : null;
   const next = timing.nextLineId ? lines.find((l) => l.id === timing.nextLineId) : undefined;
   const tone = !info
     ? ''
@@ -111,6 +113,14 @@ export function ClocksView({
             {fmtSigned(timing.overUnder)}
           </span>
         </div>
+        {block && (
+          <div data-testid="out-block">
+            <span className="rf-out-label">BLOQUE · {block.block.name}</span>
+            <span className={`rf-out-mid ${block.remaining < 0 ? 'is-bad' : ''}`}>
+              {fmtSigned(-block.remaining)}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

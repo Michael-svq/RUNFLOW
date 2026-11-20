@@ -7,6 +7,7 @@ import {
   TIMECODE_LINE_TYPES,
   type CgState,
   type MixerState,
+  type StreamAction,
 } from '@runflow/core';
 import type { LineSnapshot, ScriptGraphicBlock } from '@runflow/sync';
 import { api, errorMessage } from '../api/client';
@@ -175,7 +176,32 @@ function PlayingClip({ clip }: { clip: NonNullable<CgState['clip']> }) {
 }
 
 /** En la barra de directo: equipos, programa del mezclador, aviso ⚠ y controles del VTR. */
-export function CgBar({ canGo, mixers }: { canGo: boolean; mixers: MixerState | null }) {
+export function CgBar({
+  canGo,
+  mixers,
+  rundownId,
+  onMixers,
+}: {
+  canGo: boolean;
+  mixers: MixerState | null;
+  rundownId: string;
+  onMixers: (state: MixerState) => void;
+}) {
+  const [streamError, setStreamError] = useState<string | null>(null);
+  const [confirmStop, setConfirmStop] = useState<string | null>(null);
+  const stream = async (deviceId: string, action: StreamAction) => {
+    setStreamError(null);
+    setConfirmStop(null);
+    try {
+      const res = await api.post<{ mixers: MixerState }>(
+        `/api/rundowns/${rundownId}/mixers/stream`,
+        { deviceId, action },
+      );
+      onMixers(res.mixers);
+    } catch (err) {
+      setStreamError(errorMessage(err));
+    }
+  };
   const ctx = useContext(CgContext);
   const cgDevices = Object.values(ctx?.state?.devices ?? {});
   const mixerDevices = Object.values(mixers?.devices ?? {});
@@ -185,7 +211,7 @@ export function CgBar({ canGo, mixers }: { canGo: boolean; mixers: MixerState | 
   const warnings = [ctx?.state?.warning, mixers?.warning].filter(Boolean).join(' · ');
   return (
     <div className="rf-cgbar" role="group" aria-label="Equipos">
-      {[...cgDevices, ...mixerDevices].map((d) => (
+      {cgDevices.map((d) => (
         <span
           key={d.name}
           className={`rf-cgbar__device${d.connected ? ' is-ok' : ' is-down'}`}
@@ -194,6 +220,64 @@ export function CgBar({ canGo, mixers }: { canGo: boolean; mixers: MixerState | 
           ● {d.name}
         </span>
       ))}
+      {Object.entries(mixers?.devices ?? {}).map(([id, d]) => {
+        const out = mixers?.outputs?.[id];
+        return (
+          <span key={id} className="rf-cgbar__mixer">
+            <span
+              className={`rf-cgbar__device${d.connected ? ' is-ok' : ' is-down'}`}
+              title={d.connected ? (d.version ?? 'Conectado') : (d.error ?? 'Sin conexión')}
+            >
+              ● {d.name}
+            </span>
+            {out?.streaming && <span className="rf-cgbar__onair">EN EMISIÓN</span>}
+            {out?.recording && <span className="rf-cgbar__rec">● REC</span>}
+            {canGo && d.connected && (
+              <>
+                {out?.streaming ? (
+                  confirmStop === id ? (
+                    <button
+                      type="button"
+                      className="rf-btn rf-btn--danger rf-btn--sm"
+                      onClick={() => void stream(id, 'stopStream')}
+                    >
+                      Confirmar corte
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="rf-btn rf-btn--ghost rf-btn--sm"
+                      onClick={() => setConfirmStop(id)}
+                    >
+                      Cortar emisión
+                    </button>
+                  )
+                ) : (
+                  <button
+                    type="button"
+                    className="rf-btn rf-btn--ghost rf-btn--sm"
+                    onClick={() => void stream(id, 'startStream')}
+                  >
+                    Emitir
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="rf-btn rf-btn--ghost rf-btn--sm"
+                  onClick={() => void stream(id, out?.recording ? 'stopRecord' : 'startRecord')}
+                >
+                  {out?.recording ? 'Parar grabación' : 'Grabar'}
+                </button>
+              </>
+            )}
+          </span>
+        );
+      })}
+      {streamError && (
+        <span className="rf-cgbar__warning" role="alert">
+          ⚠ {streamError}
+        </span>
+      )}
       {mixers?.program && (
         <span className="rf-cgbar__program" title="Fuente de la línea en aire">
           PGM <strong>{mixers.program.source}</strong>

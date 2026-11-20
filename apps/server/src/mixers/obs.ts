@@ -3,7 +3,7 @@ import { EventEmitter } from 'node:events';
 // Protocolo JSON (la entrada por defecto en Node usa MessagePack).
 import OBSWebSocket from 'obs-websocket-js/json';
 import { WebSocketServer, type WebSocket } from 'ws';
-import type { ObsConfig } from '@runflow/core';
+import type { ObsConfig, StreamAction } from '@runflow/core';
 import type { MixerDriver } from './driver';
 
 /* OBS Studio por obs-websocket 5 (puerto 4455): cada fuente es una escena. */
@@ -74,6 +74,25 @@ export class ObsDriver extends EventEmitter implements MixerDriver {
     }
   }
 
+  async output(action: StreamAction): Promise<void> {
+    if (!this.connected) throw new Error(this.lastError ?? 'OBS no está conectado');
+    const request = {
+      startStream: 'StartStream',
+      stopStream: 'StopStream',
+      startRecord: 'StartRecord',
+      stopRecord: 'StopRecord',
+    } as const;
+    await this.obs.call(request[action]);
+  }
+
+  async outputStatus(): Promise<{ streaming: boolean; recording: boolean }> {
+    const [stream, record] = await Promise.all([
+      this.obs.call('GetStreamStatus'),
+      this.obs.call('GetRecordStatus'),
+    ]);
+    return { streaming: !!stream.outputActive, recording: !!record.outputActive };
+  }
+
   async inputs(): Promise<string[]> {
     const res = await this.obs.call('GetSceneList');
     return (res.scenes as { sceneName: string }[]).map((s) => s.sceneName).reverse();
@@ -87,6 +106,8 @@ export class ObsSimulator {
   readonly requests: { at: number; type: string; data: unknown }[] = [];
   program = 'CAM 1';
   preview = '';
+  streaming = false;
+  recording = false;
   private wss: WebSocketServer | undefined;
   port = 0;
 
@@ -140,6 +161,14 @@ export class ObsSimulator {
         else if (requestType === 'SetCurrentPreviewScene')
           this.preview = requestData?.sceneName ?? '';
         else if (requestType === 'TriggerStudioModeTransition') this.program = this.preview;
+        else if (requestType === 'StartStream') this.streaming = true;
+        else if (requestType === 'StopStream') this.streaming = false;
+        else if (requestType === 'StartRecord') this.recording = true;
+        else if (requestType === 'StopRecord') this.recording = false;
+        else if (requestType === 'GetStreamStatus')
+          responseData = { outputActive: this.streaming, outputTimecode: '00:00:00.000' };
+        else if (requestType === 'GetRecordStatus')
+          responseData = { outputActive: this.recording, outputTimecode: '00:00:00.000' };
         else if (requestType === 'GetSceneList')
           responseData = {
             scenes: (this.options.scenes ?? ['VTR', 'CAM 2', 'CAM 1']).map((sceneName, i) => ({

@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { Atem } from 'atem-connection';
-import type { AtemConfig } from '@runflow/core';
+import type { AtemConfig, StreamAction } from '@runflow/core';
 import type { MixerDriver } from './driver';
 
 /*
@@ -13,6 +13,8 @@ export interface AtemLike extends EventEmitter {
   state?: {
     info?: { productIdentifier?: string; apiVersion?: number };
     inputs?: Record<string, { longName?: string }>;
+    streaming?: { status?: { state?: number } };
+    recording?: { status?: { state?: number } };
   };
   connect(address: string, port?: number): Promise<void>;
   disconnect(): Promise<void>;
@@ -20,6 +22,10 @@ export interface AtemLike extends EventEmitter {
   changeProgramInput(input: number, me?: number): Promise<void>;
   changePreviewInput(input: number, me?: number): Promise<void>;
   autoTransition(me?: number): Promise<void>;
+  startStreaming?(): Promise<void>;
+  stopStreaming?(): Promise<void>;
+  startRecording?(): Promise<void>;
+  stopRecording?(): Promise<void>;
 }
 
 export class AtemDriver extends EventEmitter implements MixerDriver {
@@ -75,6 +81,26 @@ export class AtemDriver extends EventEmitter implements MixerDriver {
     } else {
       await this.atem.changeProgramInput(n, this.config.me);
     }
+  }
+
+  async output(action: StreamAction): Promise<void> {
+    if (!this.connected) throw new Error(this.lastError ?? 'ATEM no está conectado');
+    const fn = {
+      startStream: this.atem.startStreaming,
+      stopStream: this.atem.stopStreaming,
+      startRecord: this.atem.startRecording,
+      stopRecord: this.atem.stopRecording,
+    }[action];
+    if (!fn) throw new Error('Este ATEM no emite ni graba');
+    await fn.call(this.atem);
+  }
+
+  async outputStatus(): Promise<{ streaming: boolean; recording: boolean }> {
+    // StreamingStatus.Streaming = 4 · RecordingStatus.Recording = 1
+    return {
+      streaming: this.atem.state?.streaming?.status?.state === 4,
+      recording: this.atem.state?.recording?.status?.state === 1,
+    };
   }
 
   async inputs(): Promise<string[]> {

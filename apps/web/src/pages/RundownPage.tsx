@@ -117,11 +117,8 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
   const canTemplates = useCan('templates.manage');
   const user = useMemo(() => ({ id: me.user.id, name: me.user.name }), [me.user.id, me.user.name]);
   const canFire = useCan('cg.fire');
-  const { session, status, loaded, live, stage, setStage, cg, setCg, mixers } = useRundownSession(
-    org.id,
-    rundown.id,
-    user,
-  );
+  const { session, status, loaded, live, stage, setStage, cg, setCg, mixers, setMixers } =
+    useRundownSession(org.id, rundown.id, user);
   const lines = useLines(session?.doc);
   const presence = usePresence(session?.provider);
   const undoState = useUndoState(session?.undo);
@@ -407,7 +404,7 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
           keyboard={keyboardGo}
           onKeyboardChange={setKeyboardGo}
         />
-        <CgBar canGo={canGo} mixers={mixers} />
+        <CgBar canGo={canGo} mixers={mixers} rundownId={rundown.id} onMixers={setMixers} />
         {cgCtx.error && <Alert tone="error">RunFlow CG: {cgCtx.error}</Alert>}
         <div className="rf-toolbar" role="toolbar" aria-label="Escaleta">
           <label className="rf-toolbar__view">

@@ -110,6 +110,16 @@ test('M8: vMix con mapa de fuentes, corte con GO y mando por enlace', async ({
     await expect(page.locator('.rf-cgbar__program')).toContainText('PGM VTR');
     await shot(page, 'm8-directo');
 
+    // F2.3: emisión en streaming desde la barra de equipos
+    const bar = page.locator('.rf-cgbar');
+    await bar.getByRole('button', { name: 'Emitir' }).click();
+    await expect(bar.getByText('EN EMISIÓN')).toBeVisible();
+    expect(vmix.streaming).toBe(true);
+    await bar.getByRole('button', { name: 'Cortar emisión' }).click();
+    await bar.getByRole('button', { name: 'Confirmar corte' }).click();
+    await expect(bar.getByText('EN EMISIÓN')).toHaveCount(0);
+    expect(vmix.streaming).toBe(false);
+
     // 3. Mando por enlace en una tablet
     await page.getByRole('button', { name: 'Salidas' }).click();
     const dialog = page.getByRole('dialog');

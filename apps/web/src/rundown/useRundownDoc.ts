@@ -176,7 +176,19 @@ export function useRundownSession(
     };
   }, [orgId, rundownId, user.id, user.name]);
 
-  return { session, status, loaded, live, prompter, stage, setStage, cg, setCg, mixers };
+  return {
+    session,
+    status,
+    loaded,
+    live,
+    prompter,
+    stage,
+    setStage,
+    cg,
+    setCg,
+    mixers,
+    setMixers,
+  };
 }
 
 /* ---------- Líneas (instantánea reactiva) ---------- */

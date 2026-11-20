@@ -974,3 +974,22 @@ tr:hover .rf-drag-handle {
 .rf-clock--block {
   border-color: color-mix(in srgb, var(--rf-accent) 60%, transparent);
 }
+.rf-cgbar__mixer {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rf-space-1);
+}
+.rf-cgbar__onair {
+  padding: 0 6px;
+  border-radius: 3px;
+  background: #d93025;
+  color: #fff;
+  font-weight: 900;
+  font-size: var(--rf-text-xs);
+  letter-spacing: 0.05em;
+}
+.rf-cgbar__rec {
+  color: #d93025;
+  font-weight: 900;
+  font-size: var(--rf-text-xs);
+}

@@ -211,6 +211,53 @@ describe('mezcladores', () => {
     expect(res.body.live.onAir.lineId).toBe(ids.cam2);
   });
 
+  it('F2.3: emitir y grabar en vMix y OBS desde la escaleta', async () => {
+    const vmix = new VmixSimulator();
+    const obs = new ObsSimulator();
+    cleanup.push(
+      () => vmix.stop(),
+      () => obs.stop(),
+    );
+    const vmixId = await addDevice({
+      name: 'vMix',
+      kind: 'vmix',
+      config: { host: '127.0.0.1', port: await vmix.start(), sources },
+    });
+    const obsId = await addDevice({
+      name: 'OBS',
+      kind: 'obs',
+      config: { host: '127.0.0.1', port: await obs.start(), sources: {} },
+    });
+    const stream = (body: unknown) => admin.post(`/api/rundowns/${rundownId}/mixers/stream`, body);
+    const on = await stream({ action: 'startStream', deviceId: vmixId });
+    expect(on.status).toBe(200);
+    expect(vmix.streaming).toBe(true);
+    expect(on.body.mixers.outputs[vmixId]).toEqual({ streaming: true, recording: false });
+    await stream({ action: 'startRecord', deviceId: obsId });
+    expect(obs.recording).toBe(true);
+    const off = await stream({ action: 'stopStream', deviceId: vmixId });
+    expect(off.body.mixers.outputs[vmixId].streaming).toBe(false);
+    expect(off.body.mixers.outputs[obsId]).toEqual({ streaming: false, recording: true });
+
+    // Solo quien da GO controla la emisión.
+    await admin.post('/api/users', {
+      name: 'Rita',
+      email: 'rita@chaneltv.test',
+      roleId: await roleId(admin, 'redactor'),
+      password: 'temporal-12345',
+    });
+    const rita = new Client(ctx.app);
+    await rita.login('rita@chaneltv.test', 'temporal-12345');
+    await rita.post('/api/me/password', {
+      currentPassword: 'temporal-12345',
+      newPassword: PASSWORD,
+    });
+    expect(
+      (await rita.post(`/api/rundowns/${rundownId}/mixers/stream`, { action: 'stopRecord' }))
+        .status,
+    ).toBe(403);
+  });
+
   it('ATEM: corte directo o previo + AUTO en su M/E', async () => {
     const calls: string[] = [];
     class FakeAtem extends EventEmitter implements AtemLike {

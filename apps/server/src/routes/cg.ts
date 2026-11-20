@@ -7,6 +7,7 @@ import {
   DEVICE_KINDS,
   deviceInput,
   parseDeviceConfig,
+  streamInput,
   type CasparConfig,
   orgSettingsPatch,
   readOrgSettings,
@@ -243,6 +244,27 @@ export async function cgRoutes(app: FastifyInstance, deps: AppDeps): Promise<voi
     await withTenant(deps.db, t, (tx) => requireRundown(tx, t.orgId, id));
     return { id, actor: { orgId: t.orgId, userId: t.userId } };
   };
+
+  /** F2.3: emisión en streaming y grabación en el mezclador. */
+  app.post('/api/rundowns/:id/mixers/stream', { preHandler: go }, async (req) => {
+    const { id, actor } = await rundownOf(req);
+    const { action, deviceId } = parse(streamInput, req.body);
+    try {
+      const mixers = await deps.mixers!.stream(actor.orgId, id, action, deviceId);
+      await withTenant(deps.db, req.tenant!, (tx) =>
+        audit(tx, {
+          orgId: actor.orgId,
+          userId: actor.userId,
+          action: `stream.${action}`,
+          targetType: 'rundown',
+          targetId: id,
+        }),
+      );
+      return { mixers };
+    } catch (err) {
+      throw new HttpError(502, 'mixer_error', err instanceof Error ? err.message : String(err));
+    }
+  });
 
   app.get('/api/rundowns/:id/mixers', { preHandler: view }, async (req) => {
     const { id, actor } = await rundownOf(req);
