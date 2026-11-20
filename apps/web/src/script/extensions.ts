@@ -3,6 +3,7 @@ import Paragraph from '@tiptap/extension-paragraph';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import type { ScriptKind } from '@runflow/sync';
 import { RotuloView } from './RotuloView';
+import { rotulosToFocus } from './focus';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -92,11 +93,15 @@ export const Rotulo = Node.create({
     return {
       insertRotulo:
         (type: string) =>
-        ({ commands }) =>
-          commands.insertContent([
-            { type: 'rotulo', attrs: { id: crypto.randomUUID(), type } },
+        ({ commands }) => {
+          const id = crypto.randomUUID();
+          // El rótulo recién añadido recibe el foco en su primer campo.
+          rotulosToFocus.add(id);
+          return commands.insertContent([
+            { type: 'rotulo', attrs: { id, type } },
             { type: 'paragraph', attrs: { kind: 'off' } },
-          ]),
+          ]);
+        },
     };
   },
 

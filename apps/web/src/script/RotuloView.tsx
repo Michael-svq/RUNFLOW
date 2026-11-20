@@ -11,6 +11,7 @@ import {
 } from '@runflow/core';
 import { api, ApiError, errorMessage } from '../api/client';
 import { useScriptContext } from './context';
+import { rotulosToFocus } from './focus';
 
 /** Tarjeta azul de un rótulo dentro del guion. */
 export function RotuloView({
@@ -31,6 +32,10 @@ export function RotuloView({
   );
   const issueFor = (field: string) => issues.find((i) => i.field === field)?.message;
   const withPeople = attrs.type === 'TOT' || attrs.type === 'INF';
+  const [focusFirst] = useState(() => rotulosToFocus.has(attrs.id));
+  useEffect(() => {
+    rotulosToFocus.delete(attrs.id);
+  }, [attrs.id]);
 
   return (
     <NodeViewWrapper
@@ -103,6 +108,7 @@ export function RotuloView({
             editable={editable}
             error={issueFor(f.key)}
             suggest={withPeople && i === 0}
+            autoFocus={i === 0 && focusFirst}
             onChange={(v) => updateAttributes({ [f.key]: v })}
             onPick={(p) =>
               updateAttributes(
@@ -145,6 +151,7 @@ function Field({
   editable,
   error,
   suggest,
+  autoFocus,
   onChange,
   onPick,
 }: {
@@ -155,12 +162,18 @@ function Field({
   editable: boolean;
   error?: string;
   suggest: boolean;
+  autoFocus?: boolean;
   onChange(v: string): void;
   onPick(p: PersonDto): void;
 }) {
   const [focused, setFocused] = useState(false);
   const [results, setResults] = useState<PersonDto[]>([]);
   const timer = useRef<number>(0);
+  const input = useRef<HTMLInputElement>(null);
+  const [focusOnMount] = useState(!!autoFocus);
+  useEffect(() => {
+    if (focusOnMount) input.current?.focus();
+  }, [focusOnMount]);
 
   useEffect(() => {
     if (!suggest || !focused || value.trim().length < 2) {
@@ -192,12 +205,17 @@ function Field({
         </span>
       </span>
       <input
+        ref={input}
         value={value}
         maxLength={maxLength}
         disabled={!editable}
         aria-label={label}
         aria-invalid={!!error || undefined}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          // Escribir implica foco (aunque el campo se haya vuelto a montar).
+          setFocused(true);
+          onChange(e.target.value);
+        }}
         onFocus={() => setFocused(true)}
         onBlur={() => setTimeout(() => setFocused(false), 150)}
       />

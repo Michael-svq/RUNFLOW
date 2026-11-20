@@ -129,7 +129,7 @@ export function ScriptEditor({ doc, provider, line, editable, user, onUseReading
               aria-label="Añadir rótulo"
               title="Añadir rótulo (Ctrl+Mayús+R: TOT)"
               onChange={(e) => {
-                if (e.target.value) editor?.chain().focus().insertRotulo(e.target.value).run();
+                if (e.target.value) editor?.commands.insertRotulo(e.target.value);
               }}
             >
               <option value="">+ Rótulo…</option>

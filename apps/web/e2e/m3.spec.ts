@@ -142,7 +142,8 @@ test('M3: guion con paso, off y rótulos, en colaboración', async ({ page, brow
 
   // Guardar en personas y autocompletar en otro rótulo
   await rotulo.getByRole('button', { name: '+ Guardar en personas y cargos' }).click();
-  await expect(rotulo.getByText('Guardado en personas y cargos.')).toBeVisible();
+  // (en un reintento la persona ya estaba guardada)
+  await expect(rotulo.getByText(/(Guardado|Ya está) en personas y cargos\./)).toBeVisible();
   await panel.getByLabel('Añadir rótulo').selectOption('TOT');
   const second = panel.locator('.rf-rotulo').nth(1);
   await second.getByLabel('NOMBRE').fill('ana p');
