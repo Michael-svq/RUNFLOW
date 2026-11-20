@@ -35,6 +35,7 @@ Web (PWA) multiempresa en la nube y funcionamiento local con **RunFlow Station**
 | F3.2 Presupuesto: partidas por programa o convocatoria, previsto/real, desviación y CSV        | ✅        |
 | F3.3 Pantallas / videowall: pantallas por enlace, escenas a mano o con PANTALLAS en el GO      | ✅        |
 | F3.4 Redes: Bluesky, Mastodon, X, YouTube y WhatsApp; moderación y rótulo RRS                  | ✅        |
+| F4.1 Timeline: vista horizontal con pistas, cues con fotogramas, cue list y shot list          | ✅        |
 | Beta privada (equipos reales) y resto de la Fase III                                           | Siguiente |
 
 ## Estructura

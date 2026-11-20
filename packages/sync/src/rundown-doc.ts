@@ -1,5 +1,6 @@
 import { generateKeyBetween } from 'fractional-indexing';
 import * as Y from 'yjs';
+import { clearCues, copyCues } from './cues';
 import { clearScript, copyScript } from './script';
 
 /*
@@ -152,6 +153,7 @@ export function duplicateLine(doc: Y.Doc, id: string, origin?: unknown): string 
   doc.transact(() => {
     newId = insertLine(doc, { index: index + 1, cells }, origin);
     copyScript(doc, id, newId, origin);
+    copyCues(doc, id, newId, origin);
   }, origin);
   return newId;
 }
@@ -173,6 +175,7 @@ export function deleteLines(doc: Y.Doc, ids: string[], origin?: unknown): void {
     for (const id of ids) {
       lines.delete(id);
       clearScript(doc, id, origin);
+      clearCues(doc, id, origin);
     }
   }, origin);
 }

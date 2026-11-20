@@ -16,3 +16,4 @@ export * from './production';
 export * from './budget';
 export * from './screens';
 export * from './social';
+export * from './timeline';

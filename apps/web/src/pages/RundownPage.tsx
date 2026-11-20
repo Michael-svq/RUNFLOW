@@ -69,6 +69,7 @@ import {
   type ConnectionStatus,
 } from '../rundown/useRundownDoc';
 import { useViews } from '../rundown/useViews';
+import { CueList, TimelineView } from '../rundown/timeline';
 import { plannedSeconds, rundownsKey, statusLabel } from './RundownsPage';
 
 export function RundownPage() {
@@ -165,6 +166,23 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
   }, []);
   const rowInfo = useRowInfo(timing, clock, scriptColumns);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
+  type Layout = 'grid' | 'timeline' | 'cues';
+  const [layout, setLayoutState] = useState<Layout>(() => {
+    try {
+      const v = localStorage.getItem('rf-rundown-layout');
+      return v === 'timeline' || v === 'cues' ? v : 'grid';
+    } catch {
+      return 'grid';
+    }
+  });
+  const setLayout = (v: Layout) => {
+    setLayoutState(v);
+    try {
+      localStorage.setItem('rf-rundown-layout', v);
+    } catch {
+      // sin almacenamiento
+    }
+  };
   const [scriptOpen, setScriptOpen] = useState(() => {
     try {
       return localStorage.getItem('rf-script-panel') !== '0';
@@ -408,6 +426,26 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
         <CgBar canGo={canGo} mixers={mixers} rundownId={rundown.id} onMixers={setMixers} />
         {cgCtx.error && <Alert tone="error">RunFlow CG: {cgCtx.error}</Alert>}
         <div className="rf-toolbar" role="toolbar" aria-label="Escaleta">
+          <div className="rf-segmented" role="tablist" aria-label="Disposición">
+            {(
+              [
+                ['grid', 'Escaleta'],
+                ['timeline', 'Timeline'],
+                ['cues', 'Cue list'],
+              ] as [Layout, string][]
+            ).map(([k, label]) => (
+              <button
+                key={k}
+                type="button"
+                role="tab"
+                aria-selected={layout === k}
+                className={`rf-segmented__item${layout === k ? ' is-active' : ''}`}
+                onClick={() => setLayout(k)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <label className="rf-toolbar__view">
             <span className="rf-visually-hidden">{t('grid.view')}</span>
             <select
@@ -597,20 +635,44 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
           </div>
         ) : (
           <div className="rf-rundown__body">
-            <RundownGrid
-              lines={lines}
-              columns={gridColumns}
-              canEditCells={editable}
-              canEditStructure={editable && canEditStructure}
-              presence={presence}
-              actions={actions}
-              onColumnsChange={views.setColumns}
-              onCursor={onCursor}
-              rowInfo={rowInfo}
-              extraMenu={extraMenu}
-              reserveSpace={canGo && keyboardGo}
-              renderCell={renderCell}
-            />
+            {layout === 'timeline' && session ? (
+              <TimelineView
+                doc={session.doc}
+                lines={lines}
+                timing={timing}
+                live={live}
+                now={now}
+                clock={clock}
+                canEdit={editable && (canEditCells || canEditStructure)}
+                selectedLineId={selectedLineId}
+                onSelectLine={setSelectedLineId}
+              />
+            ) : layout === 'cues' && session ? (
+              <CueList
+                doc={session.doc}
+                lines={lines}
+                timing={timing}
+                live={live}
+                now={now}
+                clock={clock}
+                onSelectLine={setSelectedLineId}
+              />
+            ) : (
+              <RundownGrid
+                lines={lines}
+                columns={gridColumns}
+                canEditCells={editable}
+                canEditStructure={editable && canEditStructure}
+                presence={presence}
+                actions={actions}
+                onColumnsChange={views.setColumns}
+                onCursor={onCursor}
+                rowInfo={rowInfo}
+                extraMenu={extraMenu}
+                reserveSpace={canGo && keyboardGo}
+                renderCell={renderCell}
+              />
+            )}
             {scriptOpen && (
               <aside className="rf-script-panel" aria-label="Panel">
                 <div className="rf-panel-tabs" role="tablist">
