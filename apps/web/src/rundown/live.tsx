@@ -70,13 +70,15 @@ export function useTiming(
 export function useRowInfo(
   timing: RundownTiming,
   clock: (epoch: number) => string,
+  scripts?: Map<string, { grafismo: string; lectura: string }>,
 ): Map<string, RowInfo> {
   const cache = useRef(new Map<string, { key: string; info: RowInfo }>());
   return useMemo(() => {
     const out = new Map<string, RowInfo>();
     const next = new Map<string, { key: string; info: RowInfo }>();
     timing.lines.forEach((lt, id) => {
-      const computed: Record<string, string> =
+      const script = scripts?.get(id);
+      const base: Record<string, string> =
         lt.state === 'floating'
           ? { sum_vtr: lt.vtrSum ? formatDuration(lt.vtrSum) : '' }
           : {
@@ -85,7 +87,12 @@ export function useRowInfo(
               real: lt.actual !== null ? formatDuration(lt.actual) : '',
               sum_vtr: lt.vtrSum ? formatDuration(lt.vtrSum) : '',
             };
-      const key = `${lt.state}|${computed.hora}|${computed.back}|${computed.real}|${computed.sum_vtr}`;
+      const computed: Record<string, string> = {
+        ...base,
+        grafismo: script?.grafismo ?? '',
+        lectura: script?.lectura ?? '',
+      };
+      const key = `${lt.state}|${computed.hora}|${computed.back}|${computed.real}|${computed.sum_vtr}|${computed.grafismo}|${computed.lectura}`;
       const prev = cache.current.get(id);
       const entry = prev && prev.key === key ? prev : { key, info: { state: lt.state, computed } };
       next.set(id, entry);
@@ -93,7 +100,7 @@ export function useRowInfo(
     });
     cache.current = next;
     return out;
-  }, [timing, clock]);
+  }, [timing, clock, scripts]);
 }
 
 /* ---------- Relojes (cabecera, como en la referencia) ---------- */

@@ -78,6 +78,7 @@ export function AppLayout() {
               <NavLink
                 key={item.path}
                 to={item.path}
+                title={t(item.label)}
                 className={`rf-nav__item${item.milestone ? ' rf-nav__item--soon' : ''}`}
               >
                 <span className="rf-nav__number">{item.number}</span>

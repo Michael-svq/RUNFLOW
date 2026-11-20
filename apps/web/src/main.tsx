@@ -6,6 +6,7 @@ import { registerSW } from 'virtual:pwa-register';
 import '@runflow/ui/styles.css';
 import './styles/app.css';
 import './styles/rundown.css';
+import './styles/script.css';
 import { App } from './App';
 
 const queryClient = new QueryClient({

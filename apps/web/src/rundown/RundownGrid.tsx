@@ -526,11 +526,24 @@ export function RundownGrid({
   useEffect(() => {
     if (!menu) return;
     const close = () => setMenu(null);
-    window.addEventListener('click', close);
-    window.addEventListener('scroll', close, true);
+    // Se cierra con un clic fuera, con Escape o si la persona desplaza la rejilla
+    // (no con desplazamientos automáticos, p. ej. al abrirse el panel de guion).
+    const onDown = (e: Event) => {
+      if (!(e.target as HTMLElement | null)?.closest('.rf-menu')) close();
+    };
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+    };
+    const scroller = containerRef.current;
+    window.addEventListener('mousedown', onDown);
+    window.addEventListener('keydown', onKey);
+    scroller?.addEventListener('wheel', close, { passive: true });
+    scroller?.addEventListener('touchmove', close, { passive: true });
     return () => {
-      window.removeEventListener('click', close);
-      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('mousedown', onDown);
+      window.removeEventListener('keydown', onKey);
+      scroller?.removeEventListener('wheel', close);
+      scroller?.removeEventListener('touchmove', close);
     };
   }, [menu]);
 

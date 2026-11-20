@@ -42,6 +42,8 @@ import {
   useTiming,
 } from '../rundown/live';
 import { useServerNow } from '../rundown/useServerClock';
+import { ScriptEditor } from '../script/ScriptEditor';
+import { useScriptColumns } from '../script/useScripts';
 import { LINE_FLAGS } from '@runflow/core';
 import {
   LOCAL_ORIGIN,
@@ -92,6 +94,9 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
   const canEditStructure = useCan('rundown.edit_structure');
   const canShare = useCan('program.configure');
   const canGo = useCan('live.go');
+  const canScriptOwn = useCan('script.edit_own');
+  const canScriptAny = useCan('script.edit_any');
+  const canEditScript = canScriptOwn || canScriptAny;
   const canEditCells = canEditCellsPerm || canEditStructure;
   const user = useMemo(() => ({ id: me.user.id, name: me.user.name }), [me.user.id, me.user.name]);
   const { session, status, loaded, live } = useRundownSession(org.id, rundown.id, user);
@@ -111,7 +116,25 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
   const nowSecond = Math.floor(now / 1000) * 1000;
   const timing = useTiming(lines, rundown, live, nowSecond);
   const clock = useClockFormat(rundown.timezone);
-  const rowInfo = useRowInfo(timing, clock);
+  const scriptColumns = useScriptColumns(session?.doc, lines);
+  const rowInfo = useRowInfo(timing, clock, scriptColumns);
+  const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
+  const [scriptOpen, setScriptOpen] = useState(() => {
+    try {
+      return localStorage.getItem('rf-script-panel') !== '0';
+    } catch {
+      return true;
+    }
+  });
+  const toggleScript = () =>
+    setScriptOpen((v) => {
+      try {
+        localStorage.setItem('rf-script-panel', v ? '0' : '1');
+      } catch {
+        // sin almacenamiento
+      }
+      return !v;
+    });
 
   const showLiveError = useCallback((message: string) => {
     setLiveError(message);
@@ -149,7 +172,10 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
   }, [session]);
 
   const onCursor = useCallback(
-    (cell: CellRef | null) => session?.provider.awareness.setLocalStateField('cell', cell),
+    (cell: CellRef | null) => {
+      session?.provider.awareness.setLocalStateField('cell', cell);
+      if (cell) setSelectedLineId(cell.lineId);
+    },
     [session],
   );
 
@@ -165,6 +191,12 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
     seen.delete(me.user.id);
     return [...seen.values()];
   }, [presence, me.user.id]);
+
+  const selectedLine = lines.find((l) => l.id === selectedLineId) ?? null;
+  const scriptUser = useMemo(
+    () => ({ id: me.user.id, name: me.user.name, color: colorFor(me.user.id) }),
+    [me.user.id, me.user.name],
+  );
 
   const extraMenu = useCallback(
     ({
@@ -370,6 +402,15 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
         )}
         <Button
           size="sm"
+          variant={scriptOpen ? 'secondary' : 'ghost'}
+          onClick={toggleScript}
+          aria-pressed={scriptOpen}
+          title="Mostrar u ocultar el guion de la línea seleccionada"
+        >
+          Guion
+        </Button>
+        <Button
+          size="sm"
           variant="ghost"
           onClick={() => setDialog('shortcuts')}
           aria-label={t('grid.shortcuts')}
@@ -427,19 +468,45 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
           )}
         </div>
       ) : (
-        <RundownGrid
-          lines={lines}
-          columns={gridColumns}
-          canEditCells={editable}
-          canEditStructure={editable && canEditStructure}
-          presence={presence}
-          actions={actions}
-          onColumnsChange={views.setColumns}
-          onCursor={onCursor}
-          rowInfo={rowInfo}
-          extraMenu={extraMenu}
-          reserveSpace={canGo && keyboardGo}
-        />
+        <div className="rf-rundown__body">
+          <RundownGrid
+            lines={lines}
+            columns={gridColumns}
+            canEditCells={editable}
+            canEditStructure={editable && canEditStructure}
+            presence={presence}
+            actions={actions}
+            onColumnsChange={views.setColumns}
+            onCursor={onCursor}
+            rowInfo={rowInfo}
+            extraMenu={extraMenu}
+            reserveSpace={canGo && keyboardGo}
+          />
+          {scriptOpen && (
+            <aside className="rf-script-panel" aria-label="Guion">
+              {selectedLine && session ? (
+                <ScriptEditor
+                  key={selectedLine.id}
+                  doc={session.doc}
+                  provider={session.provider}
+                  line={selectedLine}
+                  editable={canEditScript && status !== 'denied' && status !== 'deleted'}
+                  user={scriptUser}
+                  onUseReadingTime={
+                    canEditCells
+                      ? (seconds) =>
+                          actions.setCells([{ id: selectedLine.id, key: 't_est', value: seconds }])
+                      : undefined
+                  }
+                />
+              ) : (
+                <p className="rf-script-panel__empty">
+                  Selecciona una línea para ver o escribir su guion.
+                </p>
+              )}
+            </aside>
+          )}
+        </div>
       )}
 
       <div className="rf-legend" aria-label={t('grid.legend')}>

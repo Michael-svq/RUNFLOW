@@ -4,7 +4,7 @@ import * as Y from 'yjs';
  * Guion de cada línea (PLAN §12): un fragmento XML de Yjs por línea, el mismo
  * que edita TipTap/ProseMirror en la web.
  *
- *   paragraph[kind=paso|off|nota]  texto
+ *   paragraph[kind=paso|off|nota]  texto (sin kind = paso)
  *   rotulo[type, f0..f3, tcIn, tcOut, id]  (bloque estructurado, sin texto)
  *
  * El color es presentación: lo que importa es el tipo de cada bloque.
@@ -81,7 +81,8 @@ export function readScript(fragment: Y.XmlFragment): ScriptBlock[] {
     } else if (node.nodeName === 'paragraph') {
       const kind = attr(node, 'kind');
       blocks.push({
-        kind: kind === 'paso' || kind === 'nota' ? kind : 'off',
+        // Sin tipo = paso (el tipo por defecto del editor).
+        kind: kind === 'off' || kind === 'nota' ? kind : 'paso',
         text: textOf(node),
       });
     }

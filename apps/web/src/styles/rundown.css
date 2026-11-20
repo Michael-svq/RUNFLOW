@@ -764,3 +764,75 @@ tr:hover .rf-drag-handle {
     font-size: 18px;
   }
 }
+.rf-cell[data-col='grafismo'] {
+  color: #dbe8ff;
+  font-weight: 700;
+}
+:root[data-theme='exterior'] .rf-cell[data-col='grafismo'] {
+  color: #1f4fbf;
+}
+
+/* ---------- Escaleta: más espacio de trabajo ---------- */
+/* El menú lateral se pliega a iconos (número) en la pantalla de escaleta. */
+@media (min-width: 901px) {
+  .rf-shell:has(.rf-rundown) {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+  .rf-shell:has(.rf-rundown) .rf-nav__label,
+  .rf-shell:has(.rf-rundown) .rf-nav .rf-badge,
+  .rf-shell:has(.rf-rundown) .rf-sidebar__footer,
+  .rf-shell:has(.rf-rundown) .rf-sidebar__brand svg {
+    display: none;
+  }
+  .rf-shell:has(.rf-rundown) .rf-sidebar__brand {
+    padding: 0;
+    justify-content: center;
+  }
+  .rf-shell:has(.rf-rundown) .rf-sidebar__brand .rf-logo__bar {
+    width: 22px;
+    height: 6px;
+  }
+  .rf-shell:has(.rf-rundown) .rf-nav__item {
+    justify-content: center;
+    padding: var(--rf-space-2) 0;
+  }
+}
+.rf-content:has(.rf-rundown) {
+  padding-top: var(--rf-space-3);
+}
+.rf-rundown {
+  height: calc(100vh - var(--rf-header-height) - var(--rf-space-3) - var(--rf-space-3));
+}
+.rf-livebar {
+  padding: var(--rf-space-1) var(--rf-space-2);
+  gap: var(--rf-space-2);
+}
+.rf-go {
+  min-width: 76px;
+  height: 42px;
+  font-size: 20px;
+}
+.rf-livebar__next {
+  min-width: 160px;
+}
+.rf-livebar__next-name {
+  font-size: var(--rf-text-md);
+}
+.rf-livebar__actions {
+  gap: var(--rf-space-1);
+}
+.rf-livebar__actions .rf-btn--sm {
+  padding: 0 var(--rf-space-2);
+}
+.rf-livebar__check {
+  font-size: var(--rf-text-xs);
+}
+.rf-clock {
+  padding: 3px 10px;
+}
+.rf-clock__value {
+  font-size: 16px;
+}
+.rf-clock__value--main {
+  font-size: 19px;
+}
