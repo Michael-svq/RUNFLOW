@@ -7,6 +7,7 @@ import '@runflow/ui/styles.css';
 import './styles/app.css';
 import './styles/rundown.css';
 import './styles/script.css';
+import './styles/outputs.css';
 import { App } from './App';
 
 const queryClient = new QueryClient({

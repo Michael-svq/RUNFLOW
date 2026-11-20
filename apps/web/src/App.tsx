@@ -10,6 +10,8 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { PlatformPage } from './pages/PlatformPage';
 import { RundownPage } from './pages/RundownPage';
+import { OutputPage } from './pages/OutputPage';
+import { PrompterPage } from './pages/PrompterPage';
 import { RundownsPage } from './pages/RundownsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { SetupPage } from './pages/SetupPage';
@@ -36,7 +38,10 @@ export function App() {
         <Route path="/cambiar-contrasena" element={<ChangePasswordPage />} />
         <Route path="/elegir-empresa" element={<ChooseOrgPage />} />
       </Route>
+      {/* Salidas por enlace: sin usuario. */}
+      <Route path="/salida/:token" element={<OutputPage />} />
       <Route element={<RequireOrg />}>
+        <Route path="/escaletas/:id/prompter" element={<PrompterPage />} />
         <Route element={<AppLayout />}>
           <Route index element={<Navigate to="/inicio" replace />} />
           <Route path="/inicio" element={<HomePage />} />

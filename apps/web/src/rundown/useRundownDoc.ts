@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import * as decoding from 'lib0/decoding';
-import type { LiveState } from '@runflow/core';
+import type { LiveState, PrompterState, StageMessage } from '@runflow/core';
+import { MSG_PROMPTER, MSG_STAGE, onCustom } from '../outputs/protocol';
 import { api } from '../api/client';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import { WebsocketProvider } from 'y-websocket';
@@ -84,6 +85,8 @@ export function useRundownSession(
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
   const [loaded, setLoaded] = useState(false);
   const [live, setLive] = useState<LiveState | null>(null);
+  const [prompter, setPrompter] = useState<PrompterState | null>(null);
+  const [stage, setStage] = useState<StageMessage | null>(null);
 
   useEffect(() => {
     const doc = new Y.Doc();
@@ -104,6 +107,8 @@ export function useRundownSession(
     provider.messageHandlers[100] = (_encoder: unknown, decoder: decoding.Decoder) => {
       applyLive(JSON.parse(decoding.readVarString(decoder)) as LiveState);
     };
+    onCustom<PrompterState | null>(provider, MSG_PROMPTER, (p) => alive && setPrompter(p));
+    onCustom<StageMessage | null>(provider, MSG_STAGE, (m) => alive && setStage(m));
     void api
       .get<{ live: LiveState }>(`/api/rundowns/${rundownId}/live`)
       .then((r) => applyLive(r.live))
@@ -160,7 +165,7 @@ export function useRundownSession(
     };
   }, [orgId, rundownId, user.id, user.name]);
 
-  return { session, status, loaded, live };
+  return { session, status, loaded, live, prompter, stage, setStage };
 }
 
 /* ---------- Líneas (instantánea reactiva) ---------- */

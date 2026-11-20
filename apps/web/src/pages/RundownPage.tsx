@@ -43,6 +43,7 @@ import {
 } from '../rundown/live';
 import { useServerNow } from '../rundown/useServerClock';
 import { ScriptEditor } from '../script/ScriptEditor';
+import { OutputsDialog, StageMessageDialog } from '../outputs/OutputsDialog';
 import { useScriptColumns } from '../script/useScripts';
 import { LINE_FLAGS } from '@runflow/core';
 import {
@@ -98,14 +99,20 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
   const canScriptAny = useCan('script.edit_any');
   const canEditScript = canScriptOwn || canScriptAny;
   const canEditCells = canEditCellsPerm || canEditStructure;
+  const canPrompter = useCan('prompter.control');
+  const canControl = canPrompter || canGo;
   const user = useMemo(() => ({ id: me.user.id, name: me.user.name }), [me.user.id, me.user.name]);
-  const { session, status, loaded, live } = useRundownSession(org.id, rundown.id, user);
+  const { session, status, loaded, live, stage, setStage } = useRundownSession(
+    org.id,
+    rundown.id,
+    user,
+  );
   const lines = useLines(session?.doc);
   const presence = usePresence(session?.provider);
   const undoState = useUndoState(session?.undo);
   const views = useViews(org.id, org.role.key);
   const [dialog, setDialog] = useState<
-    'columns' | 'saveView' | 'meta' | 'shortcuts' | 'asrun' | null
+    'columns' | 'saveView' | 'meta' | 'shortcuts' | 'asrun' | 'outputs' | 'message' | null
   >(null);
   const [hardTimeFor, setHardTimeFor] = useState<string | null>(null);
   const [liveError, setLiveError] = useState<string | null>(null);
@@ -400,6 +407,27 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
             {t('rundowns.edit')}
           </Button>
         )}
+        <Button size="sm" variant="ghost" onClick={() => setDialog('outputs')}>
+          Salidas
+        </Button>
+        {canControl && (
+          <Link
+            to={`/escaletas/${rundown.id}/prompter`}
+            className="rf-btn rf-btn--ghost rf-btn--sm"
+          >
+            Prompter
+          </Link>
+        )}
+        {canControl && session && (
+          <Button
+            size="sm"
+            variant={stage?.text ? 'secondary' : 'ghost'}
+            onClick={() => setDialog('message')}
+            title={stage?.text ? `En pantalla: ${stage.text}` : 'Enviar un mensaje al plató'}
+          >
+            Mensaje{stage?.text ? ' ●' : ''}
+          </Button>
+        )}
         <Button
           size="sm"
           variant={scriptOpen ? 'secondary' : 'ghost'}
@@ -539,6 +567,22 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
       {dialog === 'meta' && <MetaDialog rundown={rundown} onClose={() => setDialog(null)} />}
       {dialog === 'shortcuts' && <ShortcutsDialog onClose={() => setDialog(null)} />}
       {dialog === 'asrun' && <AsrunDialog rundown={rundown} onClose={() => setDialog(null)} />}
+      {dialog === 'outputs' && (
+        <OutputsDialog
+          rundownId={rundown.id}
+          canManage={canControl}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog === 'message' && session && (
+        <StageMessageDialog
+          provider={session.provider}
+          current={stage}
+          from={me.user.name}
+          onSent={setStage}
+          onClose={() => setDialog(null)}
+        />
+      )}
       {hardTimeFor && (
         <HardTimeDialog
           current={String(
