@@ -1,3 +1,4 @@
+import type { Permission } from '@runflow/core';
 import type { MessageKey } from '../i18n';
 
 export interface NavItem {
@@ -7,7 +8,7 @@ export interface NavItem {
   label: MessageKey;
   /** Hito en el que estará disponible; sin hito = ya disponible. */
   milestone?: string;
-  permission?: 'users.manage';
+  permission?: Permission;
 }
 
 /** Menú principal (PLAN §23, "Anexo menús" de la propuesta). */
@@ -20,4 +21,5 @@ export const NAV_ITEMS: NavItem[] = [
   { number: '06', path: '/archivo', label: 'nav.archive' },
   { number: '07', path: '/usuarios', label: 'nav.users', permission: 'users.manage' },
   { number: '08', path: '/perfil', label: 'nav.profile' },
+  { number: '09', path: '/station', label: 'nav.station', permission: 'station.admin' },
 ];

@@ -166,7 +166,29 @@ export async function stationRoutes(app: FastifyInstance, deps: AppDeps): Promis
     version: deps.version,
     linked: !!deps.stationSync,
     sync: deps.stationSync ? { ...deps.stationSync.status } : null,
+    license: deps.license?.status() ?? null,
   }));
+
+  /** Añade o renueva la licencia de esta Station. */
+  app.post('/api/station/license', { preHandler: manage }, async (req) => {
+    if (!deps.license) throw notFound('Solo en una RunFlow Station');
+    const { license } = parse(z.object({ license: z.string().trim().min(10).max(4000) }), req.body);
+    const installed = await deps.license.install(license);
+    if (!installed)
+      throw new HttpError(400, 'license_invalid', 'La licencia no es válida para esta Station', {
+        license: 'Licencia no válida',
+      });
+    const t = req.tenant!;
+    await withTenant(deps.db, t, (tx) =>
+      audit(tx, {
+        orgId: t.orgId,
+        userId: t.userId,
+        action: 'station.license',
+        targetType: 'license',
+      }),
+    );
+    return { license: deps.license.status() };
+  });
 
   /* ---------- Sincronización (autenticada con el token de la Station) ---------- */
 

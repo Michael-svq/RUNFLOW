@@ -24,6 +24,8 @@ import { outputRoutes } from './routes/outputs';
 import { workspaceRoutes } from './routes/workspace';
 import { stationRoutes } from './routes/stations';
 import { StationSync } from './station/sync-worker';
+import { LicenseManager } from './station/license';
+import { readFileSync } from 'node:fs';
 
 export interface AppDeps {
   db: Db;
@@ -34,11 +36,15 @@ export interface AppDeps {
   live?: LiveManager;
   /** Solo en una Station enlazada con la nube (modo híbrido). */
   stationSync?: StationSync;
+  /** Solo en una Station. */
+  license?: LicenseManager;
 }
 
 /** Cabecera que la web envía en toda petición que modifica datos (defensa CSRF). */
 export const CSRF_HEADER = 'x-runflow-request';
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+/** Rutas que funcionan aunque la licencia de la Station haya caducado. */
+const LICENSE_FREE = ['/api/auth/', '/api/setup', '/api/station/license', '/api/me/password'];
 
 function errorBody(code: string, message: string, fields?: Record<string, string>): ApiErrorBody {
   return { error: { code, message, ...(fields ? { fields } : {}) } };
@@ -55,7 +61,15 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
           },
     trustProxy: deps.config.trustProxy,
     bodyLimit: 1024 * 1024,
-  });
+    ...(deps.config.tls
+      ? {
+          https: {
+            cert: readFileSync(deps.config.tls.certFile),
+            key: readFileSync(deps.config.tls.keyFile),
+          },
+        }
+      : {}),
+  }) as unknown as FastifyInstance;
 
   await app.register(cookie);
   await app.register(websocket, { options: { maxPayload: 8 * 1024 * 1024 } });
@@ -71,6 +85,14 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       intervalMs: deps.config.stationSyncIntervalMs,
       version: deps.version,
     });
+  }
+  if (mode === 'station') {
+    deps.license = new LicenseManager(
+      deps.config.dataDir,
+      deps.config.licensePublicKey,
+      !!deps.stationSync,
+    );
+    await deps.license.load();
   }
   app.addHook('onClose', async () => {
     await deps.stationSync?.close();
@@ -99,6 +121,14 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       const origin = req.headers.origin;
       if (origin && req.headers.host && new URL(origin).host !== req.headers.host) {
         throw new HttpError(403, 'csrf', 'Petición no permitida');
+      }
+      // Station sin licencia en vigor: solo consulta (se puede entrar y poner la licencia).
+      if (
+        deps.license &&
+        !deps.license.status().writable &&
+        !LICENSE_FREE.some((p) => req.url.startsWith(p))
+      ) {
+        throw new HttpError(402, 'license_expired', deps.license.status().message);
       }
     }
     const token = req.cookies[SESSION_COOKIE];

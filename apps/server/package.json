@@ -9,7 +9,8 @@
     "build": "tsup",
     "migrate": "tsx src/migrate-cli.ts",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "license": "tsx src/license-cli.ts"
   },
   "dependencies": {
     "@fastify/cookie": "11.1.5",

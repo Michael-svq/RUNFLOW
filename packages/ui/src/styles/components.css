@@ -160,6 +160,16 @@
   border-color: color-mix(in srgb, var(--rf-success) 50%, transparent);
   background: var(--rf-success-bg);
 }
+.rf-badge--warning {
+  color: var(--rf-warning);
+  border-color: color-mix(in srgb, var(--rf-warning) 50%, transparent);
+  background: var(--rf-warning-bg);
+}
+.rf-badge--danger {
+  color: var(--rf-danger);
+  border-color: color-mix(in srgb, var(--rf-danger) 50%, transparent);
+  background: var(--rf-danger-bg);
+}
 .rf-badge--muted {
   color: var(--rf-text-faint);
 }

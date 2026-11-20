@@ -36,6 +36,8 @@ afterAll(async () => {
 afterEach(async () => {
   await station?.close();
   station = undefined;
+  // La nube guarda y cierra los documentos que tenía abiertos la Station.
+  await waitFor(() => cloud.collab.openDocuments === 0);
 });
 beforeEach(async () => {
   await resetDb();
@@ -137,7 +139,7 @@ describe('RunFlow Station enlazada con la nube', () => {
       const [a, b] = [await linesAt(ctx), await linesAt(cloud)];
       return a.length === 2 && JSON.stringify(a) === JSON.stringify(b);
     });
-    expect(sync.status.online).toBe(true);
+    await waitFor(() => sync.status.online);
   });
 
   it('aceptación: se corta internet en pleno directo, el estudio sigue y al volver todo se fusiona', async () => {
@@ -231,14 +233,17 @@ describe('RunFlow Station enlazada con la nube', () => {
     }[];
     const m = members.find((x) => x.email === 'rodrigo@chaneltv.test')!;
     expect((await admin.delete(`/api/users/${m.userId}`)).status).toBe(200);
-    const before = sync.status.lastSyncAt;
-    await waitFor(() => sync.status.lastSyncAt !== before);
-    await waitFor(() => sync.status.lastSyncAt !== before);
-    const again = await new Client(ctx.app).post('/api/auth/login', {
-      email: 'rodrigo@chaneltv.test',
-      password: 'temporal-12345',
-    });
-    expect(again.status).not.toBe(200);
+    // En la siguiente sincronización deja de poder entrar en la Station.
+    await waitFor(
+      async () =>
+        (
+          await new Client(ctx.app).post('/api/auth/login', {
+            email: 'rodrigo@chaneltv.test',
+            password: 'temporal-12345',
+          })
+        ).status !== 200,
+    );
+    expect(sync.status.online).toBe(true);
   });
 
   it('una Station revocada deja de sincronizar', async () => {

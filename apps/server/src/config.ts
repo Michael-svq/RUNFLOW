@@ -2,6 +2,12 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
 
+/** Clave pública de licencias incorporada al compilar (tsup `define`). */
+declare const __RUNFLOW_LICENSE_PUBLIC_KEY__: string | undefined;
+const BUILT_LICENSE_KEY =
+  typeof __RUNFLOW_LICENSE_PUBLIC_KEY__ === 'string' ? __RUNFLOW_LICENSE_PUBLIC_KEY__ : '';
+
+const emptyToUndefined = (v: unknown) => (v === '' ? undefined : v);
 const bool = z.enum(['true', 'false', '1', '0']).transform((v) => v === 'true' || v === '1');
 
 const envSchema = z.object({
@@ -20,10 +26,17 @@ const envSchema = z.object({
   /** Tiempo mínimo entre dos GO manuales (protección contra doble pulsación). */
   MIN_GO_INTERVAL_MS: z.coerce.number().int().min(0).max(10_000).default(700),
   /** Station en modo híbrido: dirección de la nube y token de la Station. */
-  CLOUD_URL: z.string().url().optional(),
-  STATION_TOKEN: z.string().optional(),
+  CLOUD_URL: z.preprocess(emptyToUndefined, z.string().url().optional()),
+  STATION_TOKEN: z.preprocess(emptyToUndefined, z.string().optional()),
   STATION_SYNC_INTERVAL_MS: z.coerce.number().int().min(100).default(15_000),
   WEB_DIST: z.string().optional(),
+  /** Carpeta de datos de la instalación (licencia de la Station…). */
+  DATA_DIR: z.string().default('./data'),
+  /** HTTPS directo (Station en red local): certificado y clave en PEM. */
+  TLS_CERT_FILE: z.string().optional(),
+  TLS_KEY_FILE: z.string().optional(),
+  /** Clave pública de licencias (solo fuera de producción; en producción va compilada). */
+  LICENSE_PUBLIC_KEY: z.string().optional(),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
 });
 
@@ -45,6 +58,9 @@ export interface AppConfig {
   stationSyncIntervalMs: number;
   /** Carpeta con la web compilada; si existe, el servidor la sirve. */
   webDist: string | undefined;
+  dataDir: string;
+  tls: { certFile: string; keyFile: string } | undefined;
+  licensePublicKey: string | undefined;
   logLevel: string;
 }
 
@@ -82,6 +98,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     stationToken: e.STATION_TOKEN,
     stationSyncIntervalMs: e.STATION_SYNC_INTERVAL_MS,
     webDist: e.WEB_DIST,
+    dataDir: path.resolve(e.DATA_DIR),
+    tls:
+      e.TLS_CERT_FILE && e.TLS_KEY_FILE
+        ? { certFile: e.TLS_CERT_FILE, keyFile: e.TLS_KEY_FILE }
+        : undefined,
+    licensePublicKey:
+      (BUILT_LICENSE_KEY || undefined) ??
+      (e.NODE_ENV !== 'production' ? e.LICENSE_PUBLIC_KEY?.replace(/\\n/g, '\n') : undefined),
     logLevel: e.LOG_LEVEL ?? (e.NODE_ENV === 'production' ? 'info' : 'debug'),
   };
 }

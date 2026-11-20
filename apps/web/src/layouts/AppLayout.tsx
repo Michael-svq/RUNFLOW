@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import type { MeResponse } from '@runflow/core';
-import { Badge, Button, Logo } from '@runflow/ui';
+import { Alert, Badge, Button, Logo } from '@runflow/ui';
 import { api } from '../api/client';
 import { useApplyMe, useLogout, useMe } from '../auth/session';
 import { t } from '../i18n';
 import { useTheme } from '../lib/theme';
 import { NAV_ITEMS } from './nav';
+import { useStationStatus } from '../pages/StationPage';
 
 function initials(name: string): string {
   return name
@@ -42,6 +43,38 @@ function OrgSwitcher({ me }: { me: MeResponse }) {
       ))}
     </select>
   );
+}
+
+/** En una Station: avisa si no hay conexión con la nube o si la licencia no está en vigor. */
+function StationBanner() {
+  const status = useStationStatus();
+  const s = status.data;
+  if (!s) return null;
+  if (s.license && !s.license.writable) {
+    return (
+      <div className="rf-station-banner">
+        <Alert tone="error">{s.license.message}</Alert>
+      </div>
+    );
+  }
+  if (s.sync && !s.sync.online && s.sync.lastSyncAt) {
+    return (
+      <div className="rf-station-banner">
+        <Alert tone="warning">
+          Sin conexión con la nube: se sigue trabajando en la Station y todo se sincronizará al
+          volver internet.
+        </Alert>
+      </div>
+    );
+  }
+  if (s.license && (s.license.state === 'grace' || s.license.state === 'trial')) {
+    return (
+      <div className="rf-station-banner">
+        <Alert tone="warning">{s.license.message}</Alert>
+      </div>
+    );
+  }
+  return null;
 }
 
 export function AppLayout() {
@@ -155,6 +188,7 @@ export function AppLayout() {
           </Button>
         </header>
         <main className="rf-content" id="contenido">
+          {me.mode === 'station' && <StationBanner />}
           <Outlet />
         </main>
       </div>

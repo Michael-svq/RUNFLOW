@@ -33,8 +33,14 @@ services:
       RUNFLOW_MODE: ${RUNFLOW_MODE:-cloud}
       COOKIE_SECURE: ${COOKIE_SECURE:-true}
       TRUST_PROXY: ${TRUST_PROXY:-true}
+      # Station enlazada con la nube (modo híbrido): déjalos vacíos para modo local.
+      CLOUD_URL: ${CLOUD_URL:-}
+      STATION_TOKEN: ${STATION_TOKEN:-}
+    volumes:
+      - app-data:/data
     ports:
       - '${APP_PORT:-3000}:3000'
 
 volumes:
   db-data:
+  app-data:

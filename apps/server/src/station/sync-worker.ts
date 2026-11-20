@@ -188,6 +188,8 @@ export class StationSync {
       await this.push(snapshot);
       await this.linkDocs();
       await this.flushLive();
+      // Si se pausó mientras tanto, no se da por conectada.
+      if (this.paused) return;
       this.status.online = true;
       this.status.lastError = null;
       this.status.lastSyncAt = new Date().toISOString();

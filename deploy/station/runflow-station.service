@@ -1,0 +1,16 @@
+[Unit]
+Description=RunFlow Station
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=runflow
+Environment=RUNFLOW_STATION_DATA=/var/lib/runflow-station
+ExecStart=@NODE@ /opt/runflow-station/main.js
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

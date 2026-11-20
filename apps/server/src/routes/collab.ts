@@ -58,7 +58,11 @@ export async function collabRoutes(app: FastifyInstance, deps: AppDeps): Promise
       await collab.handleConnection(
         socket,
         rundownId,
-        { ...ctx, readOnly: !canEdit, canControl },
+        {
+          ...ctx,
+          readOnly: !canEdit || deps.license?.status().writable === false,
+          canControl,
+        },
         pending,
       );
     } catch (err) {

@@ -12,7 +12,13 @@ Web (PWA) multiempresa en la nube y funcionamiento local con **RunFlow Station**
 | Hito                                                                                     | Estado    |
 | ---------------------------------------------------------------------------------------- | --------- |
 | M0 Fundaciones (monorepo, base de datos, entrar, empresas, usuarios, roles, diseño, PWA) | ✅        |
-| M1 Escaleta en tiempo real                                                               | Siguiente |
+| M1 Escaleta en tiempo real (colaboración, sin conexión, vistas)                          | ✅        |
+| M2 Tiempos y directo (GO, autonext, eventos a hora fija, as-run)                         | ✅        |
+| M3 Guion y rótulos (editor colaborativo, TOT/LOC/INF/DAT/BAN/HIG, TC)                    | ✅        |
+| M4 Teleprompter y salidas por enlace                                                     | ✅        |
+| M5 Chat, plantillas, nevera, versiones, papelera, importar/exportar, PDF                 | ✅        |
+| M6 RunFlow Station (servidor local, modo híbrido con la nube, licencias)                 | ✅        |
+| M7 RunFlow CG (CasparCG)                                                                 | Siguiente |
 
 ## Estructura
 
@@ -20,6 +26,7 @@ Web (PWA) multiempresa en la nube y funcionamiento local con **RunFlow Station**
 apps/
   server/     API (Fastify) — mismo código para la nube y para Station
   web/        Aplicación web (React + Vite, PWA)
+  station/    Lanzador de RunFlow Station (PostgreSQL integrado, mDNS, HTTPS)
 packages/
   core/       Permisos, roles, validaciones, catálogo de la escaleta y tipos compartidos
   sync/       Documento colaborativo de la escaleta (Yjs)
@@ -63,6 +70,17 @@ Requisitos: Node 22, pnpm 10 y PostgreSQL 16 (local o con Docker).
 
    Abre http://localhost:5173: la primera vez aparece la **configuración inicial**
    para crear tu empresa y tu cuenta de administración.
+
+## RunFlow Station
+
+Un ordenador del estudio hace de servidor: el resto de equipos entra con el navegador.
+Funciona sin nube (**local**, con licencia) o enlazada con la nube (**híbrido**: si se
+cae internet el directo sigue, y al volver todo se fusiona). Ver
+[`docs/DESPLIEGUE.md`](docs/DESPLIEGUE.md#runflow-station).
+
+```bash
+pnpm build && pnpm --filter @runflow/station start
+```
 
 ## Pruebas
 

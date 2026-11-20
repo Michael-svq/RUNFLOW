@@ -4,3 +4,9 @@ packages:
 
 onlyBuiltDependencies:
   - esbuild
+  # Binarios de PostgreSQL de RunFlow Station (enlaces de las bibliotecas).
+  - '@embedded-postgres/darwin-arm64'
+  - '@embedded-postgres/darwin-x64'
+  - '@embedded-postgres/linux-arm64'
+  - '@embedded-postgres/linux-x64'
+  - '@embedded-postgres/windows-x64'

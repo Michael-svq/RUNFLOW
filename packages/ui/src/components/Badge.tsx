@@ -5,7 +5,7 @@ export function Badge({
   children,
   title,
 }: {
-  tone?: 'default' | 'accent' | 'success' | 'muted';
+  tone?: 'default' | 'accent' | 'success' | 'warning' | 'danger' | 'muted';
   children: ReactNode;
   title?: string;
 }) {

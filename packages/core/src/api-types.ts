@@ -181,3 +181,41 @@ export interface SearchResultDto {
   num: string;
   name: string;
 }
+
+/* ---------- RunFlow Station (M6) ---------- */
+
+export interface StationDto {
+  id: string;
+  name: string;
+  lastSeenAt: string | null;
+  lastVersion: string | null;
+  createdAt: string;
+}
+
+export interface StationLicenseStatus {
+  state: 'cloud' | 'valid' | 'grace' | 'trial' | 'expired' | 'unchecked';
+  writable: boolean;
+  license: {
+    id: string;
+    licensee: string;
+    plan: string;
+    maxUsers: number;
+    issuedAt: string;
+    expiresAt: string;
+  } | null;
+  until: string | null;
+  message: string;
+}
+
+export interface StationStatusDto {
+  mode: 'cloud' | 'station';
+  version: string;
+  linked: boolean;
+  sync: {
+    online: boolean;
+    lastSyncAt: string | null;
+    lastError: string | null;
+    syncedRundowns: number;
+  } | null;
+  license: StationLicenseStatus | null;
+}

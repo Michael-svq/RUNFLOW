@@ -326,3 +326,55 @@
 .rf-tbmenu__list button:hover {
   background: var(--rf-surface-hover);
 }
+
+/* ---------- RunFlow Station (M6) ---------- */
+.rf-station {
+  display: grid;
+  gap: var(--rf-space-3);
+  margin-bottom: var(--rf-space-4);
+}
+.rf-station__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: var(--rf-space-4);
+  align-items: start;
+}
+.rf-station__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rf-space-3);
+  align-items: end;
+}
+.rf-station__form .rf-field {
+  flex: 1 1 220px;
+}
+.rf-station__token,
+.rf-station__license {
+  display: grid;
+  gap: var(--rf-space-2);
+}
+.rf-station__facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--rf-space-1) var(--rf-space-3);
+  margin: 0;
+}
+.rf-station__facts dt {
+  color: var(--rf-text-muted);
+}
+.rf-station__facts dd {
+  margin: 0;
+}
+.rf-code {
+  display: block;
+  padding: var(--rf-space-2) var(--rf-space-3);
+  border-radius: var(--rf-radius-sm, 6px);
+  background: var(--rf-surface-2);
+  border: 1px solid var(--rf-border);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--rf-text-sm);
+  overflow-wrap: anywhere;
+}
+.rf-station-banner {
+  margin: 0 0 var(--rf-space-3);
+}

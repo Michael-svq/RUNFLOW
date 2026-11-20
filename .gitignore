@@ -10,3 +10,7 @@ coverage/
 playwright-report/
 test-results/
 .DS_Store
+
+# Datos locales de instalaciones de prueba (licencia, fecha de instalación)
+apps/server/data/
+out/

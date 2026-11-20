@@ -9,10 +9,14 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
 COPY packages/core/package.json packages/core/
+COPY apps/station/package.json apps/station/
 COPY packages/db/package.json packages/db/
+COPY packages/sync/package.json packages/sync/
 COPY packages/ui/package.json packages/ui/
 RUN pnpm install --frozen-lockfile
 COPY . .
+# Clave pública de licencias de Station (opcional): se incorpora al compilar.
+ARG RUNFLOW_LICENSE_PUBLIC_KEY=""
 RUN pnpm --filter @runflow/web build && pnpm --filter @runflow/server build
 # Solo las dependencias de producción del servidor (el resto va en el bundle).
 RUN pnpm --filter @runflow/server deploy --prod --legacy /out
@@ -21,8 +25,10 @@ FROM node:22-alpine AS runtime
 ENV NODE_ENV=production \
     PORT=3000 \
     HOST=0.0.0.0 \
-    WEB_DIST=/app/web
+    WEB_DIST=/app/web \
+    DATA_DIR=/data
 WORKDIR /app
+RUN mkdir -p /data && chown node:node /data
 COPY --from=build /out/node_modules ./node_modules
 COPY --from=build /out/package.json ./package.json
 COPY --from=build /app/apps/server/dist ./dist
