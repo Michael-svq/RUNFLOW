@@ -124,3 +124,10 @@ export interface AsrunEntryDto {
   rehearsal: boolean;
   trigger: 'go' | 'auto' | 'event' | 'back';
 }
+
+export interface PersonDto {
+  id: string;
+  name: string;
+  title: string;
+  notes: string;
+}

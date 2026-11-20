@@ -1,5 +1,6 @@
 import { generateKeyBetween } from 'fractional-indexing';
 import * as Y from 'yjs';
+import { clearScript, copyScript } from './script';
 
 /*
  * Documento colaborativo de una escaleta (Yjs, CRDT).
@@ -147,7 +148,12 @@ export function duplicateLine(doc: Y.Doc, id: string, origin?: unknown): string 
   const index = ordered.findIndex((l) => l.id === id);
   if (index < 0) return null;
   const { num: _num, estado: _estado, ...cells } = ordered[index]!.cells;
-  return insertLine(doc, { index: index + 1, cells }, origin);
+  let newId = '';
+  doc.transact(() => {
+    newId = insertLine(doc, { index: index + 1, cells }, origin);
+    copyScript(doc, id, newId, origin);
+  }, origin);
+  return newId;
 }
 
 /** Mueve una línea para que quede en `toIndex` de la lista resultante. */
@@ -164,7 +170,10 @@ export function moveLine(doc: Y.Doc, id: string, toIndex: number, origin?: unkno
 export function deleteLines(doc: Y.Doc, ids: string[], origin?: unknown): void {
   doc.transact(() => {
     const lines = getLinesMap(doc);
-    for (const id of ids) lines.delete(id);
+    for (const id of ids) {
+      lines.delete(id);
+      clearScript(doc, id, origin);
+    }
   }, origin);
 }
 

@@ -154,8 +154,8 @@ export const COLUMNS: ColumnDef[] = [
   {
     key: 'grafismo',
     label: 'GRAFISMO',
-    description: 'Rótulos y grafismo (en M3 se generan desde el guion)',
-    kind: 'text',
+    description: 'Rótulos de la línea (se escriben en el guion)',
+    kind: 'computed',
     width: 220,
   },
   {
@@ -253,6 +253,14 @@ export const COLUMNS: ColumnDef[] = [
   },
   { key: 'camara', label: 'CÁMARA', description: 'Cámara', kind: 'text', width: 90 },
   {
+    key: 'lectura',
+    label: 'T. LECTURA',
+    description: 'Tiempo de lectura del paso (3 palabras por segundo; calculado)',
+    kind: 'computed',
+    width: 80,
+    align: 'right',
+  },
+  {
     key: 'sum_vtr',
     label: 'SUMATORIO TIEMPO VTR',
     description: 'Suma acumulada de DUR. VTR (calculada)',
@@ -322,6 +330,7 @@ export const BUILTIN_VIEWS: BuiltinView[] = [
     'reportero',
     'recursos',
     'grafismo',
+    'lectura',
     'observaciones',
     'dur_vtr',
     'pie',

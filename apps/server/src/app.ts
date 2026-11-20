@@ -19,6 +19,7 @@ import { collabRoutes } from './routes/collab';
 import { CollabServer } from './collab/collab-server';
 import { LiveManager } from './live/live-manager';
 import { liveRoutes } from './routes/live';
+import { peopleRoutes } from './routes/people';
 
 export interface AppDeps {
   db: Db;
@@ -116,6 +117,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await rundownRoutes(app, deps);
   await collabRoutes(app, deps);
   await liveRoutes(app, deps);
+  await peopleRoutes(app, deps);
 
   const webDist = deps.config.webDist ? path.resolve(deps.config.webDist) : undefined;
   const serveWeb = !!webDist && existsSync(path.join(webDist, 'index.html'));

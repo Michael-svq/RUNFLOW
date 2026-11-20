@@ -259,3 +259,26 @@ export const asrunLog = pgTable(
   },
   (t) => [index('asrun_rundown_idx').on(t.rundownId, t.startedAt)],
 );
+
+/** Base de datos de personas y cargos para rótulos (TOT, INF). */
+export const people = pgTable(
+  'people',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    title: text('title').notNull().default(''),
+    notes: text('notes').notNull().default(''),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex('people_org_name_title_idx').on(
+      t.orgId,
+      sql`lower(${t.name})`,
+      sql`lower(${t.title})`,
+    ),
+  ],
+);

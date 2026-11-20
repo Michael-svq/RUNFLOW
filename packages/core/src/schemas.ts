@@ -164,3 +164,16 @@ export const saveViewInput = z.object({
     .refine((cols) => new Set(cols.map((c) => c.key)).size === cols.length, 'Columnas repetidas'),
 });
 export type SaveViewInput = z.infer<typeof saveViewInput>;
+
+/* ---------- Personas y cargos (M3) ---------- */
+
+export const personInput = z.object({
+  name: trimmed(80),
+  title: z.string().trim().max(120).default(''),
+  notes: z.string().trim().max(500).default(''),
+});
+export type PersonInput = z.infer<typeof personInput>;
+
+export const listPeopleQuery = z.object({
+  q: z.string().trim().max(80).optional(),
+});
