@@ -7,6 +7,7 @@ import {
   LIVE_MODES,
   lineColeo,
   lineDuration,
+  currentBlockClock,
   lineTypeLabel,
   rundownWindow,
   type AsrunEntryDto,
@@ -167,6 +168,36 @@ export function LiveClocks({
     );
   }
 
+  const blockClock = live ? currentBlockClock(lines as TimingLine[], live, now) : null;
+  let blockBlock = null;
+  if (blockClock) {
+    const { block, elapsed, remaining } = blockClock;
+    const tone =
+      remaining < 0
+        ? 'is-over'
+        : remaining <= 10
+          ? 'is-danger'
+          : remaining <= 30
+            ? 'is-warning'
+            : '';
+    blockBlock = (
+      <div className={`rf-clock rf-clock--block ${tone}`} data-testid="clock-block">
+        <span className="rf-clock__label">BLOQUE · {block.name}</span>
+        <span className="rf-clock__values">
+          <span className="rf-clock__value" title="Transcurrido">
+            {fmtSigned(elapsed)}
+          </span>
+          <span className="rf-clock__value rf-clock__value--main" title="Restante">
+            {fmtSigned(-remaining)}
+          </span>
+        </span>
+        <span className="rf-clock__hint">
+          {formatDuration(block.plannedSeconds, { short: true })} previsto
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className="rf-clocks" role="timer" aria-live="off">
       <div className="rf-clock rf-clock--now">
@@ -197,6 +228,7 @@ export function LiveClocks({
           {fmtSigned(timing.overUnder)}
         </span>
       </div>
+      {blockBlock}
       {lineBlock}
       <Stopwatch />
     </div>

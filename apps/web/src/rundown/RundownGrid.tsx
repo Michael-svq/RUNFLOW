@@ -861,6 +861,7 @@ const Row = memo(function Row(props: RowProps) {
       data-state={info?.state}
       className={[
         info && `is-${info.state}`,
+        line.cells._block === '1' && 'is-block',
         props.dropBefore && 'is-drop-before',
         props.dropAfter && 'is-drop-after',
         props.dragging && 'is-dragging',

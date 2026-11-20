@@ -962,3 +962,15 @@ tr:hover .rf-drag-handle {
 .rf-cgbar__program strong {
   color: #d93025;
 }
+
+/* Inicio de bloque (reloj propio) */
+.rf-rgrid tbody tr.is-block > td {
+  border-top: 3px solid var(--rf-accent);
+}
+.rf-rgrid tbody tr.is-block td[data-col='nombre'] .rf-cell__text {
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+.rf-clock--block {
+  border-color: color-mix(in srgb, var(--rf-accent) 60%, transparent);
+}

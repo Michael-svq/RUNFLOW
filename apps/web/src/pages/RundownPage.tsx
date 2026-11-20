@@ -304,6 +304,14 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
             ),
         });
         if (focusLine) {
+          const isBlock = focusLine.cells[LINE_FLAGS.block] === '1';
+          items.push({
+            label: isBlock ? 'Quitar inicio de bloque' : 'Inicio de bloque (reloj propio)',
+            onClick: () =>
+              actions.setCells([
+                { id: focusLine.id, key: LINE_FLAGS.block, value: isBlock ? null : '1' },
+              ]),
+          });
           const hard = String(focusLine.cells[LINE_FLAGS.hardTime] ?? '');
           items.push({
             label: hard ? `Hora fija: ${hard}…` : 'Hora fija…',

@@ -39,6 +39,8 @@ export const LINE_FLAGS = {
   hardTime: '_hard',
   /** '1' sí, '0' no; sin valor = según el tipo. */
   autonext: '_auto',
+  /** '1' = la línea abre un bloque (ej. HEADLINES 1) con reloj propio. */
+  block: '_block',
 } as const;
 
 export interface TimingLine {
@@ -352,4 +354,64 @@ export function rundownWindow(
 
 export function lineTypeLabel(key: unknown): string {
   return LINE_TYPE_BY_KEY[String(key ?? '')]?.label ?? String(key ?? '');
+}
+
+/* ---------- Bloques (PLAN §10: reloj de bloque) ---------- */
+
+export interface RundownBlock {
+  /** Línea que abre el bloque. */
+  id: string;
+  name: string;
+  lineIds: string[];
+  /** Suma de los tiempos estimados de sus líneas (sin flotantes). */
+  plannedSeconds: number;
+}
+
+export function isBlockStart(line: TimingLine): boolean {
+  return line.cells[LINE_FLAGS.block] === '1';
+}
+
+/** Bloques de la escaleta: cada inicio de bloque agrupa las líneas hasta el siguiente. */
+export function rundownBlocks(lines: TimingLine[]): RundownBlock[] {
+  const blocks: RundownBlock[] = [];
+  let current: RundownBlock | null = null;
+  for (const line of lines) {
+    if (isBlockStart(line)) {
+      const name =
+        String(line.cells.nombre ?? '').trim() || lineTypeLabel(line.cells.tipo) || 'Bloque';
+      current = { id: line.id, name, lineIds: [], plannedSeconds: 0 };
+      blocks.push(current);
+    }
+    if (!current) continue;
+    current.lineIds.push(line.id);
+    if (!isFloating(line)) current.plannedSeconds += lineDuration(line);
+  }
+  return blocks;
+}
+
+export interface BlockClock {
+  block: RundownBlock;
+  /** Segundos desde que empezó el bloque. */
+  elapsed: number;
+  /** Segundos que quedan según lo previsto (negativo: el bloque va largo). */
+  remaining: number;
+}
+
+/** Reloj del bloque en aire: desde la primera de sus líneas que salió en este directo. */
+export function currentBlockClock(
+  lines: TimingLine[],
+  live: LiveState,
+  now: number,
+): BlockClock | null {
+  const onAirId = live.onAir?.lineId;
+  if (!onAirId) return null;
+  const block = rundownBlocks(lines).find((b) => b.lineIds.includes(onAirId));
+  if (!block) return null;
+  let start = live.onAir!.startedAt;
+  for (const id of block.lineIds) {
+    const played = live.played[id];
+    if (played && played.startedAt < start) start = played.startedAt;
+  }
+  const elapsed = Math.max(0, (now - start) / 1000);
+  return { block, elapsed, remaining: block.plannedSeconds - elapsed };
 }
