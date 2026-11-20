@@ -25,7 +25,16 @@ export const OUTPUT_KINDS = [
     label: 'Multivista',
     description: 'Relojes, agenda, prompter y mensajes en cuadrícula',
   },
+  {
+    value: 'control',
+    label: 'Mando',
+    description: 'GO, volver y rótulos desde una tablet, Stream Deck o Companion',
+  },
 ] as const;
+
+/** Órdenes del mando por enlace (Companion / Stream Deck / tablet). */
+export const CONTROL_ACTIONS = ['go', 'back', 'stop', 'next-graphic', 'clear-graphics'] as const;
+export type ControlAction = (typeof CONTROL_ACTIONS)[number];
 
 export type OutputKind = (typeof OUTPUT_KINDS)[number]['value'];
 
@@ -53,7 +62,7 @@ export const outputSettingsPatch = z.object({
 });
 
 export const createOutputInput = z.object({
-  kind: z.enum(['prompter', 'presenter', 'clocks', 'agenda', 'messages', 'multiview']),
+  kind: z.enum(['prompter', 'presenter', 'clocks', 'agenda', 'messages', 'multiview', 'control']),
   name: z.string().trim().min(1, 'Obligatorio').max(60),
   settings: outputSettingsPatch.default({}),
 });

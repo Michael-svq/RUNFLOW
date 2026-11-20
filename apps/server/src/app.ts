@@ -26,6 +26,7 @@ import { stationRoutes } from './routes/stations';
 import { StationSync } from './station/sync-worker';
 import { LicenseManager } from './station/license';
 import { CgManager } from './cg/cg-manager';
+import { MixerManager } from './mixers/mixer-manager';
 import { cgRoutes } from './routes/cg';
 import { readFileSync } from 'node:fs';
 
@@ -41,6 +42,7 @@ export interface AppDeps {
   /** Solo en una Station. */
   license?: LicenseManager;
   cg?: CgManager;
+  mixers?: MixerManager;
 }
 
 /** Cabecera que la web envía en toda petición que modifica datos (defensa CSRF). */
@@ -84,8 +86,13 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     serverBaseUrl:
       deps.config.publicUrl ?? `http${deps.config.tls ? 's' : ''}://127.0.0.1:${deps.config.port}`,
   });
-  deps.live.onChange = (rundownId, orgId, prev, next) =>
+  deps.mixers = new MixerManager(deps.db, deps.collab, app.log);
+  // Con cada cambio del directo: CasparCG y mezcladores a la vez.
+  deps.live.onChange = (rundownId, orgId, prev, next) => {
+    const goAt = Date.now();
+    deps.mixers!.onLive(rundownId, orgId, prev, next, goAt);
     deps.cg!.onLive(rundownId, orgId, prev, next);
+  };
   const { mode, cloudUrl, stationToken } = deps.config;
   if (mode === 'station' && cloudUrl && stationToken) {
     deps.stationSync = new StationSync(deps.db, deps.collab, app.log, {
@@ -93,7 +100,10 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       token: stationToken,
       intervalMs: deps.config.stationSyncIntervalMs,
       version: deps.version,
-      onConfigChanged: (orgId) => void deps.cg!.invalidate(orgId),
+      onConfigChanged: (orgId) => {
+        void deps.cg!.invalidate(orgId);
+        void deps.mixers!.invalidate(orgId);
+      },
     });
   }
   if (mode === 'station') {
@@ -107,6 +117,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   app.addHook('onClose', async () => {
     await deps.stationSync?.close();
     deps.cg!.close();
+    deps.mixers!.close();
     deps.live!.close();
     await deps.collab!.close();
   });
@@ -123,14 +134,16 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   app.addHook('onRequest', async (req) => {
     if (!req.url.startsWith('/api/')) return;
+    // El mando por enlace (Companion, Stream Deck) no usa cookies: su token es la credencial.
+    const tokenOnly = req.url.startsWith('/api/public/control/');
     if (!SAFE_METHODS.has(req.method)) {
       // Una cabecera propia obliga a una petición de origen cruzado a pasar el
       // control CORS (que no permitimos), así que bloquea CSRF.
-      if (req.headers[CSRF_HEADER] !== '1') {
+      if (!tokenOnly && req.headers[CSRF_HEADER] !== '1') {
         throw new HttpError(403, 'csrf', 'Petición no permitida');
       }
       const origin = req.headers.origin;
-      if (origin && req.headers.host && new URL(origin).host !== req.headers.host) {
+      if (!tokenOnly && origin && req.headers.host && new URL(origin).host !== req.headers.host) {
         throw new HttpError(403, 'csrf', 'Petición no permitida');
       }
       // Station sin licencia en vigor: solo consulta (se puede entrar y poner la licencia).

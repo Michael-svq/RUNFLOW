@@ -132,7 +132,10 @@ export class CgManager {
     private readonly log: FastifyBaseLogger,
     private readonly options: { serverBaseUrl: string },
   ) {
-    collab.cgSnapshot = (rundownId, orgId) => this.snapshot(rundownId, orgId);
+    collab.snapshots.push(async (rundownId, orgId) => ({
+      type: MSG_CG,
+      payload: await this.snapshot(rundownId, orgId),
+    }));
   }
 
   /* ---------- Empresa: ajustes y equipos ---------- */
@@ -610,6 +613,19 @@ export class CgManager {
       this.broadcast(rc);
       return rc.state;
     });
+  }
+
+  /** «Siguiente rótulo» (mando): el primero de la línea en aire que no ha salido. */
+  async takeNext(actor: Actor, rundownId: string): Promise<CgState> {
+    const rc = this.rundown(rundownId, actor.orgId);
+    const lineId = rc.live?.onAir?.lineId;
+    if (!lineId) return rc.state;
+    const { graphics } = await this.readDoc(rc);
+    const next = [...graphics.values()].find(
+      (g) =>
+        g.line.id === lineId && !rc.state.graphics[g.graphic.id] && !rc.state.done[g.graphic.id],
+    );
+    return next ? this.take(actor, rundownId, next.graphic.id) : rc.state;
   }
 
   /** Saca todos los rótulos en aire. */

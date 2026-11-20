@@ -29,7 +29,6 @@ export const MESSAGE_PROMPTER = 101;
 export const MESSAGE_STAGE = 102;
 /** Ajustes de una salida (cuando se cambian desde el control). */
 export const MESSAGE_OUTPUT_SETTINGS = 103;
-export const MESSAGE_CG = 105;
 /** Nuevo mensaje de chat de la escaleta. */
 export const MESSAGE_CHAT = 104;
 /** Versión automática como mucho cada… */
@@ -277,8 +276,11 @@ export class CollabServer {
   private readonly pingTimer: NodeJS.Timeout;
   /** Estado del directo que se envía a quien se conecta (lo aporta el motor de directo). */
   liveSnapshot?: (rundownId: string, orgId: string) => Promise<unknown>;
-  /** Estado de RunFlow CG que se envía a quien se conecta (mensaje 105). */
-  cgSnapshot?: (rundownId: string, orgId: string) => Promise<unknown>;
+  /** Estados que se envían a quien se conecta (RunFlow CG 105, mezcladores 106…). */
+  readonly snapshots: ((
+    rundownId: string,
+    orgId: string,
+  ) => Promise<{ type: number; payload: unknown } | null>)[] = [];
   /** Aviso de cambios en las líneas de una escaleta. */
   onDocChanged?: (rundownId: string, orgId: string) => void;
 
@@ -349,12 +351,12 @@ export class CollabServer {
         this.log.warn({ err, rundownId }, 'No se pudo enviar el estado del directo');
       }
     }
-    if (this.cgSnapshot) {
+    for (const snapshot of this.snapshots) {
       try {
-        const cg = await this.cgSnapshot(rundownId, info.orgId);
-        if (cg) send(ws, customMessage(MESSAGE_CG, cg));
+        const msg = await snapshot(rundownId, info.orgId);
+        if (msg && ws.readyState === ws.OPEN) send(ws, customMessage(msg.type, msg.payload));
       } catch (err) {
-        this.log.warn({ err, rundownId }, 'No se pudo enviar el estado de RunFlow CG');
+        this.log.warn({ err, rundownId }, 'No se pudo enviar el estado de los equipos');
       }
     }
   }

@@ -3,6 +3,7 @@ import {
   DEFAULT_GRAPHIC_SECONDS,
   GRAPHIC_TYPE_BY_KEY,
   parseTimecode,
+  TIMECODE_LINE_TYPES,
   type GraphicData,
 } from './graphics';
 
@@ -80,25 +81,147 @@ export const casparConfigSchema = z.object({
 });
 export type CasparConfig = z.infer<typeof casparConfigSchema>;
 
-export const DEVICE_KINDS = ['casparcg'] as const;
-export type DeviceKind = (typeof DEVICE_KINDS)[number];
+/* ---------- Mezcladores (M8) ---------- */
 
-export const deviceInput = z.object({
-  name: z.string().trim().min(1, 'Obligatorio').max(60),
-  kind: z.enum(DEVICE_KINDS),
-  enabled: z.boolean().default(true),
-  config: casparConfigSchema,
+/**
+ * Mapa de fuentes: la FUENTE de la línea (CAM 1, VTR, EXT 1…) → entrada del
+ * mezclador (escena de OBS, número o nombre de entrada de vMix, nº de entrada de ATEM).
+ */
+const sourceMap = z
+  .record(z.string().trim().min(1).max(40), z.string().trim().min(1).max(80))
+  .default({});
+
+export const obsConfigSchema = z.object({
+  host: z.string().trim().min(1, 'Obligatorio').max(255),
+  port: z.number().int().min(1).max(65535).default(4455),
+  password: z.string().max(200).default(''),
+  /** En modo estudio: la escena va a previo y se lanza la transición. */
+  studioMode: z.boolean().default(false),
+  sources: sourceMap,
 });
-export type DeviceInput = z.infer<typeof deviceInput>;
+export type ObsConfig = z.infer<typeof obsConfigSchema>;
 
-export interface DeviceDto {
+export const VMIX_TRANSITIONS = ['CutDirect', 'Cut', 'Fade', 'Merge', 'Wipe', 'Zoom'] as const;
+export const vmixConfigSchema = z.object({
+  host: z.string().trim().min(1, 'Obligatorio').max(255),
+  /** API TCP de vMix (8099). */
+  port: z.number().int().min(1).max(65535).default(8099),
+  transition: z.enum(VMIX_TRANSITIONS).default('CutDirect'),
+  durationMs: z.number().int().min(0).max(10_000).default(500),
+  sources: sourceMap,
+});
+export type VmixConfig = z.infer<typeof vmixConfigSchema>;
+
+export const atemConfigSchema = z.object({
+  host: z.string().trim().min(1, 'Obligatorio').max(255),
+  /** Mezclador M/E (0 = M/E 1). */
+  me: z.number().int().min(0).max(3).default(0),
+  /** cut: corte directo a programa · auto: previo + transición automática. */
+  transition: z.enum(['cut', 'auto']).default('cut'),
+  sources: sourceMap,
+});
+export type AtemConfig = z.infer<typeof atemConfigSchema>;
+
+export const DEVICE_KINDS = ['casparcg', 'obs', 'vmix', 'atem'] as const;
+export type DeviceKind = (typeof DEVICE_KINDS)[number];
+export const MIXER_KINDS: DeviceKind[] = ['obs', 'vmix', 'atem'];
+export const DEVICE_KIND_LABEL: Record<DeviceKind, string> = {
+  casparcg: 'CasparCG',
+  obs: 'OBS Studio',
+  vmix: 'vMix',
+  atem: 'ATEM',
+};
+
+const name = z.string().trim().min(1, 'Obligatorio').max(60);
+export const deviceInput = z.discriminatedUnion('kind', [
+  z.object({
+    name,
+    kind: z.literal('casparcg'),
+    enabled: z.boolean().default(true),
+    config: casparConfigSchema,
+  }),
+  z.object({
+    name,
+    kind: z.literal('obs'),
+    enabled: z.boolean().default(true),
+    config: obsConfigSchema,
+  }),
+  z.object({
+    name,
+    kind: z.literal('vmix'),
+    enabled: z.boolean().default(true),
+    config: vmixConfigSchema,
+  }),
+  z.object({
+    name,
+    kind: z.literal('atem'),
+    enabled: z.boolean().default(true),
+    config: atemConfigSchema,
+  }),
+]);
+export type DeviceInput = z.infer<typeof deviceInput>;
+export type DeviceConfig = CasparConfig | ObsConfig | VmixConfig | AtemConfig;
+
+export function parseDeviceConfig(kind: string, config: unknown): DeviceConfig | null {
+  const schema =
+    kind === 'casparcg'
+      ? casparConfigSchema
+      : kind === 'obs'
+        ? obsConfigSchema
+        : kind === 'vmix'
+          ? vmixConfigSchema
+          : kind === 'atem'
+            ? atemConfigSchema
+            : null;
+  const parsed = schema?.safeParse(config);
+  return parsed?.success ? parsed.data : null;
+}
+
+export type DeviceDto = {
   id: string;
   name: string;
-  kind: DeviceKind;
   enabled: boolean;
-  config: CasparConfig;
   status: DeviceStatus;
+} & (
+  | { kind: 'casparcg'; config: CasparConfig }
+  | { kind: 'obs'; config: ObsConfig }
+  | { kind: 'vmix'; config: VmixConfig }
+  | { kind: 'atem'; config: AtemConfig }
+);
+
+/** Fuente de una línea: su columna FUENTE o, en un VTR sin fuente, «VTR». */
+export function lineSource(cells: Record<string, unknown>): string | null {
+  const f = typeof cells.fuente === 'string' ? cells.fuente.trim().toUpperCase() : '';
+  if (f) return f.replace(/\s+/g, ' ');
+  return TIMECODE_LINE_TYPES.has(String(cells.tipo ?? '')) ? 'VTR' : null;
 }
+
+/** Entrada del mezclador para una fuente (sin distinguir mayúsculas). */
+export function mapSource(sources: Record<string, string>, source: string | null): string | null {
+  if (!source) return null;
+  const key = source.trim().toUpperCase().replace(/\s+/g, ' ');
+  for (const [k, v] of Object.entries(sources)) {
+    if (k.trim().toUpperCase().replace(/\s+/g, ' ') === key) return v;
+  }
+  return null;
+}
+
+/** Estado de los mezcladores en directo (mensaje 106). */
+export interface MixerState {
+  devices: Record<string, DeviceStatus & { name: string; kind: DeviceKind }>;
+  /** Fuente en programa (la de la línea EN AIRE) y su entrada en cada mezclador. */
+  program: { lineId: string; source: string; inputs: Record<string, string> } | null;
+  /** Latencia (ms) del último corte, del GO a la respuesta del mezclador. */
+  lastCutMs: number | null;
+  warning: string | null;
+}
+
+export const initialMixerState = (): MixerState => ({
+  devices: {},
+  program: null,
+  lastCutMs: null,
+  warning: null,
+});
 
 export interface DeviceStatus {
   connected: boolean;

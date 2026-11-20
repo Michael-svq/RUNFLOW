@@ -4,8 +4,10 @@ import { and, asc, eq } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import {
-  casparConfigSchema,
+  DEVICE_KINDS,
   deviceInput,
+  parseDeviceConfig,
+  type CasparConfig,
   orgSettingsPatch,
   readOrgSettings,
   type DeviceDto,
@@ -17,6 +19,7 @@ import { requireOrg, requirePermission } from '../auth/guards';
 import { audit } from '../services/audit';
 import { requireRundown } from '../services/rundowns';
 import { CgManager } from '../cg/cg-manager';
+import { MixerManager } from '../mixers/mixer-manager';
 import { templateHtml } from '../cg/templates';
 import type { AppDeps } from '../app';
 
@@ -109,19 +112,32 @@ export async function cgRoutes(app: FastifyInstance, deps: AppDeps): Promise<voi
     orgId: string,
     rows: (typeof devices.$inferSelect)[],
   ): Promise<DeviceDto[]> => {
-    const statuses = await cg().deviceStatuses(orgId);
-    return rows.map((r) => ({
-      id: r.id,
-      name: r.name,
-      kind: 'casparcg',
-      enabled: r.enabled,
-      config: casparConfigSchema.parse(r.config),
-      status: statuses[r.id] ?? {
-        connected: false,
-        error: r.enabled ? null : 'Desactivado',
-        version: null,
-      },
-    }));
+    const statuses = {
+      ...(await cg().deviceStatuses(orgId)),
+      ...(await deps.mixers!.deviceStatuses(orgId)),
+    };
+    return rows.flatMap((r) => {
+      const config = parseDeviceConfig(r.kind, r.config);
+      if (!config) return [];
+      return [
+        {
+          id: r.id,
+          name: r.name,
+          kind: r.kind,
+          enabled: r.enabled,
+          config,
+          status: statuses[r.id] ?? {
+            connected: false,
+            error: r.enabled ? null : 'Desactivado',
+            version: null,
+          },
+        } as DeviceDto,
+      ];
+    });
+  };
+  const invalidate = async (orgId: string) => {
+    await cg().invalidate(orgId);
+    await deps.mixers!.invalidate(orgId);
   };
 
   app.get('/api/devices', { preHandler: view }, async (req) => {
@@ -149,7 +165,7 @@ export async function cgRoutes(app: FastifyInstance, deps: AppDeps): Promise<voi
       });
       return created;
     });
-    await cg().invalidate(t.orgId);
+    await invalidate(t.orgId);
     reply.status(201);
     return { device: (await toDto(t.orgId, rows))[0] };
   });
@@ -166,7 +182,7 @@ export async function cgRoutes(app: FastifyInstance, deps: AppDeps): Promise<voi
         .returning(),
     );
     if (!rows.length) throw notFound('Equipo no encontrado');
-    await cg().invalidate(t.orgId);
+    await invalidate(t.orgId);
     return { device: (await toDto(t.orgId, rows))[0] };
   });
 
@@ -180,17 +196,38 @@ export async function cgRoutes(app: FastifyInstance, deps: AppDeps): Promise<voi
         .returning({ id: devices.id }),
     );
     if (!rows.length) throw notFound('Equipo no encontrado');
-    await cg().invalidate(t.orgId);
+    await invalidate(t.orgId);
     return { ok: true };
   });
 
-  /** Prueba de conexión con un CasparCG (antes de guardarlo). */
+  /** Prueba de conexión con un equipo (antes de guardarlo). */
   app.post('/api/devices/test', { preHandler: configure }, async (req) => {
-    const { config } = parse(z.object({ config: casparConfigSchema }), req.body);
+    const input = parse(
+      z.object({ kind: z.enum(DEVICE_KINDS).default('casparcg'), config: z.unknown() }),
+      req.body,
+    );
+    const config = parseDeviceConfig(input.kind, input.config);
+    if (!config) throw new HttpError(400, 'invalid_config', 'Configuración no válida');
     try {
-      return { ok: true, ...(await CgManager.test(config)) };
+      return input.kind === 'casparcg'
+        ? { ok: true, ...(await CgManager.test(config as CasparConfig)) }
+        : { ok: true, ...(await MixerManager.test(input.kind, config)) };
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  });
+
+  /** Entradas o escenas de un mezclador conectado (para el mapa de fuentes). */
+  app.get('/api/devices/:id/inputs', { preHandler: configure }, async (req) => {
+    const { id } = parse(idParams, req.params);
+    try {
+      return { inputs: await deps.mixers!.inputs(req.tenant!.orgId, id) };
+    } catch (err) {
+      throw new HttpError(
+        409,
+        'device_offline',
+        err instanceof Error ? err.message : 'Sin conexión',
+      );
     }
   });
 
@@ -204,6 +241,11 @@ export async function cgRoutes(app: FastifyInstance, deps: AppDeps): Promise<voi
     await withTenant(deps.db, t, (tx) => requireRundown(tx, t.orgId, id));
     return { id, actor: { orgId: t.orgId, userId: t.userId } };
   };
+
+  app.get('/api/rundowns/:id/mixers', { preHandler: view }, async (req) => {
+    const { id, actor } = await rundownOf(req);
+    return { mixers: await deps.mixers!.snapshot(id, actor.orgId) };
+  });
 
   app.get('/api/rundowns/:id/cg', { preHandler: view }, async (req) => {
     const { id, actor } = await rundownOf(req);

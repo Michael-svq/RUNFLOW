@@ -3,6 +3,7 @@ import { and, asc, eq, isNull } from 'drizzle-orm';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import {
+  CONTROL_ACTIONS,
   createOutputInput,
   outputSettings,
   updateOutputInput,
@@ -94,6 +95,8 @@ export async function outputRoutes(app: FastifyInstance, deps: AppDeps): Promise
     const { id } = parse(idParams, req.params);
     const input = parse(createOutputInput, req.body);
     const t = req.tenant!;
+    // Un mando da GO sin iniciar sesión: solo lo crea quien puede dar GO.
+    if (input.kind === 'control' && !t.permissions.includes('live.go')) throw forbidden();
     const token = randomBytes(24).toString('base64url');
     const row = await withTenant(deps.db, t, async (tx) => {
       await requireRundown(tx, t.orgId, id);
@@ -202,6 +205,61 @@ export async function outputRoutes(app: FastifyInstance, deps: AppDeps): Promise
       live: await deps.live!.get({ orgId: row.output.orgId, userId: SYSTEM_USER }, row.rundown.id),
     };
   });
+
+  /* ---------- Mando por enlace (Companion, Stream Deck, tablet) ---------- */
+
+  const controlParams = z.object({
+    token: z.string().regex(/^[A-Za-z0-9_-]{20,64}$/),
+    action: z.enum(CONTROL_ACTIONS),
+  });
+
+  /** Estado para los botones (feedback de Companion). */
+  app.get(
+    '/api/public/control/:token',
+    { config: { rateLimit: { max: 600, timeWindow: '1 minute' } } },
+    async (req) => {
+      const parsed = tokenParams.safeParse(req.params);
+      const row = parsed.success ? await findByToken(deps, parsed.data.token) : undefined;
+      if (!row || row.output.kind !== 'control') throw notFound('Enlace no válido o revocado');
+      const actor = { orgId: row.output.orgId, userId: SYSTEM_USER };
+      const live = await deps.live!.get(actor, row.rundown.id);
+      const cg = await deps.cg!.snapshot(row.rundown.id, row.output.orgId);
+      return {
+        rundown: row.rundown.title,
+        onAir: live.onAir,
+        next: live.next,
+        armed: live.armed,
+        rehearsal: live.rehearsal,
+        graphicsOnAir: Object.keys(cg.graphics).length,
+      };
+    },
+  );
+
+  app.post(
+    '/api/public/control/:token/:action',
+    { config: { rateLimit: { max: 600, timeWindow: '1 minute' } } },
+    async (req) => {
+      const parsed = controlParams.safeParse(req.params);
+      const row = parsed.success ? await findByToken(deps, parsed.data.token) : undefined;
+      if (!row || row.output.kind !== 'control') throw notFound('Enlace no válido o revocado');
+      if (!row.output.createdBy) throw notFound('Enlace no válido o revocado');
+      // Las órdenes quedan registradas a nombre de quien creó el mando.
+      const actor = { orgId: row.output.orgId, userId: row.output.createdBy };
+      const id = row.rundown.id;
+      switch (parsed.data!.action) {
+        case 'go':
+          return { live: await deps.live!.go(actor, id, { trigger: 'go' }) };
+        case 'back':
+          return { live: await deps.live!.back(actor, id) };
+        case 'stop':
+          return { live: await deps.live!.stop(actor, id) };
+        case 'next-graphic':
+          return { cg: await deps.cg!.takeNext(actor, id) };
+        case 'clear-graphics':
+          return { cg: await deps.cg!.clearGraphics(actor, id) };
+      }
+    },
+  );
 
   // Conexión de solo lectura de una salida (documento + directo + prompter + mensajes).
   // No usa cookie: el token del enlace es la credencial.
