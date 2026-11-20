@@ -73,6 +73,7 @@ async function startStation() {
     CLOUD_URL: cloudUrl,
     STATION_TOKEN: created.body.token,
     STATION_SYNC_INTERVAL_MS: '150',
+    MIN_GO_INTERVAL_MS: '0',
   });
   const sync = station.deps.stationSync!;
   sync.start();
@@ -137,6 +138,44 @@ describe('RunFlow Station enlazada con la nube', () => {
       return a.length === 2 && JSON.stringify(a) === JSON.stringify(b);
     });
     expect(sync.status.online).toBe(true);
+  });
+
+  it('aceptación: se corta internet en pleno directo, el estudio sigue y al volver todo se fusiona', async () => {
+    const { ctx, sync } = await startStation();
+    const ids = await ctx.collab.withDoc(rundownId, orgId, (doc) => [
+      insertLine(doc, { cells: { nombre: 'Uno', tipo: 'ACTING', t_est: 30 } }),
+      insertLine(doc, { cells: { nombre: 'Dos', tipo: 'TEMA', t_est: 30 } }),
+      insertLine(doc, { cells: { nombre: 'Tres', tipo: 'TEMA', t_est: 30 } }),
+    ]);
+    await waitFor(async () => (await linesAt(cloud)).length === 3);
+    const ana = new Client(ctx.app);
+    await ana.login('ana@chaneltv.test', PASSWORD);
+    const live = `/api/rundowns/${rundownId}/live`;
+    expect((await ana.patch(live, { mode: 'manual' })).status).toBe(200);
+    expect((await ana.post(`${live}/go`)).body.live.onAir.lineId).toBe(ids[0]);
+    // Quien sigue el directo desde la nube lo ve…
+    await waitFor(async () => (await admin.get(live)).body.live.onAir?.lineId === ids[0]);
+    // …pero el directo lo controla la Station.
+    expect((await admin.post(`${live}/go`)).status).toBe(409);
+
+    await sync.pause(); // se cae internet
+    expect((await ana.post(`${live}/go`)).body.live.onAir.lineId).toBe(ids[1]);
+    await cloud.collab.withDoc(rundownId, orgId, (doc) =>
+      insertLine(doc, { cells: { nombre: 'Última hora', tipo: 'TEMA', t_est: 20 } }),
+    );
+    expect((await admin.get(live)).body.live.onAir.lineId).toBe(ids[0]);
+
+    sync.resume(); // vuelve internet
+    await waitFor(async () => (await admin.get(live)).body.live.onAir?.lineId === ids[1]);
+    const estado = (c: TestContext) =>
+      c.collab.withDoc(
+        rundownId,
+        orgId,
+        (doc) => readLines(doc).find((l) => l.id === ids[0])?.cells.estado,
+      );
+    await waitFor(async () => (await estado(cloud)) === 'E');
+    await waitFor(async () => (await linesAt(ctx)).includes('Última hora'));
+    expect(await linesAt(ctx)).toEqual(await linesAt(cloud));
   });
 
   it('lo creado en la Station sube a la nube', async () => {

@@ -48,6 +48,8 @@ export interface LiveSettings {
 interface LiveRundown {
   rundownId: string;
   orgId: string;
+  /** El directo lo lleva una RunFlow Station: la nube solo lo refleja. */
+  external: boolean;
   window: RundownWindow;
   state: LiveState;
   timer: NodeJS.Timeout | undefined;
@@ -115,6 +117,7 @@ export class LiveManager {
       orgId,
       window: rundownWindow(row.airDate, row.startTime, row.endTime, row.timezone),
       state: { ...initialLiveState(), ...((row.live as Partial<LiveState> | null) ?? {}) },
+      external: !!(row.live as { station?: boolean } | null)?.station,
       timer: undefined,
       queue: Promise.resolve(),
     };
@@ -149,6 +152,41 @@ export class LiveManager {
     return this.collab.withDoc(item.rundownId, item.orgId, (doc) => readLines(doc));
   }
 
+  /** Escaleta cuyo directo se controla desde aquí (no desde una Station). */
+  private async local(rundownId: string, orgId: string): Promise<LiveRundown> {
+    const item = await this.load(rundownId, orgId);
+    if (item.external)
+      throw conflict(
+        'station_live',
+        'Este directo se controla desde la RunFlow Station del estudio',
+      );
+    return item;
+  }
+
+  /**
+   * Nube: refleja el estado del directo que lleva una Station (para quien lo
+   * sigue desde fuera del estudio). No programa avances: manda la Station.
+   */
+  async mirror(orgId: string, rundownId: string, state: LiveState): Promise<void> {
+    const item = await this.load(rundownId, orgId);
+    await this.enqueue(item, async () => {
+      clearTimeout(item.timer);
+      item.timer = undefined;
+      item.external = !!state.onAir || (!!state.showStartedAt && !state.showEndedAt);
+      item.state = state;
+      await withTenant(this.db, { orgId, userId: SYSTEM_USER }, (tx) =>
+        tx
+          .update(rundowns)
+          .set({
+            live: item.external ? { ...state, station: true } : state,
+            updatedAt: sql`now()`,
+          })
+          .where(and(eq(rundowns.id, rundownId), eq(rundowns.orgId, orgId))),
+      );
+      this.collab.broadcastLive(rundownId, state);
+    });
+  }
+
   /* ---------- Órdenes ---------- */
 
   async go(
@@ -156,7 +194,7 @@ export class LiveManager {
     rundownId: string,
     opts: { expectedOnAir?: string | null; trigger?: GoTrigger; lineId?: string },
   ): Promise<LiveState> {
-    const item = await this.load(rundownId, actor.orgId);
+    const item = await this.local(rundownId, actor.orgId);
     return this.enqueue(item, () => this.doGo(item, actor.userId, opts));
   }
 
@@ -234,7 +272,7 @@ export class LiveManager {
 
   /** Vuelve a poner en aire la línea anterior. */
   async back(actor: Actor, rundownId: string): Promise<LiveState> {
-    const item = await this.load(rundownId, actor.orgId);
+    const item = await this.local(rundownId, actor.orgId);
     return this.enqueue(item, async () => {
       const state = item.state;
       const lines = (await this.lines(item)).filter((l) => !isFloating(l));
@@ -277,7 +315,7 @@ export class LiveManager {
 
   /** Elige a mano la siguiente línea (null = la siguiente en orden). */
   async setNext(actor: Actor, rundownId: string, lineId: string | null): Promise<LiveState> {
-    const item = await this.load(rundownId, actor.orgId);
+    const item = await this.local(rundownId, actor.orgId);
     return this.enqueue(item, async () => {
       if (lineId) {
         const line = (await this.lines(item)).find((l) => l.id === lineId);
@@ -297,7 +335,7 @@ export class LiveManager {
 
   /** Termina el directo: la línea en aire pasa a emitida. */
   async stop(actor: Actor, rundownId: string): Promise<LiveState> {
-    const item = await this.load(rundownId, actor.orgId);
+    const item = await this.local(rundownId, actor.orgId);
     return this.enqueue(item, async () => {
       if (!item.state.onAir) throw conflict('not_live', 'No hay nada en aire');
       return this.doGo(item, actor.userId, { trigger: 'auto', end: true });
@@ -306,7 +344,7 @@ export class LiveManager {
 
   /** Vuelve a preparación (no borra el as-run ni los estados de las líneas). */
   async reset(actor: Actor, rundownId: string): Promise<LiveState> {
-    const item = await this.load(rundownId, actor.orgId);
+    const item = await this.local(rundownId, actor.orgId);
     return this.enqueue(item, async () => {
       const s = item.state;
       const updated: LiveState = {
@@ -328,7 +366,7 @@ export class LiveManager {
   }
 
   async settings(actor: Actor, rundownId: string, input: LiveSettings): Promise<LiveState> {
-    const item = await this.load(rundownId, actor.orgId);
+    const item = await this.local(rundownId, actor.orgId);
     return this.enqueue(item, async () => {
       const updated: LiveState = { ...item.state, ...input, seq: item.state.seq + 1 };
       await withTenant(this.db, { orgId: item.orgId, userId: actor.userId }, (tx) =>
@@ -390,6 +428,7 @@ export class LiveManager {
   private async schedule(item: LiveRundown): Promise<void> {
     clearTimeout(item.timer);
     item.timer = undefined;
+    if (item.external) return;
     const state = item.state;
     if (state.mode === 'manual' && !state.onAir) return;
     let lines: TimingLine[];

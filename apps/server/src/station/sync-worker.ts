@@ -76,6 +76,8 @@ export class StationSync {
   private paused = false;
   private links = new Map<string, Link>();
   private orgId: string | null = null;
+  private pendingLive = new Map<string, unknown>();
+  private flushing = false;
   readonly status: SyncStatus = {
     enabled: true,
     online: false,
@@ -98,7 +100,36 @@ export class StationSync {
   ) {}
 
   start(): void {
+    this.collab.onLive = (rundownId, live) => {
+      this.pendingLive.set(rundownId, live);
+      void this.flushLive();
+    };
     void this.tick();
+  }
+
+  /** Envía a la nube el último estado del directo de cada escaleta (si hay red). */
+  private async flushLive(): Promise<void> {
+    if (this.paused || this.flushing) return;
+    this.flushing = true;
+    let failed = false;
+    try {
+      for (const [rundownId, live] of [...this.pendingLive]) {
+        const res = await fetch(`${this.options.cloudUrl}/api/station-sync/live/${rundownId}`, {
+          method: 'POST',
+          headers: this.headers(),
+          body: JSON.stringify({ live }),
+        });
+        if (!res.ok && res.status !== 404) throw new Error(`Directo a la nube: ${res.status}`);
+        if (this.pendingLive.get(rundownId) === live) this.pendingLive.delete(rundownId);
+      }
+    } catch (err) {
+      failed = true;
+      this.log.warn({ err }, 'No se pudo enviar el directo a la nube (se reintentará)');
+    } finally {
+      this.flushing = false;
+    }
+    // Llegó otro cambio mientras se enviaba (si falló, se reintenta en la próxima sincronización).
+    if (!failed && !this.paused && this.pendingLive.size) void this.flushLive();
   }
 
   /** Simula la pérdida de red (pruebas) o detiene la sincronización. */
@@ -117,6 +148,7 @@ export class StationSync {
 
   async close(): Promise<void> {
     this.paused = true;
+    this.collab.onLive = undefined;
     clearTimeout(this.timer);
     for (const [id, link] of this.links) {
       link.provider.destroy();
@@ -155,6 +187,7 @@ export class StationSync {
       await this.apply(snapshot);
       await this.push(snapshot);
       await this.linkDocs();
+      await this.flushLive();
       this.status.online = true;
       this.status.lastError = null;
       this.status.lastSyncAt = new Date().toISOString();

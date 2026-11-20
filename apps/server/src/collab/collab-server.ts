@@ -372,7 +372,11 @@ export class CollabServer {
   }
 
   /** Envía el estado del directo a todas las personas conectadas a la escaleta. */
+  /** Station enlazada: cada cambio del directo se envía también a la nube. */
+  onLive: ((rundownId: string, live: unknown) => void) | undefined;
+
   broadcastLive(rundownId: string, live: unknown): void {
+    this.onLive?.(rundownId, live);
     void this.docs.get(rundownId)?.then((shared) => shared.broadcast(liveMessage(live)));
   }
 

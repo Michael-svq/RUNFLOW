@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
+import type { LiveState } from '@runflow/core';
 import {
   fridgeItems,
   memberships,
@@ -247,6 +248,18 @@ export async function stationRoutes(app: FastifyInstance, deps: AppDeps): Promis
           .onConflictDoNothing();
       }
     });
+    return { ok: true };
+  });
+
+  /** Estado del directo que lleva la Station (la nube lo refleja). */
+  app.post('/api/station-sync/live/:rundownId', async (req) => {
+    const s = await requireStation(deps, req);
+    const rundownId = z.uuid().parse((req.params as { rundownId: string }).rundownId);
+    const { live } = parse(z.object({ live: z.record(z.string(), z.unknown()) }), req.body);
+    await withTenant(deps.db, { orgId: s.orgId, userId: SYSTEM_USER }, (tx) =>
+      requireRundown(tx, s.orgId, rundownId),
+    );
+    await deps.live!.mirror(s.orgId, rundownId, live as unknown as LiveState);
     return { ok: true };
   });
 
