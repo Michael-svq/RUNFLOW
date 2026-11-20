@@ -45,6 +45,9 @@ jobs:
       - name: Crear el rol de la aplicación (sin privilegios, sujeto a RLS)
         run: PGPASSWORD=runflow psql -h localhost -U runflow -d runflow -c "CREATE ROLE runflow_app LOGIN PASSWORD 'runflow_app';"
 
+      - name: ffmpeg (duración y vistas previas de Media)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+
       - name: Formato
         run: pnpm exec prettier --check .
 

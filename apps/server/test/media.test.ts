@@ -48,7 +48,7 @@ beforeAll(async () => {
     ]);
     video = await readFile(file);
   } else {
-    video = Buffer.from('falso vídeo');
+    video = Buffer.alloc(4096, 'falso vídeo ');
   }
   ctx = await createTestContext({ DATA_DIR: path.join(dir, 'data') });
 });
