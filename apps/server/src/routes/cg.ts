@@ -9,6 +9,7 @@ import {
   parseDeviceConfig,
   streamInput,
   type CasparConfig,
+  type LightingConfig,
   orgSettingsPatch,
   readOrgSettings,
   type DeviceDto,
@@ -20,6 +21,7 @@ import { requireOrg, requirePermission } from '../auth/guards';
 import { audit } from '../services/audit';
 import { requireRundown } from '../services/rundowns';
 import { CgManager } from '../cg/cg-manager';
+import { LightingManager } from '../lighting/manager';
 import { MixerManager } from '../mixers/mixer-manager';
 import { templateHtml } from '../cg/templates';
 import type { AppDeps } from '../app';
@@ -117,6 +119,7 @@ export async function cgRoutes(app: FastifyInstance, deps: AppDeps): Promise<voi
     const statuses = {
       ...(await cg().deviceStatuses(orgId)),
       ...(await deps.mixers!.deviceStatuses(orgId)),
+      ...(await deps.lighting!.deviceStatuses(orgId)),
     };
     return rows.flatMap((r) => {
       const config = parseDeviceConfig(r.kind, r.config);
@@ -140,6 +143,7 @@ export async function cgRoutes(app: FastifyInstance, deps: AppDeps): Promise<voi
   const invalidate = async (orgId: string) => {
     await cg().invalidate(orgId);
     await deps.mixers!.invalidate(orgId);
+    await deps.lighting?.invalidate(orgId);
   };
 
   app.get('/api/devices', { preHandler: view }, async (req) => {
@@ -214,7 +218,28 @@ export async function cgRoutes(app: FastifyInstance, deps: AppDeps): Promise<voi
     try {
       return input.kind === 'casparcg'
         ? { ok: true, ...(await CgManager.test(config as CasparConfig)) }
-        : { ok: true, ...(await MixerManager.test(input.kind, config)) };
+        : input.kind === 'lighting'
+          ? { ok: true, ...(await LightingManager.test(config as LightingConfig)) }
+          : { ok: true, ...(await MixerManager.test(input.kind, config)) };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  });
+
+  /** Disparar un cue de luces a mano (prueba desde Configuración, F4.3). */
+  app.post('/api/devices/:id/fire', { preHandler: configure }, async (req) => {
+    const { id } = parse(idParams, req.params);
+    const { target, seconds } = parse(
+      z.object({
+        target: z.string().trim().min(1).max(200),
+        seconds: z.number().min(0).max(60).default(0),
+      }),
+      req.body,
+    );
+    try {
+      const n = await deps.lighting!.fire(req.tenant!.orgId, target, seconds, id);
+      if (!n) throw new Error('Equipo de iluminación no encontrado o desactivado');
+      return { ok: true };
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : String(err) };
     }

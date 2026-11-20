@@ -11,6 +11,7 @@ Web (PWA) multiempresa en la nube y funcionamiento local con **RunFlow Station**
 - Inteligencia artificial: [`docs/IA.md`](docs/IA.md)
 - API pública y webhooks: [`docs/API.md`](docs/API.md)
 - Redes sociales: [`docs/REDES.md`](docs/REDES.md)
+- Iluminación: [`docs/ILUMINACION.md`](docs/ILUMINACION.md)
 
 ## Estado
 
@@ -37,6 +38,7 @@ Web (PWA) multiempresa en la nube y funcionamiento local con **RunFlow Station**
 | F3.4 Redes: Bluesky, Mastodon, X, YouTube y WhatsApp; moderación y rótulo RRS                  | ✅        |
 | F4.1 Timeline: vista horizontal con pistas, cues con fotogramas, cue list y shot list          | ✅        |
 | F4.2 Automatización: los cues cortan el mezclador y lanzan rótulos a su tiempo en directo      | ✅        |
+| F4.3 Iluminación: OSC, MIDI Show Control (ipMIDI), Art-Net y sACN con escenas y fundidos       | ✅        |
 | Beta privada (equipos reales) y resto de la Fase III                                           | Siguiente |
 
 ## Estructura

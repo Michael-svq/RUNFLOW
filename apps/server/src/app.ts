@@ -40,6 +40,7 @@ import { socialRoutes } from './routes/social';
 import { SocialPoller, socialOptions } from './social/poller';
 import { ScreensManager } from './screens/manager';
 import { CueRunner } from './automation/cue-runner';
+import { LightingManager } from './lighting/manager';
 import { MediaStore } from './media/store';
 import { WebhookDispatcher } from './api/webhooks';
 import { SourcePoller } from './sources/poller';
@@ -67,6 +68,7 @@ export interface AppDeps {
   media?: MediaStore;
   screens?: ScreensManager;
   cues?: CueRunner;
+  lighting?: LightingManager;
   social?: SocialPoller;
 }
 
@@ -131,6 +133,9 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     await deps.mixers!.cutSource(ctx.rundownId, ctx.orgId, ctx.lineId, source);
     return true;
   };
+  deps.lighting = new LightingManager(deps.db, app.log);
+  deps.cues.executors.luces = async ({ orgId, cue }) =>
+    (await deps.lighting!.fire(orgId, cue.target || cue.label, cue.duration)) > 0;
   deps.cues.executors.camara = cutCue;
   deps.cues.executors.vtr = cutCue;
   deps.cues.executors.rotulos = async ({ rundownId, orgId, cue, graphics }) => {
@@ -174,6 +179,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       onConfigChanged: (orgId) => {
         void deps.cg!.invalidate(orgId);
         void deps.mixers!.invalidate(orgId);
+        void deps.lighting?.invalidate(orgId);
       },
     });
   }
@@ -192,6 +198,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     deps.sources?.close();
     deps.social?.close();
     deps.cues?.close();
+    deps.lighting?.close();
     deps.live!.close();
     await deps.collab!.close();
   });

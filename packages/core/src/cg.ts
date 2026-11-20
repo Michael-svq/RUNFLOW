@@ -130,7 +130,65 @@ export const atemConfigSchema = z.object({
 });
 export type AtemConfig = z.infer<typeof atemConfigSchema>;
 
-export const DEVICE_KINDS = ['casparcg', 'obs', 'vmix', 'atem'] as const;
+/* ---------- F4.3 Iluminación ---------- */
+
+export const LIGHTING_PROTOCOLS = [
+  { value: 'osc', label: 'OSC (Eos, grandMA3, QLC+, Chamsys…)', port: 8000 },
+  { value: 'msc', label: 'MIDI Show Control por red (ipMIDI)', port: 21928 },
+  { value: 'artnet', label: 'Art-Net (DMX)', port: 6454 },
+  { value: 'sacn', label: 'sACN / E1.31 (DMX)', port: 5568 },
+] as const;
+export type LightingProtocol = (typeof LIGHTING_PROTOCOLS)[number]['value'];
+
+export const lightingConfigSchema = z.object({
+  protocol: z.enum(['osc', 'msc', 'artnet', 'sacn']).default('osc'),
+  /** IP de la mesa o del nodo; en sACN, vacío = multidifusión del universo. */
+  host: z.string().trim().max(255).default(''),
+  /** 0 = el del protocolo (OSC 8000, ipMIDI 21928, Art-Net 6454, sACN 5568). */
+  port: z.number().int().min(0).max(65535).default(0),
+  /** OSC: dirección con {cue} (p. ej. /eos/cue/{cue}/fire o /gma3/cmd). */
+  oscAddress: z.string().trim().max(200).default('/eos/cue/{cue}/fire'),
+  /** OSC: argumento de texto opcional con {cue} (p. ej. «Go+ Sequence 1 Cue {cue}»). */
+  oscArg: z.string().trim().max(200).default(''),
+  /** MSC: id de dispositivo (127 = todos). */
+  mscDevice: z.number().int().min(0).max(127).default(127),
+  /** MSC: lista de cues (opcional). */
+  mscList: z.string().trim().max(20).default(''),
+  /** DMX: universo (Art-Net desde 0; sACN desde 1). */
+  universe: z.number().int().min(0).max(32767).default(1),
+  /** DMX: escenas con nombre → canales («1=255,2=128,10-12=200»). */
+  presets: z.record(z.string(), z.string().max(2000)).default({}),
+});
+export type LightingConfig = z.infer<typeof lightingConfigSchema>;
+
+/**
+ * Canales DMX de un cue: el nombre de una escena o «1=255,2=128,10-12=200»
+ * (valores 0–255 o «50%»). Devuelve canal (1–512) → valor, o null si no vale.
+ */
+export function parseDmxSpec(
+  spec: string,
+  presets: Record<string, string> = {},
+): Map<number, number> | null {
+  const preset = Object.entries(presets).find(
+    ([k]) => k.trim().toUpperCase() === spec.trim().toUpperCase(),
+  );
+  const text = (preset ? preset[1] : spec).trim();
+  if (!text) return null;
+  const out = new Map<number, number>();
+  for (const part of text.split(/[,;\s]+/).filter(Boolean)) {
+    const m = /^(\d{1,3})(?:-(\d{1,3}))?[=@:](\d{1,3})(%?)$/.exec(part);
+    if (!m) return null;
+    const from = Number(m[1]);
+    const to = m[2] ? Number(m[2]) : from;
+    const raw = Number(m[3]);
+    const value = m[4] ? Math.round((Math.min(100, raw) / 100) * 255) : raw;
+    if (from < 1 || to > 512 || from > to || value > 255) return null;
+    for (let c = from; c <= to; c++) out.set(c, value);
+  }
+  return out.size ? out : null;
+}
+
+export const DEVICE_KINDS = ['casparcg', 'obs', 'vmix', 'atem', 'lighting'] as const;
 export type DeviceKind = (typeof DEVICE_KINDS)[number];
 export const MIXER_KINDS: DeviceKind[] = ['obs', 'vmix', 'atem'];
 export const DEVICE_KIND_LABEL: Record<DeviceKind, string> = {
@@ -138,6 +196,7 @@ export const DEVICE_KIND_LABEL: Record<DeviceKind, string> = {
   obs: 'OBS Studio',
   vmix: 'vMix',
   atem: 'ATEM',
+  lighting: 'Iluminación',
 };
 
 const name = z.string().trim().min(1, 'Obligatorio').max(60);
@@ -166,9 +225,15 @@ export const deviceInput = z.discriminatedUnion('kind', [
     enabled: z.boolean().default(true),
     config: atemConfigSchema,
   }),
+  z.object({
+    name,
+    kind: z.literal('lighting'),
+    enabled: z.boolean().default(true),
+    config: lightingConfigSchema,
+  }),
 ]);
 export type DeviceInput = z.infer<typeof deviceInput>;
-export type DeviceConfig = CasparConfig | ObsConfig | VmixConfig | AtemConfig;
+export type DeviceConfig = CasparConfig | ObsConfig | VmixConfig | AtemConfig | LightingConfig;
 
 export function parseDeviceConfig(kind: string, config: unknown): DeviceConfig | null {
   const schema =
@@ -180,7 +245,9 @@ export function parseDeviceConfig(kind: string, config: unknown): DeviceConfig |
           ? vmixConfigSchema
           : kind === 'atem'
             ? atemConfigSchema
-            : null;
+            : kind === 'lighting'
+              ? lightingConfigSchema
+              : null;
   const parsed = schema?.safeParse(config);
   return parsed?.success ? parsed.data : null;
 }
@@ -195,6 +262,7 @@ export type DeviceDto = {
   | { kind: 'obs'; config: ObsConfig }
   | { kind: 'vmix'; config: VmixConfig }
   | { kind: 'atem'; config: AtemConfig }
+  | { kind: 'lighting'; config: LightingConfig }
 );
 
 /** Fuente de una línea: su columna FUENTE o, en un VTR sin fuente, «VTR». */

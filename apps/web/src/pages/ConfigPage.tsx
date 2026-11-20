@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   DEVICE_KIND_LABEL,
+  LIGHTING_PROTOCOLS,
   DEVICE_KINDS,
   GRAPHIC_TYPES,
   VMIX_TRANSITIONS,
@@ -385,6 +386,20 @@ const DEFAULTS: Record<Kind, Pick<DeviceForm, 'name' | 'f' | 'b'>> = {
     b: {},
   },
   atem: { name: 'ATEM', f: { host: '192.168.10.240', me: '1', transition: 'cut' }, b: {} },
+  lighting: {
+    name: 'Mesa de luces',
+    f: {
+      protocol: 'osc',
+      host: '192.168.1.50',
+      port: '0',
+      oscAddress: '/eos/cue/{cue}/fire',
+      oscArg: '',
+      mscDevice: '127',
+      mscList: '',
+      universe: '1',
+    },
+    b: {},
+  },
 };
 
 const emptyDevice = (kind: Kind): DeviceForm => ({
@@ -394,7 +409,8 @@ const emptyDevice = (kind: Kind): DeviceForm => ({
   ...DEFAULTS[kind],
   f: { ...DEFAULTS[kind].f },
   b: { ...DEFAULTS[kind].b },
-  sources: kind === 'casparcg' ? [] : DEFAULT_SOURCES.map(([k, v]) => [k, v]),
+  sources:
+    kind === 'casparcg' || kind === 'lighting' ? [] : DEFAULT_SOURCES.map(([k, v]) => [k, v]),
 });
 
 function toForm(d: DeviceDto): DeviceForm {
@@ -403,7 +419,7 @@ function toForm(d: DeviceDto): DeviceForm {
   const b: Record<string, boolean> = {};
   let sources: [string, string][] = [];
   for (const [k, v] of Object.entries(d.config)) {
-    if (k === 'sources') sources = Object.entries(v as Record<string, string>);
+    if (k === 'sources' || k === 'presets') sources = Object.entries(v as Record<string, string>);
     else if (k === 'layers')
       for (const [lk, lv] of Object.entries(v as Record<string, number>)) f[lk] = String(lv);
     else if (typeof v === 'boolean') b[k] = v;
@@ -452,6 +468,18 @@ function toConfig(form: DeviceForm): Record<string, unknown> {
         transition: f.transition,
         sources,
       };
+    case 'lighting':
+      return {
+        protocol: f.protocol,
+        host: (f.host ?? '').trim(),
+        port: n('port') || 0,
+        oscAddress: (f.oscAddress ?? '').trim(),
+        oscArg: (f.oscArg ?? '').trim(),
+        mscDevice: n('mscDevice'),
+        mscList: (f.mscList ?? '').trim(),
+        universe: n('universe'),
+        presets: sources,
+      };
   }
 }
 
@@ -460,9 +488,19 @@ const INPUT_HINT: Record<Kind, string> = {
   obs: 'Nombre de la escena de OBS',
   vmix: 'Número o nombre de la entrada de vMix',
   atem: 'Número de entrada del ATEM (1 = Cámara 1, 3010 = Media Player 1…)',
+  lighting:
+    'Escenas DMX: nombre → canales (1=255,2=128,10-12=50%). En el cue de luces se escribe el nombre o los canales.',
 };
 
 function deviceSummary(d: DeviceDto): string {
+  if (d.kind === 'lighting') {
+    const proto = LIGHTING_PROTOCOLS.find((p) => p.value === d.config.protocol)!;
+    return `${proto.label.split(' (')[0]} · ${d.config.host || 'difusión'}:${d.config.port || proto.port}${
+      d.config.protocol === 'artnet' || d.config.protocol === 'sacn'
+        ? ` · universo ${d.config.universe}`
+        : ''
+    }`;
+  }
   const c = d.config as { host: string; port?: number; channel?: number };
   const where = c.port ? `${c.host}:${c.port}` : c.host;
   return d.kind === 'casparcg' ? `${where} · canal ${c.channel}` : where;
@@ -593,8 +631,9 @@ function Devices() {
         )}
       </div>
       <p className="rf-muted rf-small">
-        CasparCG para rótulos y VTR; OBS, vMix o ATEM como mezclador. Con GO, el mezclador corta a
-        la FUENTE de la línea (CAM 1, VTR…) según su mapa de fuentes. CasparCG también lee la
+        CasparCG para rótulos y VTR; OBS, vMix o ATEM como mezclador; mesas de luces por OSC, MIDI
+        Show Control, Art-Net o sACN para los cues de luces del timeline. Con GO, el mezclador corta
+        a la FUENTE de la línea (CAM 1, VTR…) según su mapa de fuentes. CasparCG también lee la
         posición de los vídeos por OSC: en <code>casparcg.config</code> añade este servidor como
         cliente OSC en el puerto indicado.
       </p>
@@ -621,6 +660,29 @@ function Devices() {
                 </span>
               </div>
               <span className="rf-sidelist__confirm">
+                {d.kind === 'lighting' && d.enabled && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={async () => {
+                      const target = window.prompt('Cue, escena o canales a disparar', '1');
+                      if (!target) return;
+                      const r = await api
+                        .post<{ ok: boolean; error?: string }>(`/api/devices/${d.id}/fire`, {
+                          target,
+                        })
+                        .catch((e: unknown) => ({ ok: false, error: errorMessage(e) }));
+                      setNotice(
+                        r.ok
+                          ? { tone: 'success', text: `Enviado a ${d.name}: ${target}` }
+                          : { tone: 'error', text: r.error ?? 'Error' },
+                      );
+                      void qc.invalidateQueries({ queryKey: devicesKey });
+                    }}
+                  >
+                    Probar cue
+                  </Button>
+                )}
                 <Button size="sm" onClick={() => open(toForm(d))}>
                   Editar
                 </Button>
@@ -659,7 +721,13 @@ function Devices() {
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
-          {field('host', 'Dirección (IP o nombre)', { required: true })}
+          {field(
+            'host',
+            form.kind === 'lighting'
+              ? 'Dirección de la mesa o del nodo (vacío: difusión / multidifusión)'
+              : 'Dirección (IP o nombre)',
+            { required: form.kind !== 'lighting' },
+          )}
           {form.kind === 'casparcg' && (
             <>
               {field('port', 'Puerto AMCP', num)}
@@ -719,73 +787,112 @@ function Devices() {
               ])}
             </>
           )}
-          {form.kind !== 'casparcg' && (
-            <fieldset className="rf-config__sources">
-              <legend>Mapa de fuentes</legend>
-              <p className="rf-muted rf-small">{INPUT_HINT[form.kind]}</p>
-              {form.sources.map(([k, v], i) => (
-                <div key={i} className="rf-config__source">
-                  <input
-                    className="rf-input"
-                    aria-label={`Fuente ${i + 1}`}
-                    value={k}
-                    placeholder="CAM 1"
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        sources: form.sources.map((s, j) => (j === i ? [e.target.value, s[1]] : s)),
-                      })
-                    }
-                  />
-                  <span aria-hidden="true">→</span>
-                  <input
-                    className="rf-input"
-                    aria-label={`Entrada para ${k || `la fuente ${i + 1}`}`}
-                    value={v}
-                    list={inputs ? 'rf-mixer-inputs' : undefined}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        sources: form.sources.map((s, j) => (j === i ? [s[0], e.target.value] : s)),
-                      })
-                    }
-                  />
+          {form.kind === 'lighting' && (
+            <>
+              {select(
+                'protocol',
+                'Protocolo',
+                LIGHTING_PROTOCOLS.map((p) => ({ value: p.value, label: p.label })),
+              )}
+              {field('port', 'Puerto (0 = el del protocolo)', num)}
+              {form.f.protocol === 'osc' && (
+                <>
+                  {field('oscAddress', 'Dirección OSC ({cue} = número de cue)', {
+                    placeholder: '/eos/cue/{cue}/fire',
+                  })}
+                  {field('oscArg', 'Argumento de texto (opcional)', {
+                    placeholder: 'Go+ Sequence 1 Cue {cue}',
+                  })}
+                </>
+              )}
+              {form.f.protocol === 'msc' && (
+                <>
+                  {field('mscDevice', 'Id de dispositivo MSC (127 = todos)', {
+                    type: 'number',
+                    min: 0,
+                    max: 127,
+                  })}
+                  {field('mscList', 'Lista de cues (opcional)')}
+                </>
+              )}
+              {(form.f.protocol === 'artnet' || form.f.protocol === 'sacn') &&
+                field('universe', 'Universo DMX', num)}
+            </>
+          )}
+          {form.kind !== 'casparcg' &&
+            (form.kind !== 'lighting' ||
+              form.f.protocol === 'artnet' ||
+              form.f.protocol === 'sacn') && (
+              <fieldset className="rf-config__sources">
+                <legend>{form.kind === 'lighting' ? 'Escenas DMX' : 'Mapa de fuentes'}</legend>
+                <p className="rf-muted rf-small">{INPUT_HINT[form.kind]}</p>
+                {form.sources.map(([k, v], i) => (
+                  <div key={i} className="rf-config__source">
+                    <input
+                      className="rf-input"
+                      aria-label={`${form.kind === 'lighting' ? 'Escena' : 'Fuente'} ${i + 1}`}
+                      value={k}
+                      placeholder={form.kind === 'lighting' ? 'CALLE' : 'CAM 1'}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          sources: form.sources.map((s, j) =>
+                            j === i ? [e.target.value, s[1]] : s,
+                          ),
+                        })
+                      }
+                    />
+                    <span aria-hidden="true">→</span>
+                    <input
+                      className="rf-input"
+                      aria-label={`${form.kind === 'lighting' ? 'Canales' : 'Entrada'} para ${k || `la fuente ${i + 1}`}`}
+                      value={v}
+                      list={inputs ? 'rf-mixer-inputs' : undefined}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          sources: form.sources.map((s, j) =>
+                            j === i ? [s[0], e.target.value] : s,
+                          ),
+                        })
+                      }
+                    />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      aria-label={`Quitar ${k || 'fuente'}`}
+                      onClick={() =>
+                        setForm({ ...form, sources: form.sources.filter((_, j) => j !== i) })
+                      }
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                ))}
+                {inputs && (
+                  <datalist id="rf-mixer-inputs">
+                    {inputs.map((i) => (
+                      <option key={i} value={i.split(' · ')[0]}>
+                        {i}
+                      </option>
+                    ))}
+                  </datalist>
+                )}
+                <div className="rf-form__actions">
                   <Button
                     size="sm"
-                    variant="ghost"
-                    aria-label={`Quitar ${k || 'fuente'}`}
-                    onClick={() =>
-                      setForm({ ...form, sources: form.sources.filter((_, j) => j !== i) })
-                    }
+                    onClick={() => setForm({ ...form, sources: [...form.sources, ['', '']] })}
                   >
-                    ✕
+                    {form.kind === 'lighting' ? '+ Escena' : '+ Fuente'}
                   </Button>
+                  {form.id && form.kind !== 'lighting' && (
+                    <Button size="sm" variant="ghost" onClick={() => void loadInputs()}>
+                      Leer entradas del mezclador
+                    </Button>
+                  )}
                 </div>
-              ))}
-              {inputs && (
-                <datalist id="rf-mixer-inputs">
-                  {inputs.map((i) => (
-                    <option key={i} value={i.split(' · ')[0]}>
-                      {i}
-                    </option>
-                  ))}
-                </datalist>
-              )}
-              <div className="rf-form__actions">
-                <Button
-                  size="sm"
-                  onClick={() => setForm({ ...form, sources: [...form.sources, ['', '']] })}
-                >
-                  + Fuente
-                </Button>
-                {form.id && (
-                  <Button size="sm" variant="ghost" onClick={() => void loadInputs()}>
-                    Leer entradas del mezclador
-                  </Button>
-                )}
-              </div>
-            </fieldset>
-          )}
+              </fieldset>
+            )}
           <label className="rf-check">
             <input
               type="checkbox"
