@@ -102,7 +102,7 @@ test('M3: guion con paso, off y rótulos, en colaboración', async ({ page, brow
   await row(page, 0).locator('td[data-col="nombre"]').click();
 
   // Guion: paso (verde) y off (negro)
-  const panel = page.getByRole('complementary', { name: 'Guion' });
+  const panel = page.getByRole('complementary', { name: 'Panel' });
   await expect(panel.locator('.rf-script__name')).toHaveText('GOBIERNO');
   const docEl = panel.locator('.rf-script__doc');
   await docEl.click();
@@ -162,7 +162,7 @@ test('M3: guion con paso, off y rótulos, en colaboración', async ({ page, brow
   await rafa.goto(`/escaletas/${rundownId}`);
   await expect(rafa.locator('.rf-conn--online')).toBeVisible();
   await row(rafa, 0).locator('td[data-col="nombre"]').click();
-  const rafaDoc = rafa.getByRole('complementary', { name: 'Guion' }).locator('.rf-script__doc');
+  const rafaDoc = rafa.getByRole('complementary', { name: 'Panel' }).locator('.rf-script__doc');
   await expect(rafaDoc.locator('p.rf-script-paso')).toHaveText(
     'Buenas tardes. El Gobierno aprueba hoy los presupuestos.',
   );

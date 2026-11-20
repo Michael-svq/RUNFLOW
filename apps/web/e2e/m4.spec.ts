@@ -18,7 +18,7 @@ function row(page: Page, i: number) {
 
 async function writePaso(page: Page, i: number, text: string) {
   await row(page, i).locator('td[data-col="nombre"]').click();
-  const doc = page.getByRole('complementary', { name: 'Guion' }).locator('.rf-script__doc');
+  const doc = page.getByRole('complementary', { name: 'Panel' }).locator('.rf-script__doc');
   await doc.click();
   await page.keyboard.type(text);
   await expect(doc.locator('p.rf-script-paso').first()).toHaveText(text);

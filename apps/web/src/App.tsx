@@ -12,6 +12,9 @@ import { PlatformPage } from './pages/PlatformPage';
 import { RundownPage } from './pages/RundownPage';
 import { OutputPage } from './pages/OutputPage';
 import { PrompterPage } from './pages/PrompterPage';
+import { FridgePage } from './pages/FridgePage';
+import { ArchivePage } from './pages/ArchivePage';
+import { PrintPage } from './pages/PrintPage';
 import { RundownsPage } from './pages/RundownsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { SetupPage } from './pages/SetupPage';
@@ -42,12 +45,15 @@ export function App() {
       <Route path="/salida/:token" element={<OutputPage />} />
       <Route element={<RequireOrg />}>
         <Route path="/escaletas/:id/prompter" element={<PrompterPage />} />
+        <Route path="/escaletas/:id/imprimir" element={<PrintPage />} />
         <Route element={<AppLayout />}>
           <Route index element={<Navigate to="/inicio" replace />} />
           <Route path="/inicio" element={<HomePage />} />
           <Route path="/usuarios" element={<RequireUsersPermission />} />
           <Route path="/perfil" element={<ProfilePage />} />
           <Route path="/escaletas" element={<RundownsPage />} />
+          <Route path="/nevera" element={<FridgePage />} />
+          <Route path="/archivo" element={<ArchivePage />} />
           <Route path="/escaletas/:id" element={<RundownPage />} />
           <Route path="/plataforma" element={<RequirePlatformAdmin />} />
           {NAV_ITEMS.filter((i) => i.milestone).map((item) => (

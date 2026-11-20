@@ -10,6 +10,7 @@ import {
   RUNDOWN_STATUSES,
   type ProgramDto,
   type RundownDto,
+  type TemplateDto,
 } from '@runflow/core';
 import { Alert, Badge, Button, Dialog, SelectField, Spinner, TextField } from '@runflow/ui';
 import { api, errorMessage } from '../api/client';
@@ -270,8 +271,13 @@ function NewRundownDialog({
     const start = p?.defaultStartTime?.slice(0, 5) ?? '14:00';
     return { startTime: start, endTime: addMinutes(start, p?.defaultDurationMin ?? 60) };
   };
+  const templates = useQuery({
+    queryKey: ['templates'],
+    queryFn: async () => (await api.get<{ templates: TemplateDto[] }>('/api/templates')).templates,
+  });
   const [values, setValues] = useState({
     programId: first?.id ?? '',
+    templateId: '',
     title: '',
     airDate: defaultDate,
     ...defaults(first),
@@ -282,7 +288,10 @@ function NewRundownDialog({
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    const { data, errors } = validate(createRundownInput, values);
+    const { data, errors } = validate(createRundownInput, {
+      ...values,
+      templateId: values.templateId || undefined,
+    });
     if (!data) return form.setFieldErrors(errors);
     const res = await form.submit(() => api.post<{ rundown: RundownDto }>('/api/rundowns', data));
     if (res) {
@@ -335,6 +344,21 @@ function NewRundownDialog({
               setValues((v) => ({ ...v, programId: e.target.value, ...defaults(p) }));
             }}
           />
+          {(templates.data?.length ?? 0) > 0 && (
+            <SelectField
+              label="Plantilla"
+              value={values.templateId}
+              onChange={set('templateId')}
+              options={[
+                { value: '', label: 'Escaleta vacía' },
+                ...(templates.data ?? []).map((tp) => ({
+                  value: tp.id,
+                  label: `${tp.name} (${tp.lineCount} líneas)`,
+                })),
+              ]}
+              error={form.fieldErrors.templateId}
+            />
+          )}
           <TextField
             label={t('rundowns.field.title')}
             value={values.title}

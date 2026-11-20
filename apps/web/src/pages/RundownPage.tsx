@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router';
 import {
@@ -44,6 +44,15 @@ import {
 import { useServerNow } from '../rundown/useServerClock';
 import { ScriptEditor } from '../script/ScriptEditor';
 import { OutputsDialog, StageMessageDialog } from '../outputs/OutputsDialog';
+import { ImportExportDialog } from '../rundown/ImportExportDialog';
+import {
+  ChatTab,
+  FridgeTab,
+  saveLineToFridge,
+  useChat,
+  VersionsTab,
+  fridgeKey,
+} from '../rundown/panels';
 import { useScriptColumns } from '../script/useScripts';
 import { LINE_FLAGS } from '@runflow/core';
 import {
@@ -91,6 +100,7 @@ export function RundownPage() {
 
 function RundownEditor({ rundown }: { rundown: RundownDto }) {
   const { me, org } = useSession();
+  const queryClient = useQueryClient();
   const canEditCellsPerm = useCan('rundown.edit_cells');
   const canEditStructure = useCan('rundown.edit_structure');
   const canShare = useCan('program.configure');
@@ -101,6 +111,7 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
   const canEditCells = canEditCellsPerm || canEditStructure;
   const canPrompter = useCan('prompter.control');
   const canControl = canPrompter || canGo;
+  const canTemplates = useCan('templates.manage');
   const user = useMemo(() => ({ id: me.user.id, name: me.user.name }), [me.user.id, me.user.name]);
   const { session, status, loaded, live, stage, setStage } = useRundownSession(
     org.id,
@@ -112,7 +123,17 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
   const undoState = useUndoState(session?.undo);
   const views = useViews(org.id, org.role.key);
   const [dialog, setDialog] = useState<
-    'columns' | 'saveView' | 'meta' | 'shortcuts' | 'asrun' | 'outputs' | 'message' | null
+    | 'columns'
+    | 'saveView'
+    | 'meta'
+    | 'shortcuts'
+    | 'asrun'
+    | 'outputs'
+    | 'message'
+    | 'template'
+    | 'io'
+    | 'print'
+    | null
   >(null);
   const [hardTimeFor, setHardTimeFor] = useState<string | null>(null);
   const [liveError, setLiveError] = useState<string | null>(null);
@@ -133,6 +154,13 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
       return true;
     }
   });
+  type PanelTab = 'guion' | 'chat' | 'nevera' | 'versiones';
+  const [panelTab, setPanelTab] = useState<PanelTab>('guion');
+  const chat = useChat(rundown.id, session?.provider, scriptOpen && panelTab === 'chat');
+  const openPanel = (tab: PanelTab) => {
+    setPanelTab(tab);
+    if (!scriptOpen) toggleScript();
+  };
   const toggleScript = () =>
     setScriptOpen((v) => {
       try {
@@ -226,6 +254,22 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
             onClick: () => void commands.setNext(null),
           });
       }
+      if (focusLine && lineIds.length === 1 && session && (canEditStructure || canEditScript)) {
+        items.push({
+          label: 'Guardar en la nevera',
+          onClick: () => {
+            const name = String(focusLine.cells.nombre ?? '') || 'Línea sin título';
+            saveLineToFridge(session.doc, focusLine, name)
+              .then(() => {
+                void queryClient.invalidateQueries({ queryKey: fridgeKey });
+                openPanel('nevera');
+              })
+              .catch((err: unknown) =>
+                showLiveError(err instanceof Error ? err.message : 'No se pudo guardar'),
+              );
+          },
+        });
+      }
       if (editable && lineIds.length > 0 && session) {
         const selected = lines.filter((l) => lineIds.includes(l.id));
         const allFloating = selected.every((l) => l.cells[LINE_FLAGS.floating] === '1');
@@ -269,7 +313,18 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
       }
       return items;
     },
-    [lines, canGo, commands, live?.next, editable, session, actions],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      lines,
+      canGo,
+      commands,
+      live?.next,
+      editable,
+      session,
+      actions,
+      canEditStructure,
+      canEditScript,
+    ],
   );
 
   const dateRaw = new Intl.DateTimeFormat(locale, {
@@ -402,11 +457,27 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
             + {t('grid.addLine')}
           </Button>
         )}
-        {canEditStructure && (
-          <Button size="sm" variant="ghost" onClick={() => setDialog('meta')}>
-            {t('rundowns.edit')}
-          </Button>
-        )}
+        <ToolbarMenu label="Escaleta">
+          {canEditStructure && (
+            <button type="button" role="menuitem" onClick={() => setDialog('meta')}>
+              {t('rundowns.edit')}
+            </button>
+          )}
+          {canTemplates && (
+            <button type="button" role="menuitem" onClick={() => setDialog('template')}>
+              Guardar como plantilla
+            </button>
+          )}
+          <button type="button" role="menuitem" onClick={() => setDialog('io')}>
+            Importar/Exportar
+          </button>
+          <button type="button" role="menuitem" onClick={() => setDialog('print')}>
+            Imprimir / PDF
+          </button>
+          <button type="button" role="menuitem" onClick={() => setDialog('asrun')}>
+            Registro de emisión
+          </button>
+        </ToolbarMenu>
         <Button size="sm" variant="ghost" onClick={() => setDialog('outputs')}>
           Salidas
         </Button>
@@ -433,9 +504,9 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
           variant={scriptOpen ? 'secondary' : 'ghost'}
           onClick={toggleScript}
           aria-pressed={scriptOpen}
-          title="Mostrar u ocultar el guion de la línea seleccionada"
+          title="Mostrar u ocultar el panel (guion, chat, nevera, versiones)"
         >
-          Guion
+          Panel{chat.unread > 0 && !scriptOpen ? ` · ${chat.unread} chat` : ''}
         </Button>
         <Button
           size="sm"
@@ -511,27 +582,77 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
             reserveSpace={canGo && keyboardGo}
           />
           {scriptOpen && (
-            <aside className="rf-script-panel" aria-label="Guion">
-              {selectedLine && session ? (
-                <ScriptEditor
-                  key={selectedLine.id}
-                  doc={session.doc}
-                  provider={session.provider}
-                  line={selectedLine}
-                  editable={canEditScript && status !== 'denied' && status !== 'deleted'}
-                  user={scriptUser}
-                  onUseReadingTime={
-                    canEditCells
-                      ? (seconds) =>
-                          actions.setCells([{ id: selectedLine.id, key: 't_est', value: seconds }])
-                      : undefined
-                  }
-                />
-              ) : (
-                <p className="rf-script-panel__empty">
-                  Selecciona una línea para ver o escribir su guion.
-                </p>
-              )}
+            <aside className="rf-script-panel" aria-label="Panel">
+              <div className="rf-panel-tabs" role="tablist">
+                {(
+                  [
+                    ['guion', 'Guion'],
+                    ['chat', chat.unread ? `Chat (${chat.unread})` : 'Chat'],
+                    ['nevera', 'Nevera'],
+                    ['versiones', 'Versiones'],
+                  ] as [PanelTab, string][]
+                ).map(([tab, label]) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    role="tab"
+                    aria-selected={panelTab === tab}
+                    className={`rf-panel-tabs__tab${panelTab === tab ? ' is-active' : ''}`}
+                    onClick={() => setPanelTab(tab)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div
+                className="rf-panel-body"
+                role="tabpanel"
+                aria-label={panelTab === 'guion' ? 'Guion' : panelTab}
+              >
+                {panelTab === 'guion' &&
+                  (selectedLine && session ? (
+                    <ScriptEditor
+                      key={selectedLine.id}
+                      doc={session.doc}
+                      provider={session.provider}
+                      line={selectedLine}
+                      editable={canEditScript && status !== 'denied' && status !== 'deleted'}
+                      user={scriptUser}
+                      onUseReadingTime={
+                        canEditCells
+                          ? (seconds) =>
+                              actions.setCells([
+                                { id: selectedLine.id, key: 't_est', value: seconds },
+                              ])
+                          : undefined
+                      }
+                    />
+                  ) : (
+                    <p className="rf-script-panel__empty">
+                      Selecciona una línea para ver o escribir su guion.
+                    </p>
+                  ))}
+                {panelTab === 'chat' && <ChatTab chat={chat} meId={me.user.id} />}
+                {panelTab === 'nevera' && session && (
+                  <FridgeTab
+                    doc={session.doc}
+                    insertIndex={
+                      selectedLine
+                        ? lines.findIndex((l) => l.id === selectedLine.id) + 1
+                        : lines.length
+                    }
+                    canInsert={editable && canEditStructure}
+                    onInserted={(id) => setSelectedLineId(id)}
+                  />
+                )}
+                {panelTab === 'versiones' && (
+                  <VersionsTab
+                    rundownId={rundown.id}
+                    canSave={editable}
+                    canRestore={canEditStructure}
+                  />
+                )}
+              </div>
             </aside>
           )}
         </div>
@@ -565,6 +686,21 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
         />
       )}
       {dialog === 'meta' && <MetaDialog rundown={rundown} onClose={() => setDialog(null)} />}
+      {dialog === 'template' && (
+        <TemplateDialog rundown={rundown} onClose={() => setDialog(null)} />
+      )}
+      {dialog === 'io' && session && (
+        <ImportExportDialog
+          rundown={rundown}
+          doc={session.doc}
+          lines={lines}
+          viewColumns={views.columns}
+          rowInfo={rowInfo}
+          canImport={editable && canEditStructure}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog === 'print' && <PrintDialog rundownId={rundown.id} onClose={() => setDialog(null)} />}
       {dialog === 'shortcuts' && <ShortcutsDialog onClose={() => setDialog(null)} />}
       {dialog === 'asrun' && <AsrunDialog rundown={rundown} onClose={() => setDialog(null)} />}
       {dialog === 'outputs' && (
@@ -789,13 +925,15 @@ function MetaDialog({ rundown, onClose }: { rundown: RundownDto; onClose: () => 
       onClose={onClose}
       footer={
         <>
-          <Button
-            variant="danger"
-            className="rf-dialog__left"
-            onClick={() => setConfirmDelete(true)}
-          >
-            {t('rundowns.delete')}
-          </Button>
+          {!confirmDelete && (
+            <Button
+              variant="danger"
+              className="rf-dialog__left"
+              onClick={() => setConfirmDelete(true)}
+            >
+              {t('rundowns.delete')}
+            </Button>
+          )}
           <Button variant="ghost" onClick={onClose}>
             {t('common.cancel')}
           </Button>
@@ -906,5 +1044,155 @@ function ShortcutsDialog({ onClose }: { onClose: () => void }) {
         </tbody>
       </table>
     </Dialog>
+  );
+}
+
+/** Guarda la escaleta actual como plantilla (sin estados de línea). */
+function TemplateDialog({ rundown, onClose }: { rundown: RundownDto; onClose: () => void }) {
+  const [name, setName] = useState(rundown.programName);
+  const [description, setDescription] = useState('');
+  const [done, setDone] = useState(false);
+  const form = useFormState();
+  return (
+    <Dialog
+      open
+      title="Guardar como plantilla"
+      onClose={onClose}
+      footer={
+        done ? (
+          <Button variant="primary" onClick={onClose}>
+            {t('common.close')}
+          </Button>
+        ) : (
+          <>
+            <Button variant="ghost" onClick={onClose}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="primary"
+              loading={form.submitting}
+              onClick={async () => {
+                if (!name.trim()) return form.setFieldErrors({ name: 'Obligatorio' });
+                const ok = await form.submit(() =>
+                  api.post(`/api/rundowns/${rundown.id}/save-as-template`, { name, description }),
+                );
+                if (ok) setDone(true);
+              }}
+            >
+              {t('common.save')}
+            </Button>
+          </>
+        )
+      }
+    >
+      {done ? (
+        <Alert tone="success">
+          Plantilla «{name}» guardada. Elígela al crear una escaleta nueva.
+        </Alert>
+      ) : (
+        <>
+          <p className="rf-muted rf-small">
+            Se guardan las líneas, columnas y guiones (sin los estados C/E/X/A) para crear escaletas
+            iguales más adelante.
+          </p>
+          {form.formError && <Alert tone="error">{form.formError}</Alert>}
+          <TextField
+            label="Nombre"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            error={form.fieldErrors.name}
+          />
+          <TextField
+            label="Descripción"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </>
+      )}
+    </Dialog>
+  );
+}
+
+export const PRINT_VIEWS = [
+  { value: 'completa', label: 'Escaleta completa' },
+  { value: 'realizacion', label: 'Escaleta de realización' },
+  { value: 'produccion', label: 'Escaleta de producción' },
+  { value: 'tecnica', label: 'Escaleta técnica' },
+  { value: 'presentador', label: 'Guion del presentador (solo paso)' },
+  { value: 'guion', label: 'Guion completo (paso, off y rótulos)' },
+  { value: 'rotulos', label: 'Hoja de rótulos' },
+  { value: 'asrun', label: 'Registro de emisión' },
+] as const;
+
+/** Elige la vista de impresión y la abre en una pestaña nueva (Imprimir → Guardar como PDF). */
+function PrintDialog({ rundownId, onClose }: { rundownId: string; onClose: () => void }) {
+  const [view, setView] = useState<string>('completa');
+  return (
+    <Dialog
+      open
+      title="Imprimir o guardar en PDF"
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            {t('common.cancel')}
+          </Button>
+          <a
+            className="rf-btn rf-btn--primary"
+            href={`/escaletas/${rundownId}/imprimir?vista=${view}`}
+            target="_blank"
+            rel="noreferrer"
+            onClick={onClose}
+          >
+            Abrir vista de impresión
+          </a>
+        </>
+      }
+    >
+      <p className="rf-muted rf-small">
+        Se abre una página lista para imprimir. En el diálogo de impresión, elige «Guardar como PDF»
+        para obtener el archivo.
+      </p>
+      <fieldset className="rf-choice-group">
+        {PRINT_VIEWS.map((v) => (
+          <label key={v.value} className={`rf-choice${view === v.value ? ' is-active' : ''}`}>
+            <input
+              type="radio"
+              name="print-view"
+              value={v.value}
+              checked={view === v.value}
+              onChange={() => setView(v.value)}
+            />
+            <span>{v.label}</span>
+          </label>
+        ))}
+      </fieldset>
+    </Dialog>
+  );
+}
+
+/** Menú desplegable de la barra de herramientas. */
+function ToolbarMenu({ label, children }: { label: string; children: React.ReactNode }) {
+  const ref = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    const close = (e: MouseEvent) => {
+      if (ref.current?.open && !ref.current.contains(e.target as Node)) ref.current.open = false;
+    };
+    window.addEventListener('mousedown', close);
+    return () => window.removeEventListener('mousedown', close);
+  }, []);
+  return (
+    <details ref={ref} className="rf-tbmenu">
+      <summary className="rf-btn rf-btn--ghost rf-btn--sm">{label} ▾</summary>
+      <div
+        className="rf-menu rf-tbmenu__list"
+        role="menu"
+        onClick={() => {
+          if (ref.current) ref.current.open = false;
+        }}
+      >
+        {children}
+      </div>
+    </details>
   );
 }

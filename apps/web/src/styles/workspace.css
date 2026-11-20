@@ -1,0 +1,328 @@
+/* ---------- Panel lateral con pestañas ---------- */
+.rf-panel-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--rf-border);
+  flex-shrink: 0;
+}
+.rf-panel-tabs__tab {
+  flex: 1;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  padding: var(--rf-space-2) var(--rf-space-1);
+  font-weight: 700;
+  font-size: var(--rf-text-sm);
+  color: var(--rf-text-muted);
+  cursor: pointer;
+}
+.rf-panel-tabs__tab.is-active {
+  color: var(--rf-text);
+  border-bottom-color: var(--rf-accent);
+}
+.rf-panel-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Chat */
+.rf-chat {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.rf-chat__list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  list-style: none;
+  margin: 0;
+  padding: var(--rf-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--rf-space-2);
+}
+.rf-chat__list li {
+  max-width: 88%;
+  padding: var(--rf-space-2) var(--rf-space-3);
+  background: var(--rf-surface-2);
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius-md);
+}
+.rf-chat__list li.is-mine {
+  align-self: flex-end;
+  border-color: color-mix(in srgb, var(--rf-accent) 50%, var(--rf-border));
+}
+.rf-chat__meta {
+  display: block;
+  font-size: var(--rf-text-xs);
+  color: var(--rf-text-muted);
+}
+.rf-chat__body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.rf-chat__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rf-space-2);
+  padding: var(--rf-space-2) var(--rf-space-3);
+  border-top: 1px solid var(--rf-border);
+}
+.rf-chat__input {
+  min-height: 56px;
+}
+
+/* Listas del panel (nevera, versiones) y de páginas */
+.rf-sidelist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rf-space-3);
+  padding: var(--rf-space-3);
+  overflow: auto;
+}
+.rf-sidelist__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.rf-sidelist__items li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--rf-space-2);
+  padding: var(--rf-space-2) 0;
+  border-bottom: 1px solid var(--rf-border);
+}
+.rf-sidelist__save {
+  display: flex;
+  gap: var(--rf-space-2);
+}
+.rf-sidelist__confirm {
+  display: flex;
+  gap: var(--rf-space-1);
+  flex-shrink: 0;
+}
+.rf-search {
+  display: flex;
+  gap: var(--rf-space-2);
+}
+.rf-results li {
+  padding: var(--rf-space-1) 0;
+}
+.rf-notice-gap {
+  height: var(--rf-space-5);
+}
+.rf-perms {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--rf-space-2);
+}
+.rf-perms legend {
+  margin-bottom: var(--rf-space-2);
+}
+.rf-io {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rf-space-2);
+}
+.rf-io__preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rf-space-2);
+  padding: var(--rf-space-3);
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius-md);
+}
+.rf-io__mapping {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--rf-space-2);
+  max-height: 30vh;
+  overflow: auto;
+}
+.rf-io__mapping label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--rf-text-xs);
+  font-weight: 700;
+}
+.rf-io__mapping .rf-select {
+  min-height: 30px;
+}
+
+/* ---------- Impresión ---------- */
+:root[data-print] body {
+  background: #fff;
+  color: #111;
+}
+.rf-print {
+  background: #fff;
+  color: #111;
+  padding: 16px 20px;
+  font-family: var(--rf-font-body);
+  min-height: 100%;
+}
+.rf-print__tools {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.rf-print__tools .rf-select {
+  width: auto;
+  background: #fff;
+  color: #111;
+  border-color: #bbb;
+}
+.rf-print__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  border-bottom: 3px solid #ff7a1a;
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+}
+.rf-print__head h1 {
+  font-size: 20px;
+  font-weight: 900;
+}
+.rf-print__head p {
+  font-size: 12px;
+  color: #444;
+}
+.rf-print__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 11px;
+  color: #444;
+}
+.rf-print__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+.rf-print__table th {
+  background: #434343;
+  color: #fff;
+  font-size: 9px;
+  text-align: left;
+  padding: 3px 4px;
+  border: 1px solid #000;
+}
+.rf-print__table td {
+  padding: 3px 4px;
+  border: 1px solid #999;
+  vertical-align: top;
+  white-space: pre-wrap;
+}
+.rf-print__table td.is-right {
+  text-align: right;
+}
+.rf-print__table td.is-center {
+  text-align: center;
+}
+.rf-print__table tr.is-floating td {
+  font-style: italic;
+  color: #666;
+}
+.rf-print__block {
+  break-inside: avoid;
+  margin-bottom: 14px;
+}
+.rf-print__block h2 {
+  font-size: 13px;
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 4px;
+}
+.rf-print__block h2 span {
+  color: #ff7a1a;
+}
+.rf-print__block h2 small {
+  float: right;
+  font-weight: 400;
+  color: #666;
+  font-size: 10px;
+}
+.rf-print__block p {
+  margin: 0 0 4px;
+  font-size: 12px;
+}
+.rf-print__block p.is-paso {
+  color: #12813a;
+  font-weight: 700;
+}
+.rf-print--presentador .rf-print__block p.is-paso {
+  font-size: 18px;
+  line-height: 1.4;
+}
+.rf-print__block p.is-nota {
+  color: #777;
+  font-style: italic;
+}
+.rf-print__rotulo {
+  margin: 4px 0;
+  padding: 3px 6px;
+  border: 1.5px solid #1f6feb;
+  border-radius: 4px;
+  color: #0b2a66;
+  font-size: 11px;
+}
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .rf-print {
+    padding: 0;
+  }
+  .rf-print__table th,
+  .rf-print__table td {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+@page {
+  margin: 10mm;
+}
+
+/* Menú desplegable de la barra de herramientas */
+.rf-tbmenu {
+  position: relative;
+}
+.rf-tbmenu > summary {
+  list-style: none;
+}
+.rf-tbmenu > summary::-webkit-details-marker {
+  display: none;
+}
+.rf-tbmenu__list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+}
+.rf-tbmenu__list button {
+  width: 100%;
+  text-align: left;
+  padding: 6px var(--rf-space-3);
+  border: 0;
+  border-radius: var(--rf-radius-sm);
+  background: transparent;
+  font-size: var(--rf-text-sm);
+  cursor: pointer;
+}
+.rf-tbmenu__list button:hover {
+  background: var(--rf-surface-hover);
+}

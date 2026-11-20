@@ -14,6 +14,7 @@ import { useSession } from '../auth/session';
 import { PageHeader } from '../components/PageHeader';
 import { formatDateTime, t } from '../i18n';
 import { useFormState, validate } from '../lib/forms';
+import { RolesSection } from './RolesSection';
 
 const membersKey = ['members'] as const;
 const rolesKey = ['roles'] as const;
@@ -173,6 +174,9 @@ export function UsersPage() {
           </table>
         </div>
       )}
+
+      <div className="rf-notice-gap" />
+      <RolesSection />
 
       {dialog?.kind === 'create' && (
         <CreateUserDialog

@@ -214,6 +214,10 @@ export function useLines(doc: Y.Doc | undefined): LineSnapshot[] {
           });
         };
         lines.observeDeep(handler);
+        // Lo que llegó antes de suscribirse (p. ej. la copia local) también cuenta.
+        const before = snapshot;
+        compute();
+        if (snapshot !== before) cb();
         return () => {
           cancelAnimationFrame(frame);
           lines.unobserveDeep(handler);
