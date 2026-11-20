@@ -27,6 +27,7 @@ import { MediaPage } from './pages/MediaPage';
 import { HelpPage } from './pages/HelpPage';
 import { ProductionPage } from './pages/ProductionPage';
 import { CallReplyPage, CallSheetPage } from './pages/CallSheetPage';
+import { ScreenPage } from './pages/ScreenPage';
 import { useCan, useMe } from './auth/session';
 
 function RequireUsersPermission() {
@@ -66,6 +67,7 @@ export function App() {
       <Route path="/salida/:token" element={<OutputPage />} />
       <Route path="/ayuda" element={<HelpPage />} />
       <Route path="/convocatoria/:token" element={<CallReplyPage />} />
+      <Route path="/pantalla/:token" element={<ScreenPage />} />
       <Route element={<RequireOrg />}>
         <Route path="/escaletas/:id/prompter" element={<PrompterPage />} />
         <Route path="/escaletas/:id/imprimir" element={<PrintPage />} />

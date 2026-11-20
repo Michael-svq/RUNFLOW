@@ -750,3 +750,40 @@ export const budgetLines = pgTable(
     index('budget_lines_event_idx').on(t.eventId),
   ],
 );
+
+/* ---------- F3.3 Pantallas / videowall ---------- */
+
+/** Pantallas del plató: cada una abre /pantalla/:token a pantalla completa. */
+export const screens = pgTable(
+  'screens',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    token: text('token').notNull().unique(),
+    /** Contenido por defecto (ScreenContent de @runflow/core). */
+    content: jsonb('content').notNull().default({ type: 'none' }),
+    createdAt: createdAt(),
+  },
+  (t) => [index('screens_org_idx').on(t.orgId)],
+);
+
+/** Escenas: contenido por pantalla; se activan a mano o con la columna PANTALLAS. */
+export const screenScenes = pgTable(
+  'screen_scenes',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    /** Clave normalizada (mayúsculas, sin acentos) para casar con PANTALLAS. */
+    key: text('key').notNull(),
+    contents: jsonb('contents').notNull().default({}),
+    active: boolean('active').notNull().default(false),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('screen_scenes_org_key_idx').on(t.orgId, t.key)],
+);

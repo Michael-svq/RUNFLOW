@@ -77,6 +77,8 @@ const SECTIONS: { id: string; title: string; items: string[] }[] = [
       'En Equipo se convoca a cada persona con su puesto y hora de citación; «Copiar enlace», WhatsApp o Email le envían un enlace para confirmar sin cuenta.',
       'Invitados (llegada, maquillaje, set) y Logística (transporte, catering, escenografía…) se marcan según avanzan; todo se actualiza para el equipo cada pocos segundos.',
       '«Hoja de llamada» abre la versión para imprimir o guardar en PDF; «Duplicar» copia la convocatoria a otra fecha con el mismo equipo.',
+      'Pantallas: da de alta cada pantalla del plató (videowall, monitores, público) y abre su enlace a pantalla completa en el equipo que la alimenta. Cada una tiene un contenido por defecto (negro, imagen o vídeo de Media, texto, reloj o web).',
+      'Las escenas dicen qué sale en cada pantalla: escribe el nombre de la escena en la columna PANTALLAS de una línea y, al darle GO, las pantallas cambian solas; también se lanzan a mano.',
       'Presupuesto (en cada convocatoria o en la pestaña general): partidas con previsto y real; el resumen por categoría muestra la desviación y lo pendiente de pago, y «Exportar CSV» lo abre en cualquier hoja de cálculo.',
     ],
   },

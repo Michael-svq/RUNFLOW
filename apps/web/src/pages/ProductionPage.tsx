@@ -25,6 +25,7 @@ import { api, errorMessage } from '../api/client';
 import { useCan } from '../auth/session';
 import { PageHeader } from '../components/PageHeader';
 import { BudgetPanel } from '../production/BudgetPanel';
+import { ScreensPanel } from '../production/ScreensPanel';
 import {
   dayKey,
   fmtDateTime,
@@ -51,12 +52,13 @@ const statusTone = (s: EventStatus | CallStatus | GuestStatus) =>
       : 'muted';
 
 export function ProductionPage() {
-  const [tab, setTab] = useState<'calendar' | 'crew' | 'budget'>('calendar');
+  const [tab, setTab] = useState<'calendar' | 'crew' | 'budget' | 'screens'>('calendar');
   const canBudget = useCan('budget.view');
   const tabs = [
     ['calendar', 'Calendario'],
     ['crew', 'Personal'],
     ...(canBudget ? [['budget', 'Presupuesto']] : []),
+    ['screens', 'Pantallas'],
   ] as [typeof tab, string][];
   return (
     <>
@@ -85,6 +87,8 @@ export function ProductionPage() {
         <Calendar />
       ) : tab === 'crew' ? (
         <CrewDirectory />
+      ) : tab === 'screens' ? (
+        <ScreensPanel />
       ) : (
         <section className="rf-card" aria-label="Presupuesto">
           <BudgetPanel />

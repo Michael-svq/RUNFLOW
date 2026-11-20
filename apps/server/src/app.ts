@@ -35,6 +35,8 @@ import { publicApiRoutes } from './routes/public-api';
 import { mediaRoutes } from './routes/media';
 import { productionRoutes } from './routes/production';
 import { budgetRoutes } from './routes/budget';
+import { screenRoutes } from './routes/screens';
+import { ScreensManager } from './screens/manager';
 import { MediaStore } from './media/store';
 import { WebhookDispatcher } from './api/webhooks';
 import { SourcePoller } from './sources/poller';
@@ -60,6 +62,7 @@ export interface AppDeps {
   sources?: SourcePoller;
   webhooks?: WebhookDispatcher;
   media?: MediaStore;
+  screens?: ScreensManager;
 }
 
 /** Cabecera que la web envía en toda petición que modifica datos (defensa CSRF). */
@@ -109,6 +112,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
   deps.mixers = new MixerManager(deps.db, deps.collab, app.log);
   // Con cada cambio del directo: CasparCG y mezcladores a la vez.
+  deps.screens = new ScreensManager(deps.db, deps.collab, app.log);
   deps.webhooks = new WebhookDispatcher(deps.db, () => deps.secrets!, deps.collab, app.log, {
     allowPrivate: deps.config.sourcesAllowPrivate || deps.config.env === 'test',
   });
@@ -122,6 +126,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     deps.mixers!.onLive(rundownId, orgId, prev, next, goAt);
     deps.cg!.onLive(rundownId, orgId, prev, next);
     deps.webhooks!.onLive(rundownId, orgId, prev, next);
+    deps.screens!.onLive(rundownId, orgId, prev, next);
   };
   const { mode, cloudUrl, stationToken } = deps.config;
   if (mode === 'station' && cloudUrl && stationToken) {
@@ -234,6 +239,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await mediaRoutes(app, deps);
   await productionRoutes(app, deps);
   await budgetRoutes(app, deps);
+  await screenRoutes(app, deps);
   deps.sources = new SourcePoller(deps.db, app.log, {
     intervalMs: deps.config.sourcesPollMs,
     allowPrivate: deps.config.sourcesAllowPrivate,

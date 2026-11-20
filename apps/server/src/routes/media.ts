@@ -44,7 +44,7 @@ const toDto = (r: Row): MediaDto => ({
 });
 
 /** Envía un fichero con soporte de Range (para el reproductor del navegador). */
-async function sendRange(
+export async function sendRange(
   reply: FastifyReply,
   file: string,
   mime: string,

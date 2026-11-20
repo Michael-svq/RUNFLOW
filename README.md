@@ -32,6 +32,7 @@ Web (PWA) multiempresa en la nube y funcionamiento local con **RunFlow Station**
 | F2.1 Media: subir, previsualizar, marcar TC, proxies y copia a CasparCG                        | ✅        |
 | F3.1 Producción: calendario, personal, hojas de llamada con confirmación, invitados, logística | ✅        |
 | F3.2 Presupuesto: partidas por programa o convocatoria, previsto/real, desviación y CSV        | ✅        |
+| F3.3 Pantallas / videowall: pantallas por enlace, escenas a mano o con PANTALLAS en el GO      | ✅        |
 | Beta privada (equipos reales) y resto de la Fase III                                           | Siguiente |
 
 ## Estructura
