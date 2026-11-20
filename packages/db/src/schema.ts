@@ -42,6 +42,11 @@ export const organizations = pgTable('organizations', {
   timezone: text('timezone').notNull().default('Europe/Madrid'),
   /** Configuración Master de la empresa (OrgSettings de @runflow/core). */
   settings: jsonb('settings').notNull().default({}),
+  /** Cobro con Stripe (lanzamiento). */
+  stripeCustomerId: text('stripe_customer_id'),
+  stripeSubscriptionId: text('stripe_subscription_id'),
+  subscriptionStatus: text('subscription_status'),
+  planRenewsAt: timestamp('plan_renews_at', { withTimezone: true }),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });

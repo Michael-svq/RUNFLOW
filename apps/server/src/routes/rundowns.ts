@@ -25,6 +25,7 @@ import {
   updateView,
 } from '../services/rundowns';
 import type { AppDeps } from '../app';
+import { assertPlan } from '../services/plans';
 
 const idParams = z.object({ id: z.uuid() });
 
@@ -39,6 +40,7 @@ export async function rundownRoutes(app: FastifyInstance, deps: AppDeps): Promis
   }));
   app.post('/api/programs', { preHandler: configure }, async (req, reply) => {
     const input = parse(createProgramInput, req.body);
+    await assertPlan(deps.db, deps.config.planLimits, req.tenant!, 'programs');
     reply.status(201);
     return { program: await createProgram(deps.db, req.tenant!, input) };
   });

@@ -16,6 +16,7 @@ import { forbidden, HttpError, notFound, parse } from '../errors';
 import { requireOrg, requirePermission } from '../auth/guards';
 import { audit } from '../services/audit';
 import type { AppDeps } from '../app';
+import { assertPlan } from '../services/plans';
 
 const idParams = z.object({ id: z.uuid() });
 
@@ -123,6 +124,7 @@ export async function aiRoutes(app: FastifyInstance, deps: AppDeps): Promise<voi
   };
 
   app.post('/api/ai/providers', { preHandler: configure }, async (req, reply) => {
+    await assertPlan(deps.db, deps.config.planLimits, req.tenant!, 'ai');
     const row = await save(req, null);
     reply.status(201);
     return { provider: toDto(row) };
@@ -226,6 +228,7 @@ export async function aiRoutes(app: FastifyInstance, deps: AppDeps): Promise<voi
     async (req): Promise<AiRunResult> => {
       const input = parse(aiRunInput, req.body);
       const t = req.tenant!;
+      await assertPlan(deps.db, deps.config.planLimits, t, 'ai');
       const { row, limit, used } = await withTenant(deps.db, t, async (tx) => {
         const rows = await tx
           .select()

@@ -29,6 +29,7 @@ import { CgManager } from './cg/cg-manager';
 import { MixerManager } from './mixers/mixer-manager';
 import { SecretBox } from './services/secrets';
 import { aiRoutes } from './routes/ai';
+import { billingRoutes } from './routes/billing';
 import { cgRoutes } from './routes/cg';
 import { readFileSync } from 'node:fs';
 
@@ -143,7 +144,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   app.addHook('onRequest', async (req) => {
     if (!req.url.startsWith('/api/')) return;
     // El mando por enlace (Companion, Stream Deck) no usa cookies: su token es la credencial.
-    const tokenOnly = req.url.startsWith('/api/public/control/');
+    const tokenOnly =
+      req.url.startsWith('/api/public/control/') || req.url.startsWith('/api/billing/webhook');
     if (!SAFE_METHODS.has(req.method)) {
       // Una cabecera propia obliga a una petición de origen cruzado a pasar el
       // control CORS (que no permitimos), así que bloquea CSRF.
@@ -201,6 +203,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await stationRoutes(app, deps);
   await cgRoutes(app, deps);
   await aiRoutes(app, deps);
+  await billingRoutes(app, deps);
 
   const webDist = deps.config.webDist ? path.resolve(deps.config.webDist) : undefined;
   const serveWeb = !!webDist && existsSync(path.join(webDist, 'index.html'));

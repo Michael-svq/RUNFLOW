@@ -35,6 +35,16 @@ const envSchema = z.object({
   /** HTTPS directo (Station en red local): certificado y clave en PEM. */
   TLS_CERT_FILE: z.string().optional(),
   TLS_KEY_FILE: z.string().optional(),
+  /** Nube SaaS: aplica los límites de cada plan (usuarios, programas, equipos, IA). */
+  PLAN_LIMITS: bool.default(false),
+  /** Nube SaaS: cualquiera puede crear una empresa desde /registro. */
+  SIGNUP_ENABLED: bool.default(false),
+  /** Cobro con Stripe (lanzamiento). */
+  STRIPE_SECRET_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
+  STRIPE_WEBHOOK_SECRET: z.preprocess(emptyToUndefined, z.string().optional()),
+  STRIPE_PRICE_BASIC: z.preprocess(emptyToUndefined, z.string().optional()),
+  STRIPE_PRICE_PRO: z.preprocess(emptyToUndefined, z.string().optional()),
+  STRIPE_API_BASE: z.string().url().default('https://api.stripe.com'),
   /** Clave maestra para cifrar secretos (claves de IA). Sin ella se crea en DATA_DIR. */
   SECRET_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
   /** Dirección con la que otros equipos (CasparCG) ven este servidor, p. ej. http://192.168.1.20:8080. */
@@ -65,6 +75,16 @@ export interface AppConfig {
   dataDir: string;
   publicUrl: string | undefined;
   secretKey: string | undefined;
+  planLimits: boolean;
+  signupEnabled: boolean;
+  stripe:
+    | {
+        secretKey: string;
+        webhookSecret: string | undefined;
+        prices: { basic?: string; pro?: string };
+        apiBase: string;
+      }
+    | undefined;
   tls: { certFile: string; keyFile: string } | undefined;
   licensePublicKey: string | undefined;
   logLevel: string;
@@ -107,6 +127,19 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     dataDir: path.resolve(e.DATA_DIR),
     publicUrl: e.PUBLIC_URL,
     secretKey: e.SECRET_KEY,
+    planLimits: e.PLAN_LIMITS,
+    signupEnabled: e.SIGNUP_ENABLED,
+    stripe: e.STRIPE_SECRET_KEY
+      ? {
+          secretKey: e.STRIPE_SECRET_KEY,
+          webhookSecret: e.STRIPE_WEBHOOK_SECRET,
+          prices: {
+            ...(e.STRIPE_PRICE_BASIC ? { basic: e.STRIPE_PRICE_BASIC } : {}),
+            ...(e.STRIPE_PRICE_PRO ? { pro: e.STRIPE_PRICE_PRO } : {}),
+          },
+          apiBase: e.STRIPE_API_BASE.replace(/\/+$/, ''),
+        }
+      : undefined,
     tls:
       e.TLS_CERT_FILE && e.TLS_KEY_FILE
         ? { certFile: e.TLS_CERT_FILE, keyFile: e.TLS_KEY_FILE }

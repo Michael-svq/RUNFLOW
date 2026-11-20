@@ -1,8 +1,8 @@
 import { sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
-import { setupInput, type SetupStatusResponse } from '@runflow/core';
+import { setupInput, signupInput, type SetupStatusResponse } from '@runflow/core';
 import { users, withSystem } from '@runflow/db';
-import { conflict, parse } from '../errors';
+import { conflict, HttpError, parse } from '../errors';
 import { createOrganizationWithAdmin } from '../services/orgs';
 import type { AppDeps } from '../app';
 import { startSession } from './auth';
@@ -23,7 +23,10 @@ export async function systemRoutes(app: FastifyInstance, deps: AppDeps): Promise
   });
 
   app.get('/api/setup/status', async (): Promise<SetupStatusResponse> => {
-    return { needsSetup: await needsSetup(deps) };
+    return {
+      needsSetup: await needsSetup(deps),
+      signupEnabled: deps.config.signupEnabled && deps.config.mode === 'cloud',
+    };
   });
 
   /**
@@ -54,6 +57,49 @@ export async function systemRoutes(app: FastifyInstance, deps: AppDeps): Promise
           actorUserId: null,
         });
       });
+      return startSession(app, deps, req, reply, result.adminUserId, result.orgId);
+    },
+  );
+
+  /**
+   * Registro autoservicio (nube SaaS, SIGNUP_ENABLED): una empresa nueva en el
+   * plan Gratis y su administración. No da acceso a cuentas que ya existen.
+   */
+  app.post(
+    '/api/signup',
+    { config: { rateLimit: { max: deps.config.authRateLimit, timeWindow: '1 minute' } } },
+    async (req, reply) => {
+      if (!deps.config.signupEnabled || deps.config.mode !== 'cloud') {
+        throw new HttpError(404, 'not_found', 'El registro no está disponible');
+      }
+      const input = parse(signupInput, req.body);
+      const result = await withSystem(deps.db, async (tx) => {
+        const existing = (
+          await tx.execute<{ id: string | null }>(
+            sql`select rf_user_id_by_email(${input.email}) as id`,
+          )
+        ).rows[0]?.id;
+        if (existing) {
+          throw new HttpError(
+            409,
+            'email_taken',
+            'Ya hay una cuenta con ese email: entra con ella',
+            {
+              email: 'Ya hay una cuenta con ese email',
+            },
+          );
+        }
+        return createOrganizationWithAdmin(tx, {
+          orgName: input.orgName,
+          adminName: input.name,
+          adminEmail: input.email,
+          adminPassword: input.password,
+          mustChangePassword: false,
+          isPlatformAdmin: false,
+          actorUserId: null,
+        });
+      });
+      reply.status(201);
       return startSession(app, deps, req, reply, result.adminUserId, result.orgId);
     },
   );

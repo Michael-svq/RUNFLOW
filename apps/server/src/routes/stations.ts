@@ -27,6 +27,7 @@ import { requireRundown } from '../services/rundowns';
 import { audit } from '../services/audit';
 import { CLOSE_UNAUTHORIZED } from '../collab/collab-server';
 import type { AppDeps } from '../app';
+import { assertPlan } from '../services/plans';
 
 const SYSTEM_USER = '00000000-0000-0000-0000-000000000000';
 const idParams = z.object({ id: z.uuid() });
@@ -128,6 +129,7 @@ export async function stationRoutes(app: FastifyInstance, deps: AppDeps): Promis
   app.post('/api/stations', { preHandler: manage }, async (req, reply) => {
     const { name } = parse(stationInput, req.body);
     const t = req.tenant!;
+    await assertPlan(deps.db, deps.config.planLimits, t, 'station');
     const token = randomBytes(32).toString('base64url');
     const [row] = await withTenant(deps.db, t, async (tx) => {
       const created = await tx

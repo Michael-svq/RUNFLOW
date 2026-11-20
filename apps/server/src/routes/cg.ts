@@ -22,6 +22,7 @@ import { CgManager } from '../cg/cg-manager';
 import { MixerManager } from '../mixers/mixer-manager';
 import { templateHtml } from '../cg/templates';
 import type { AppDeps } from '../app';
+import { assertPlan } from '../services/plans';
 
 const idParams = z.object({ id: z.uuid() });
 const graphicInput = z.object({ graphicId: z.string().min(1).max(64) });
@@ -151,6 +152,7 @@ export async function cgRoutes(app: FastifyInstance, deps: AppDeps): Promise<voi
   app.post('/api/devices', { preHandler: configure }, async (req, reply) => {
     const input = parse(deviceInput, req.body);
     const t = req.tenant!;
+    await assertPlan(deps.db, deps.config.planLimits, t, 'devices');
     const rows = await withTenant(deps.db, t, async (tx) => {
       const created = await tx
         .insert(devices)

@@ -12,6 +12,7 @@ import {
   updateMember,
 } from '../services/members';
 import type { AppDeps } from '../app';
+import { assertPlan } from '../services/plans';
 
 const userIdParams = z.object({ userId: z.uuid() });
 
@@ -24,6 +25,7 @@ export async function memberRoutes(app: FastifyInstance, deps: AppDeps): Promise
 
   app.post('/api/users', { preHandler: manage }, async (req, reply) => {
     const input = parse(createUserInput, req.body);
+    await assertPlan(deps.db, deps.config.planLimits, req.tenant!, 'users');
     const result = await createMember(deps.db, req.tenant!, input);
     reply.status(201);
     return result;

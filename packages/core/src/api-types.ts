@@ -63,6 +63,8 @@ export interface PlatformOrgDto {
 
 export interface SetupStatusResponse {
   needsSetup: boolean;
+  /** La nube admite registro autoservicio (/registro). */
+  signupEnabled?: boolean;
 }
 
 export interface ApiErrorBody {
