@@ -21,7 +21,8 @@ apps/
   server/     API (Fastify) — mismo código para la nube y para Station
   web/        Aplicación web (React + Vite, PWA)
 packages/
-  core/       Permisos, roles por defecto, validaciones y tipos compartidos
+  core/       Permisos, roles, validaciones, catálogo de la escaleta y tipos compartidos
+  sync/       Documento colaborativo de la escaleta (Yjs)
   db/         Esquema de base de datos, migraciones y aislamiento por empresa (RLS)
   ui/         Sistema de diseño: colores y tipografías de marca, logo, componentes
 docs/         Plan, decisiones técnicas y material de referencia

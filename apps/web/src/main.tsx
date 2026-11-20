@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { registerSW } from 'virtual:pwa-register';
 import '@runflow/ui/styles.css';
 import './styles/app.css';
+import './styles/rundown.css';
 import { App } from './App';
 
 const queryClient = new QueryClient({

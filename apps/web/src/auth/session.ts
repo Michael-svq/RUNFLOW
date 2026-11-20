@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { MeResponse, Permission, SetupStatusResponse } from '@runflow/core';
 import { api, ApiError } from '../api/client';
+import { clearLocalRundowns } from '../rundown/useRundownDoc';
 
 export const meKey = ['me'] as const;
 
@@ -45,6 +46,8 @@ export function useLogout() {
     try {
       await api.post('/api/auth/logout');
     } finally {
+      // En equipos compartidos no deben quedar copias locales de escaletas.
+      await clearLocalRundowns().catch(() => undefined);
       qc.clear();
       qc.setQueryData(meKey, null);
     }

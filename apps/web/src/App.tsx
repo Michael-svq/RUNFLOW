@@ -9,6 +9,8 @@ import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { PlatformPage } from './pages/PlatformPage';
+import { RundownPage } from './pages/RundownPage';
+import { RundownsPage } from './pages/RundownsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { SetupPage } from './pages/SetupPage';
 import { UsersPage } from './pages/UsersPage';
@@ -40,6 +42,8 @@ export function App() {
           <Route path="/inicio" element={<HomePage />} />
           <Route path="/usuarios" element={<RequireUsersPermission />} />
           <Route path="/perfil" element={<ProfilePage />} />
+          <Route path="/escaletas" element={<RundownsPage />} />
+          <Route path="/escaletas/:id" element={<RundownPage />} />
           <Route path="/plataforma" element={<RequirePlatformAdmin />} />
           {NAV_ITEMS.filter((i) => i.milestone).map((item) => (
             <Route key={item.path} path={item.path} element={<PlaceholderPage item={item} />} />
