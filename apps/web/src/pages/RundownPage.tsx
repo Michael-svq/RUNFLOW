@@ -116,7 +116,7 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
   const canTemplates = useCan('templates.manage');
   const user = useMemo(() => ({ id: me.user.id, name: me.user.name }), [me.user.id, me.user.name]);
   const canFire = useCan('cg.fire');
-  const { session, status, loaded, live, stage, setStage, cg, setCg } = useRundownSession(
+  const { session, status, loaded, live, stage, setStage, cg, setCg, mixers } = useRundownSession(
     org.id,
     rundown.id,
     user,
@@ -398,7 +398,7 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
           keyboard={keyboardGo}
           onKeyboardChange={setKeyboardGo}
         />
-        <CgBar canGo={canGo} />
+        <CgBar canGo={canGo} mixers={mixers} />
         {cgCtx.error && <Alert tone="error">RunFlow CG: {cgCtx.error}</Alert>}
         <div className="rf-toolbar" role="toolbar" aria-label="Escaleta">
           <label className="rf-toolbar__view">

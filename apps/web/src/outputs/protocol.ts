@@ -8,6 +8,8 @@ export const MSG_PROMPTER = 101;
 export const MSG_STAGE = 102;
 /** Estado de RunFlow CG (rótulos en aire, VTR, equipos). */
 export const MSG_CG = 105;
+/** Estado de los mezcladores (programa, equipos, latencia del corte). */
+export const MSG_MIXER = 106;
 export const MSG_OUTPUT_SETTINGS = 103;
 
 export function onCustom<T>(

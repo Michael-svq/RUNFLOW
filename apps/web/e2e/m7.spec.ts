@@ -86,13 +86,13 @@ test('M7: CasparCG, diseño de rótulos, PLAY, GO con VTR y ▶/■', async ({ p
     await expect(page.getByText('Guardado.')).toBeVisible();
     await shot(page, 'm7-configuracion');
 
-    await page.getByRole('button', { name: 'Añadir CasparCG' }).click();
+    await page.getByRole('button', { name: 'Añadir equipo' }).click();
     const form = page.getByRole('form', { name: 'Equipo CasparCG' });
     await form.getByLabel('Nombre', { exact: true }).fill('CasparCG plató');
     await form.getByLabel('Puerto AMCP').fill(String(port));
     await form.getByLabel('Puerto OSC (0 = sin OSC)').fill('0');
     await form.getByRole('button', { name: 'Probar conexión' }).click();
-    await expect(page.getByText(/Conectado: CasparCG 2\.3/)).toBeVisible();
+    await expect(page.getByText(/Conectado: 2\.3/)).toBeVisible();
     await form.getByRole('button', { name: 'Guardar equipo' }).click();
     await expect(
       page.locator('li', { hasText: 'CasparCG plató' }).getByText('Conectado'),

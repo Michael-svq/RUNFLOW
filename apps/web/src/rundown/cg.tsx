@@ -6,6 +6,7 @@ import {
   normalizeClip,
   TIMECODE_LINE_TYPES,
   type CgState,
+  type MixerState,
 } from '@runflow/core';
 import type { LineSnapshot, ScriptGraphicBlock } from '@runflow/sync';
 import { api, errorMessage } from '../api/client';
@@ -173,17 +174,18 @@ function PlayingClip({ clip }: { clip: NonNullable<CgState['clip']> }) {
   );
 }
 
-/** En la barra de directo: equipos, aviso ⚠ y controles del VTR en aire. */
-export function CgBar({ canGo }: { canGo: boolean }) {
+/** En la barra de directo: equipos, programa del mezclador, aviso ⚠ y controles del VTR. */
+export function CgBar({ canGo, mixers }: { canGo: boolean; mixers: MixerState | null }) {
   const ctx = useContext(CgContext);
-  if (!ctx?.state) return null;
-  const devices = Object.values(ctx.state.devices);
-  const onAir = Object.keys(ctx.state.graphics).length;
-  const clip = ctx.state.clip;
-  if (!devices.length && !onAir) return null;
+  const cgDevices = Object.values(ctx?.state?.devices ?? {});
+  const mixerDevices = Object.values(mixers?.devices ?? {});
+  const onAir = Object.keys(ctx?.state?.graphics ?? {}).length;
+  const clip = ctx?.state?.clip ?? null;
+  if (!cgDevices.length && !mixerDevices.length && !onAir) return null;
+  const warnings = [ctx?.state?.warning, mixers?.warning].filter(Boolean).join(' · ');
   return (
-    <div className="rf-cgbar" role="group" aria-label="RunFlow CG">
-      {devices.map((d) => (
+    <div className="rf-cgbar" role="group" aria-label="Equipos">
+      {[...cgDevices, ...mixerDevices].map((d) => (
         <span
           key={d.name}
           className={`rf-cgbar__device${d.connected ? ' is-ok' : ' is-down'}`}
@@ -192,12 +194,20 @@ export function CgBar({ canGo }: { canGo: boolean }) {
           ● {d.name}
         </span>
       ))}
-      {ctx.state.warning && (
-        <span className="rf-cgbar__warning" role="alert" title={ctx.state.warning}>
-          ⚠ {ctx.state.warning}
+      {mixers?.program && (
+        <span className="rf-cgbar__program" title="Fuente de la línea en aire">
+          PGM <strong>{mixers.program.source}</strong>
+          {mixers.lastCutMs !== null && (
+            <span className="rf-muted"> · corte {mixers.lastCutMs} ms</span>
+          )}
         </span>
       )}
-      {clip && clip.state !== 'stopped' && canGo && (
+      {warnings && (
+        <span className="rf-cgbar__warning" role="alert" title={warnings}>
+          ⚠ {warnings}
+        </span>
+      )}
+      {ctx && clip && clip.state !== 'stopped' && canGo && (
         <span className="rf-cgbar__clip">
           <span className="rf-muted">VTR {clip.name}</span>
           <button
@@ -226,7 +236,7 @@ export function CgBar({ canGo }: { canGo: boolean }) {
           </button>
         </span>
       )}
-      {onAir > 0 && ctx.canFire && (
+      {ctx && onAir > 0 && ctx.canFire && (
         <button
           type="button"
           className="rf-btn rf-btn--danger rf-btn--sm"

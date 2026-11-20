@@ -20,7 +20,14 @@ import {
   onCustom,
 } from '../outputs/protocol';
 import { PrompterView, useFollowPrompter, usePrompterBlocks } from '../outputs/Prompter';
-import { AgendaView, ClocksView, MessageView, MultiView, PresenterView } from '../outputs/Views';
+import {
+  AgendaView,
+  ClocksView,
+  ControlView,
+  MessageView,
+  MultiView,
+  PresenterView,
+} from '../outputs/Views';
 import { useTiming } from '../rundown/live';
 import { useLines } from '../rundown/useRundownDoc';
 import { useServerNow } from '../rundown/useServerClock';
@@ -75,6 +82,8 @@ function OutputScreen({ token, output }: { token: string; output: PublicOutputDt
     onCustom<PrompterState | null>(provider, MSG_PROMPTER, setPrompter);
     onCustom<StageMessage | null>(provider, MSG_STAGE, setMessage);
     onCustom<OutputSettings>(provider, MSG_OUTPUT_SETTINGS, setSettings);
+    // Chat, RunFlow CG y mezcladores: estas pantallas no los usan.
+    for (const type of [104, 105, 106]) onCustom(provider, type, () => undefined);
     provider.on('status', ({ status: s }: { status: string }) => {
       setStatus((prev) => (prev === 'revoked' ? prev : s === 'connected' ? 'online' : 'offline'));
     });
@@ -129,6 +138,7 @@ function OutputScreen({ token, output }: { token: string; output: PublicOutputDt
           scrollRef={scrollRef}
         />
       )}
+      {output.kind === 'control' && <ControlView token={token} {...common} />}
       {output.kind === 'multiview' && (
         <MultiView
           {...common}

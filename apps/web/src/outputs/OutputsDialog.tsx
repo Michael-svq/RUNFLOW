@@ -35,7 +35,11 @@ export function OutputsDialog({
       (await api.get<{ outputs: OutputDto[] }>(`/api/rundowns/${rundownId}/outputs`)).outputs,
   });
   const [values, setValues] = useState({ kind: 'prompter', name: '' });
-  const [created, setCreated] = useState<{ name: string; url: string } | null>(null);
+  const [created, setCreated] = useState<{
+    name: string;
+    url: string;
+    control: string | null;
+  } | null>(null);
   const [copied, setCopied] = useState(false);
   const form = useFormState();
   const action = useFormState();
@@ -49,7 +53,14 @@ export function OutputsDialog({
       api.post<{ output: OutputDto; token: string }>(`/api/rundowns/${rundownId}/outputs`, data),
     );
     if (res) {
-      setCreated({ name: res.output.name, url: `${location.origin}/salida/${res.token}` });
+      setCreated({
+        name: res.output.name,
+        url: `${location.origin}/salida/${res.token}`,
+        control:
+          res.output.kind === 'control'
+            ? `${location.origin}/api/public/control/${res.token}`
+            : null,
+      });
       setCopied(false);
       setValues((v) => ({ ...v, name: '' }));
       void qc.invalidateQueries({ queryKey: key });
@@ -78,8 +89,8 @@ export function OutputsDialog({
     >
       <p className="rf-muted rf-small">
         Pantallas que se abren con un enlace, sin usuario: teleprompter, presentador, relojes,
-        agenda, mensajes o multivista. Ábrelas en la TV, la tablet o el ordenador del cristal del
-        prompter.
+        agenda, mensajes, multivista o un mando para dar GO. Ábrelas en la TV, la tablet o el
+        ordenador del cristal del prompter.
       </p>
       {created && (
         <Alert tone="success">
@@ -110,6 +121,26 @@ export function OutputsDialog({
               Abrir
             </a>
           </div>
+          {created.control && (
+            <div className="rf-small">
+              <p>
+                Para <strong>Companion / Stream Deck</strong> (módulo «Generic HTTP», petición
+                POST), una URL por botón:
+              </p>
+              <ul className="rf-control-urls">
+                {['go', 'back', 'next-graphic', 'clear-graphics', 'stop'].map((a) => (
+                  <li key={a}>
+                    <code>
+                      {created.control}/{a}
+                    </code>
+                  </li>
+                ))}
+              </ul>
+              <p>
+                Estado para las teclas (GET): <code>{created.control}</code>
+              </p>
+            </div>
+          )}
         </Alert>
       )}
       {action.formError && <Alert tone="error">{action.formError}</Alert>}

@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  DEVICE_KIND_LABEL,
+  DEVICE_KINDS,
   GRAPHIC_TYPES,
-  type CasparConfig,
+  VMIX_TRANSITIONS,
   type CgDesign,
   type DeviceDto,
+  type DeviceKind,
   type OrgSettings,
 } from '@runflow/core';
 import { Alert, Badge, Button, SelectField, Spinner, TextField } from '@runflow/ui';
@@ -320,64 +323,136 @@ function DesignEditor({ settings }: { settings: OrgSettings }) {
 
 /* ---------- Equipos ---------- */
 
-const emptyDevice = (): DeviceForm => ({
-  id: null,
-  name: 'CasparCG',
-  enabled: true,
-  host: '127.0.0.1',
-  port: '5250',
-  oscPort: '6250',
-  channel: '1',
-  vtr: '10',
-  lower: '20',
-  banner: '30',
-  logo: '40',
-  templateBaseUrl: '',
-});
+type Kind = DeviceKind;
 
 interface DeviceForm {
   id: string | null;
+  kind: Kind;
   name: string;
   enabled: boolean;
-  host: string;
-  port: string;
-  oscPort: string;
-  channel: string;
-  vtr: string;
-  lower: string;
-  banner: string;
-  logo: string;
-  templateBaseUrl: string;
+  /** Campos de texto de la configuración (se convierten al guardar). */
+  f: Record<string, string>;
+  /** Opciones sí/no (modo estudio de OBS…). */
+  b: Record<string, boolean>;
+  /** Mapa de fuentes: FUENTE → entrada del mezclador. */
+  sources: [string, string][];
 }
 
-const toForm = (d: DeviceDto): DeviceForm => ({
-  id: d.id,
-  name: d.name,
-  enabled: d.enabled,
-  host: d.config.host,
-  port: String(d.config.port),
-  oscPort: String(d.config.oscPort),
-  channel: String(d.config.channel),
-  vtr: String(d.config.layers.vtr),
-  lower: String(d.config.layers.lower),
-  banner: String(d.config.layers.banner),
-  logo: String(d.config.layers.logo),
-  templateBaseUrl: d.config.templateBaseUrl,
+const DEFAULT_SOURCES: [string, string][] = [
+  ['CAM 1', ''],
+  ['CAM 2', ''],
+  ['CAM 3', ''],
+  ['VTR', ''],
+];
+
+const DEFAULTS: Record<Kind, Pick<DeviceForm, 'name' | 'f' | 'b'>> = {
+  casparcg: {
+    name: 'CasparCG',
+    f: {
+      host: '127.0.0.1',
+      port: '5250',
+      oscPort: '6250',
+      channel: '1',
+      vtr: '10',
+      lower: '20',
+      banner: '30',
+      logo: '40',
+      templateBaseUrl: '',
+    },
+    b: {},
+  },
+  obs: {
+    name: 'OBS',
+    f: { host: '127.0.0.1', port: '4455', password: '' },
+    b: { studioMode: false },
+  },
+  vmix: {
+    name: 'vMix',
+    f: { host: '127.0.0.1', port: '8099', transition: 'CutDirect', durationMs: '500' },
+    b: {},
+  },
+  atem: { name: 'ATEM', f: { host: '192.168.10.240', me: '1', transition: 'cut' }, b: {} },
+};
+
+const emptyDevice = (kind: Kind): DeviceForm => ({
+  id: null,
+  kind,
+  enabled: true,
+  ...DEFAULTS[kind],
+  f: { ...DEFAULTS[kind].f },
+  b: { ...DEFAULTS[kind].b },
+  sources: kind === 'casparcg' ? [] : DEFAULT_SOURCES.map(([k, v]) => [k, v]),
 });
 
-const toConfig = (f: DeviceForm): CasparConfig => ({
-  host: f.host.trim(),
-  port: Number(f.port),
-  oscPort: Number(f.oscPort),
-  channel: Number(f.channel),
-  layers: {
-    vtr: Number(f.vtr),
-    lower: Number(f.lower),
-    banner: Number(f.banner),
-    logo: Number(f.logo),
-  },
-  templateBaseUrl: f.templateBaseUrl.trim(),
-});
+function toForm(d: DeviceDto): DeviceForm {
+  const base = emptyDevice(d.kind);
+  const f: Record<string, string> = {};
+  const b: Record<string, boolean> = {};
+  let sources: [string, string][] = [];
+  for (const [k, v] of Object.entries(d.config)) {
+    if (k === 'sources') sources = Object.entries(v as Record<string, string>);
+    else if (k === 'layers')
+      for (const [lk, lv] of Object.entries(v as Record<string, number>)) f[lk] = String(lv);
+    else if (typeof v === 'boolean') b[k] = v;
+    else f[k] = String(k === 'me' ? Number(v) + 1 : v);
+  }
+  return { ...base, id: d.id, name: d.name, enabled: d.enabled, f, b, sources };
+}
+
+function toConfig(form: DeviceForm): Record<string, unknown> {
+  const { f, b } = form;
+  const n = (k: string) => Number(f[k]);
+  const sources = Object.fromEntries(
+    form.sources.filter(([k, v]) => k.trim() && v.trim()).map(([k, v]) => [k.trim(), v.trim()]),
+  );
+  switch (form.kind) {
+    case 'casparcg':
+      return {
+        host: f.host!.trim(),
+        port: n('port'),
+        oscPort: n('oscPort'),
+        channel: n('channel'),
+        layers: { vtr: n('vtr'), lower: n('lower'), banner: n('banner'), logo: n('logo') },
+        templateBaseUrl: (f.templateBaseUrl ?? '').trim(),
+      };
+    case 'obs':
+      return {
+        host: f.host!.trim(),
+        port: n('port'),
+        password: f.password ?? '',
+        studioMode: !!b.studioMode,
+        sources,
+      };
+    case 'vmix':
+      return {
+        host: f.host!.trim(),
+        port: n('port'),
+        transition: f.transition,
+        durationMs: n('durationMs'),
+        sources,
+      };
+    case 'atem':
+      return {
+        host: f.host!.trim(),
+        me: Math.max(0, n('me') - 1),
+        transition: f.transition,
+        sources,
+      };
+  }
+}
+
+const INPUT_HINT: Record<Kind, string> = {
+  casparcg: '',
+  obs: 'Nombre de la escena de OBS',
+  vmix: 'Número o nombre de la entrada de vMix',
+  atem: 'Número de entrada del ATEM (1 = Cámara 1, 3010 = Media Player 1…)',
+};
+
+function deviceSummary(d: DeviceDto): string {
+  const c = d.config as { host: string; port?: number; channel?: number };
+  const where = c.port ? `${c.host}:${c.port}` : c.host;
+  return d.kind === 'casparcg' ? `${where} · canal ${c.channel}` : where;
+}
 
 function Devices() {
   const qc = useQueryClient();
@@ -387,11 +462,19 @@ function Devices() {
     refetchInterval: 5000,
   });
   const [form, setForm] = useState<DeviceForm | null>(null);
+  const [addKind, setAddKind] = useState<Kind>('casparcg');
   const [busy, setBusy] = useState(false);
+  const [inputs, setInputs] = useState<string[] | null>(null);
   const [notice, setNotice] = useState<{ tone: 'success' | 'error' | 'info'; text: string } | null>(
     null,
   );
   const [confirm, setConfirm] = useState<string | null>(null);
+
+  const open = (next: DeviceForm | null) => {
+    setForm(next);
+    setInputs(null);
+    setNotice(null);
+  };
 
   async function onSave(e: FormEvent) {
     e.preventDefault();
@@ -401,13 +484,13 @@ function Devices() {
     try {
       const body = {
         name: form.name,
-        kind: 'casparcg',
+        kind: form.kind,
         enabled: form.enabled,
         config: toConfig(form),
       };
       if (form.id) await api.patch(`/api/devices/${form.id}`, body);
       else await api.post('/api/devices', body);
-      setForm(null);
+      open(null);
       void qc.invalidateQueries({ queryKey: devicesKey });
     } catch (err) {
       setNotice({ tone: 'error', text: errorMessage(err) });
@@ -420,13 +503,21 @@ function Devices() {
     if (!form) return;
     setNotice({ tone: 'info', text: 'Probando conexión…' });
     try {
-      const res = await api.post<{ ok: boolean; version?: string; clips?: number; error?: string }>(
-        '/api/devices/test',
-        { config: toConfig(form) },
-      );
+      const res = await api.post<{
+        ok: boolean;
+        version?: string;
+        clips?: number;
+        inputs?: number;
+        error?: string;
+      }>('/api/devices/test', { kind: form.kind, config: toConfig(form) });
       setNotice(
         res.ok
-          ? { tone: 'success', text: `Conectado: CasparCG ${res.version} · ${res.clips} clips` }
+          ? {
+              tone: 'success',
+              text: `Conectado: ${res.version}${
+                res.clips !== undefined ? ` · ${res.clips} clips` : ''
+              }${res.inputs !== undefined ? ` · ${res.inputs} entradas` : ''}`,
+            }
           : { tone: 'error', text: `Sin conexión: ${res.error}` },
       );
     } catch (err) {
@@ -434,29 +525,64 @@ function Devices() {
     }
   }
 
-  const field = (key: keyof DeviceForm, label: string, extra: Record<string, unknown> = {}) => (
+  async function loadInputs() {
+    if (!form?.id) return;
+    try {
+      setInputs((await api.get<{ inputs: string[] }>(`/api/devices/${form.id}/inputs`)).inputs);
+    } catch (err) {
+      setNotice({ tone: 'error', text: errorMessage(err) });
+    }
+  }
+
+  const field = (key: string, label: string, extra: Record<string, unknown> = {}) => (
     <TextField
+      key={key}
       label={label}
-      value={String(form![key] ?? '')}
-      onChange={(e) => setForm({ ...form!, [key]: e.target.value })}
+      value={form!.f[key] ?? ''}
+      onChange={(e) => setForm({ ...form!, f: { ...form!.f, [key]: e.target.value } })}
       {...extra}
     />
   );
+  const select = (key: string, label: string, options: { value: string; label: string }[]) => (
+    <SelectField
+      key={key}
+      label={label}
+      value={form!.f[key] ?? ''}
+      options={options}
+      onChange={(e) => setForm({ ...form!, f: { ...form!.f, [key]: e.target.value } })}
+    />
+  );
+  const num = { type: 'number', min: 0 };
 
   return (
     <section className="rf-card rf-config">
       <div className="rf-config__head">
-        <h2 className="rf-form__title">Equipos: CasparCG</h2>
+        <h2 className="rf-form__title">Equipos del estudio</h2>
         {!form && (
-          <Button size="sm" onClick={() => setForm(emptyDevice())}>
-            Añadir CasparCG
-          </Button>
+          <span className="rf-config__add">
+            <select
+              className="rf-select"
+              aria-label="Tipo de equipo"
+              value={addKind}
+              onChange={(e) => setAddKind(e.target.value as Kind)}
+            >
+              {DEVICE_KINDS.map((k) => (
+                <option key={k} value={k}>
+                  {DEVICE_KIND_LABEL[k]}
+                </option>
+              ))}
+            </select>
+            <Button size="sm" onClick={() => open(emptyDevice(addKind))}>
+              Añadir equipo
+            </Button>
+          </span>
         )}
       </div>
       <p className="rf-muted rf-small">
-        RunFlow controla CasparCG 2.3+ por AMCP (puerto 5250) y lee la posición de los vídeos por
-        OSC: en <code>casparcg.config</code> añade este servidor como cliente OSC en el puerto
-        indicado. Los mezcladores llegan en M8.
+        CasparCG para rótulos y VTR; OBS, vMix o ATEM como mezclador. Con GO, el mezclador corta a
+        la FUENTE de la línea (CAM 1, VTR…) según su mapa de fuentes. CasparCG también lee la
+        posición de los vídeos por OSC: en <code>casparcg.config</code> añade este servidor como
+        cliente OSC en el puerto indicado.
       </p>
       {list.isPending ? (
         <Spinner label="Cargando…" />
@@ -469,19 +595,19 @@ function Devices() {
           {list.data.map((d) => (
             <li key={d.id}>
               <div>
-                <strong>{d.name}</strong>{' '}
+                <strong>{d.name}</strong> <Badge>{DEVICE_KIND_LABEL[d.kind]}</Badge>{' '}
                 <Badge tone={d.status.connected ? 'success' : d.enabled ? 'danger' : 'muted'}>
                   {d.status.connected ? 'Conectado' : d.enabled ? 'Sin conexión' : 'Desactivado'}
                 </Badge>
                 <span className="rf-muted rf-small">
                   {' '}
-                  {d.config.host}:{d.config.port} · canal {d.config.channel}
+                  {deviceSummary(d)}
                   {d.status.version && ` · ${d.status.version}`}
                   {!d.status.connected && d.status.error && ` · ${d.status.error}`}
                 </span>
               </div>
               <span className="rf-sidelist__confirm">
-                <Button size="sm" onClick={() => setForm(toForm(d))}>
+                <Button size="sm" onClick={() => open(toForm(d))}>
                   Editar
                 </Button>
                 {confirm === d.id ? (
@@ -507,19 +633,142 @@ function Devices() {
         </ul>
       )}
       {form && (
-        <form className="rf-config__device" onSubmit={onSave} aria-label="Equipo CasparCG">
-          {field('name', 'Nombre', { maxLength: 60, required: true })}
+        <form
+          className="rf-config__device"
+          onSubmit={onSave}
+          aria-label={`Equipo ${DEVICE_KIND_LABEL[form.kind]}`}
+        >
+          <TextField
+            label="Nombre"
+            maxLength={60}
+            required
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+          />
           {field('host', 'Dirección (IP o nombre)', { required: true })}
-          {field('port', 'Puerto AMCP', { type: 'number', min: 1, max: 65535 })}
-          {field('oscPort', 'Puerto OSC (0 = sin OSC)', { type: 'number', min: 0, max: 65535 })}
-          {field('channel', 'Canal', { type: 'number', min: 1, max: 32 })}
-          {field('vtr', 'Capa VTR', { type: 'number', min: 1 })}
-          {field('lower', 'Capa rótulos inferiores', { type: 'number', min: 1 })}
-          {field('banner', 'Capa banners', { type: 'number', min: 1 })}
-          {field('logo', 'Capa fecha/mosca', { type: 'number', min: 1 })}
-          {field('templateBaseUrl', 'Dirección de RunFlow vista desde CasparCG (opcional)', {
-            placeholder: 'http://192.168.1.20:8080',
-          })}
+          {form.kind === 'casparcg' && (
+            <>
+              {field('port', 'Puerto AMCP', num)}
+              {field('oscPort', 'Puerto OSC (0 = sin OSC)', num)}
+              {field('channel', 'Canal', num)}
+              {field('vtr', 'Capa VTR', num)}
+              {field('lower', 'Capa rótulos inferiores', num)}
+              {field('banner', 'Capa banners', num)}
+              {field('logo', 'Capa fecha/mosca', num)}
+              {field('templateBaseUrl', 'Dirección de RunFlow vista desde CasparCG (opcional)', {
+                placeholder: 'http://192.168.1.20:8080',
+              })}
+            </>
+          )}
+          {form.kind === 'obs' && (
+            <>
+              {field('port', 'Puerto de obs-websocket', num)}
+              {field('password', 'Contraseña de obs-websocket', {
+                type: 'password',
+                autoComplete: 'off',
+              })}
+              <label className="rf-check">
+                <input
+                  type="checkbox"
+                  checked={!!form.b.studioMode}
+                  onChange={(e) =>
+                    setForm({ ...form, b: { ...form.b, studioMode: e.target.checked } })
+                  }
+                />
+                <span>Modo estudio: la escena va a previo y se lanza la transición</span>
+              </label>
+            </>
+          )}
+          {form.kind === 'vmix' && (
+            <>
+              {field('port', 'Puerto de la API TCP', num)}
+              {select(
+                'transition',
+                'Transición',
+                VMIX_TRANSITIONS.map((t) => ({
+                  value: t,
+                  label: t === 'CutDirect' ? 'Corte directo' : t,
+                })),
+              )}
+              {field('durationMs', 'Duración de la transición (ms)', num)}
+            </>
+          )}
+          {form.kind === 'atem' && (
+            <>
+              {field('me', 'M/E', { type: 'number', min: 1, max: 4 })}
+              {select('transition', 'Transición', [
+                { value: 'cut', label: 'Corte directo a programa' },
+                { value: 'auto', label: 'Previo + AUTO' },
+              ])}
+            </>
+          )}
+          {form.kind !== 'casparcg' && (
+            <fieldset className="rf-config__sources">
+              <legend>Mapa de fuentes</legend>
+              <p className="rf-muted rf-small">{INPUT_HINT[form.kind]}</p>
+              {form.sources.map(([k, v], i) => (
+                <div key={i} className="rf-config__source">
+                  <input
+                    className="rf-input"
+                    aria-label={`Fuente ${i + 1}`}
+                    value={k}
+                    placeholder="CAM 1"
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        sources: form.sources.map((s, j) => (j === i ? [e.target.value, s[1]] : s)),
+                      })
+                    }
+                  />
+                  <span aria-hidden="true">→</span>
+                  <input
+                    className="rf-input"
+                    aria-label={`Entrada para ${k || `la fuente ${i + 1}`}`}
+                    value={v}
+                    list={inputs ? 'rf-mixer-inputs' : undefined}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        sources: form.sources.map((s, j) => (j === i ? [s[0], e.target.value] : s)),
+                      })
+                    }
+                  />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    aria-label={`Quitar ${k || 'fuente'}`}
+                    onClick={() =>
+                      setForm({ ...form, sources: form.sources.filter((_, j) => j !== i) })
+                    }
+                  >
+                    ✕
+                  </Button>
+                </div>
+              ))}
+              {inputs && (
+                <datalist id="rf-mixer-inputs">
+                  {inputs.map((i) => (
+                    <option key={i} value={i.split(' · ')[0]}>
+                      {i}
+                    </option>
+                  ))}
+                </datalist>
+              )}
+              <div className="rf-form__actions">
+                <Button
+                  size="sm"
+                  onClick={() => setForm({ ...form, sources: [...form.sources, ['', '']] })}
+                >
+                  + Fuente
+                </Button>
+                {form.id && (
+                  <Button size="sm" variant="ghost" onClick={() => void loadInputs()}>
+                    Leer entradas del mezclador
+                  </Button>
+                )}
+              </div>
+            </fieldset>
+          )}
           <label className="rf-check">
             <input
               type="checkbox"
@@ -535,7 +784,7 @@ function Devices() {
             <Button type="button" onClick={() => void onTest()}>
               Probar conexión
             </Button>
-            <Button type="button" variant="ghost" onClick={() => setForm(null)}>
+            <Button type="button" variant="ghost" onClick={() => open(null)}>
               Cancelar
             </Button>
           </div>

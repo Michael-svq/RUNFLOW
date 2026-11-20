@@ -956,3 +956,9 @@ tr:hover .rf-drag-handle {
   align-items: center;
   gap: var(--rf-space-1);
 }
+.rf-cgbar__program {
+  font-variant-numeric: tabular-nums;
+}
+.rf-cgbar__program strong {
+  color: #d93025;
+}

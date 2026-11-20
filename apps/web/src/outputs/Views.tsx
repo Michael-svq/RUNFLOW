@@ -1,4 +1,4 @@
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import {
   formatDuration,
   isFloating,
@@ -252,6 +252,94 @@ export function MultiView(props: {
         compact
       />
       <MessageView message={props.message} now={props.now} />
+    </div>
+  );
+}
+
+/** Mando por enlace (tablet): GO, volver, rótulos. Las mismas órdenes que Companion. */
+export function ControlView({
+  token,
+  rundown,
+  lines,
+  live,
+  timing,
+  now,
+}: {
+  token: string;
+  rundown: { title: string };
+  lines: LineSnapshot[];
+  live: LiveState | null;
+  timing: RundownTiming;
+  now: number;
+}) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const info = onAirInfo(lines, live, now);
+  const next = timing.nextLineId ? lines.find((l) => l.id === timing.nextLineId) : undefined;
+  const send = async (action: string) => {
+    setBusy(action);
+    setError(null);
+    try {
+      const res = await fetch(`/api/public/control/${encodeURIComponent(token)}/${action}`, {
+        method: 'POST',
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as {
+          error?: { message?: string };
+        } | null;
+        setError(body?.error?.message ?? `Error ${res.status}`);
+      }
+    } catch {
+      setError('Sin conexión');
+    } finally {
+      setBusy(null);
+    }
+  };
+  const label = lineLabel;
+  return (
+    <div className="rf-control">
+      <header className="rf-control__head">
+        <strong>{rundown.title}</strong>
+        {live?.rehearsal && <span className="rf-control__tag">ENSAYO</span>}
+        {live && !live.armed && <span className="rf-control__tag">EQUIPOS DESARMADOS</span>}
+      </header>
+      <div className="rf-control__now">
+        <span className="rf-control__label">EN AIRE</span>
+        <span className="rf-control__line">{info ? label(info.line) : '—'}</span>
+        {info && info.duration > 0 && (
+          <span className={`rf-control__time${info.remaining < 0 ? ' is-over' : ''}`}>
+            {fmtSigned(-info.remaining, false)}
+          </span>
+        )}
+      </div>
+      <div className="rf-control__next">
+        <span className="rf-control__label">SIGUIENTE</span>
+        <span className="rf-control__line">{label(next)}</span>
+      </div>
+      <div className="rf-control__buttons">
+        <button
+          type="button"
+          className="rf-control__go"
+          disabled={busy === 'go'}
+          onClick={() => void send('go')}
+        >
+          GO
+        </button>
+        <button type="button" onClick={() => void send('back')} disabled={!!busy}>
+          ◀ Volver
+        </button>
+        <button type="button" onClick={() => void send('next-graphic')} disabled={!!busy}>
+          ▶ Siguiente rótulo
+        </button>
+        <button type="button" onClick={() => void send('clear-graphics')} disabled={!!busy}>
+          ■ Sacar rótulos
+        </button>
+      </div>
+      {error && (
+        <p className="rf-control__error" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
