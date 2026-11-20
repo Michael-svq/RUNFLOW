@@ -17,6 +17,8 @@ const envSchema = z.object({
   SESSION_TTL_DAYS: z.coerce.number().int().min(1).max(365).default(14),
   /** Intentos por minuto y por IP en login, cambio de contraseña y primera configuración. */
   AUTH_RATE_LIMIT: z.coerce.number().int().min(1).default(10),
+  /** Tiempo mínimo entre dos GO manuales (protección contra doble pulsación). */
+  MIN_GO_INTERVAL_MS: z.coerce.number().int().min(0).max(10_000).default(700),
   WEB_DIST: z.string().optional(),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
 });
@@ -33,6 +35,7 @@ export interface AppConfig {
   trustProxy: boolean;
   sessionTtlDays: number;
   authRateLimit: number;
+  minGoIntervalMs: number;
   /** Carpeta con la web compilada; si existe, el servidor la sirve. */
   webDist: string | undefined;
   logLevel: string;
@@ -67,6 +70,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     trustProxy: e.TRUST_PROXY,
     sessionTtlDays: e.SESSION_TTL_DAYS,
     authRateLimit: e.AUTH_RATE_LIMIT,
+    minGoIntervalMs: e.MIN_GO_INTERVAL_MS,
     webDist: e.WEB_DIST,
     logLevel: e.LOG_LEVEL ?? (e.NODE_ENV === 'production' ? 'info' : 'debug'),
   };

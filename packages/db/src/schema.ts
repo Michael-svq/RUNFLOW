@@ -183,6 +183,8 @@ export const rundowns = pgTable(
     status: text('status').notNull().default('borrador'),
     /** Estado completo del documento colaborativo (Yjs). */
     ydoc: bytea('ydoc'),
+    /** Estado del directo (LiveState de @runflow/core), autoridad del servidor. */
+    live: jsonb('live'),
     lineCount: integer('line_count').notNull().default(0),
     estimatedSeconds: integer('estimated_seconds').notNull().default(0),
     createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
@@ -230,4 +232,30 @@ export const views = pgTable(
     updatedAt: updatedAt(),
   },
   (t) => [index('views_org_idx').on(t.orgId)],
+);
+
+/** Registro de emisión: qué salió al aire y cuándo (PLAN §8). */
+export const asrunLog = pgTable(
+  'asrun_log',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    rundownId: uuid('rundown_id')
+      .notNull()
+      .references(() => rundowns.id, { onDelete: 'cascade' }),
+    lineId: text('line_id').notNull(),
+    num: text('num').notNull().default(''),
+    name: text('name').notNull().default(''),
+    type: text('type').notNull().default(''),
+    startedAt: timestamp('started_at', { withTimezone: true, mode: 'date' }).notNull(),
+    endedAt: timestamp('ended_at', { withTimezone: true, mode: 'date' }),
+    durationS: integer('duration_s'),
+    rehearsal: boolean('rehearsal').notNull().default(false),
+    /** go | auto | event | back */
+    trigger: text('trigger').notNull(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  },
+  (t) => [index('asrun_rundown_idx').on(t.rundownId, t.startedAt)],
 );

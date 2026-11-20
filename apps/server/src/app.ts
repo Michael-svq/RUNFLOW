@@ -17,13 +17,16 @@ import { platformRoutes } from './routes/platform';
 import { rundownRoutes } from './routes/rundowns';
 import { collabRoutes } from './routes/collab';
 import { CollabServer } from './collab/collab-server';
+import { LiveManager } from './live/live-manager';
+import { liveRoutes } from './routes/live';
 
 export interface AppDeps {
   db: Db;
   config: AppConfig;
   version: string;
-  /** Lo crea buildApp. */
+  /** Los crea buildApp. */
   collab?: CollabServer;
+  live?: LiveManager;
 }
 
 /** Cabecera que la web envía en toda petición que modifica datos (defensa CSRF). */
@@ -50,7 +53,13 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(cookie);
   await app.register(websocket, { options: { maxPayload: 8 * 1024 * 1024 } });
   deps.collab = new CollabServer(deps.db, app.log);
-  app.addHook('onClose', async () => deps.collab!.close());
+  deps.live = new LiveManager(deps.db, deps.collab, app.log, {
+    minGoIntervalMs: deps.config.minGoIntervalMs,
+  });
+  app.addHook('onClose', async () => {
+    deps.live!.close();
+    await deps.collab!.close();
+  });
   await app.register(rateLimit, {
     global: false,
     errorResponseBuilder: (_req, ctx) => ({
@@ -96,6 +105,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       return reply.status(statusCode).send(errorBody('bad_request', 'Petición no válida'));
     }
     req.log.error(err);
+    if (deps.config.env === 'test') console.error(err);
     return reply.status(500).send(errorBody('internal', 'Error interno del servidor'));
   });
 
@@ -105,6 +115,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await platformRoutes(app, deps);
   await rundownRoutes(app, deps);
   await collabRoutes(app, deps);
+  await liveRoutes(app, deps);
 
   const webDist = deps.config.webDist ? path.resolve(deps.config.webDist) : undefined;
   const serveWeb = !!webDist && existsSync(path.join(webDist, 'index.html'));

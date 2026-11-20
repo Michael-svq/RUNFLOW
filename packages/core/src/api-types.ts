@@ -96,6 +96,8 @@ export interface RundownDto {
   lineCount: number;
   /** Suma de TIEMPO ESTIMADO de las líneas, en segundos. */
   estimatedSeconds: number;
+  /** Zona horaria de la empresa (para calcular la hora exacta de inicio y fin). */
+  timezone: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -108,4 +110,17 @@ export interface SavedViewDto {
   columns: { key: string; width: number }[];
   /** Quien la pide puede modificarla o borrarla. */
   canEdit: boolean;
+}
+
+export interface AsrunEntryDto {
+  id: number;
+  lineId: string;
+  num: string;
+  name: string;
+  type: string;
+  startedAt: string;
+  endedAt: string | null;
+  durationS: number | null;
+  rehearsal: boolean;
+  trigger: 'go' | 'auto' | 'event' | 'back';
 }

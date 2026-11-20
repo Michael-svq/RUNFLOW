@@ -10,7 +10,15 @@ import {
   type UpdateProgramInput,
   type UpdateRundownInput,
 } from '@runflow/core';
-import { programs, rundowns, views, withTenant, type Db, type Tx } from '@runflow/db';
+import {
+  organizations,
+  programs,
+  rundowns,
+  views,
+  withTenant,
+  type Db,
+  type Tx,
+} from '@runflow/db';
 import { badRequest, conflict, forbidden, notFound, pgErrorCode } from '../errors';
 import type { TenantInfo } from '../auth/guards';
 import { audit } from './audit';
@@ -115,6 +123,7 @@ const rundownSelect = {
   estimatedSeconds: rundowns.estimatedSeconds,
   createdAt: rundowns.createdAt,
   updatedAt: rundowns.updatedAt,
+  timezone: organizations.timezone,
 };
 
 type RundownRow = {
@@ -134,7 +143,8 @@ function rundownQuery(tx: Tx) {
   return tx
     .select(rundownSelect)
     .from(rundowns)
-    .innerJoin(programs, eq(programs.id, rundowns.programId));
+    .innerJoin(programs, eq(programs.id, rundowns.programId))
+    .innerJoin(organizations, eq(organizations.id, rundowns.orgId));
 }
 
 /** Escaleta de la empresa activa que no esté borrada (o 404). */

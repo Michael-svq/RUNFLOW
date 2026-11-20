@@ -65,12 +65,15 @@ export async function rundownRoutes(app: FastifyInstance, deps: AppDeps): Promis
   app.patch('/api/rundowns/:id', { preHandler: structure }, async (req) => {
     const { id } = parse(idParams, req.params);
     const input = parse(updateRundownInput, req.body);
-    return { rundown: await updateRundown(deps.db, req.tenant!, id, input) };
+    const rundown = await updateRundown(deps.db, req.tenant!, id, input);
+    if (input.airDate || input.startTime || input.endTime) await deps.live?.refreshWindow(id);
+    return { rundown };
   });
   app.delete('/api/rundowns/:id', { preHandler: structure }, async (req) => {
     const { id } = parse(idParams, req.params);
     await deleteRundown(deps.db, req.tenant!, id);
     deps.collab?.closeDocument(id);
+    deps.live?.forget(id);
     return { ok: true };
   });
 

@@ -23,6 +23,8 @@ import { rundownLines, rundowns, withTenant, type Db } from '@runflow/db';
 const MESSAGE_SYNC = 0;
 const MESSAGE_AWARENESS = 1;
 const MESSAGE_QUERY_AWARENESS = 3;
+/** Mensaje propio: estado del directo (JSON). */
+export const MESSAGE_LIVE = 100;
 
 const SAVE_DEBOUNCE_MS = 800;
 const SAVE_MAX_WAIT_MS = 5_000;
@@ -52,7 +54,10 @@ class SharedDoc {
   private saveTimer: NodeJS.Timeout | undefined;
   private firstDirtyAt = 0;
   private saving: Promise<void> = Promise.resolve();
+  private changeTimer: NodeJS.Timeout | undefined;
   dirty = false;
+  /** Usos internos en curso (motor de directo) que impiden descargar el documento. */
+  holds = 0;
 
   constructor(
     readonly rundownId: string,
@@ -66,6 +71,7 @@ class SharedDoc {
       syncProtocol.writeUpdate(encoder, update);
       this.broadcast(encoding.toUint8Array(encoder), origin);
       this.scheduleSave();
+      if (origin !== 'load' && origin !== 'live') this.notifyChange();
     });
     this.awareness.on(
       'update',
@@ -90,7 +96,16 @@ class SharedDoc {
     );
   }
 
-  private broadcast(message: Uint8Array, except?: unknown): void {
+  /** Avisa (agrupado) de que han cambiado las líneas, p. ej. para reprogramar el autonext. */
+  private notifyChange(): void {
+    clearTimeout(this.changeTimer);
+    this.changeTimer = setTimeout(
+      () => this.server.onDocChanged?.(this.rundownId, this.orgId),
+      300,
+    );
+  }
+
+  broadcast(message: Uint8Array, except?: unknown): void {
     for (const ws of this.conns.keys()) {
       if (ws !== except) send(ws, message);
     }
@@ -191,9 +206,17 @@ class SharedDoc {
 
   destroy(): void {
     clearTimeout(this.saveTimer);
+    clearTimeout(this.changeTimer);
     this.awareness.destroy();
     this.doc.destroy();
   }
+}
+
+function liveMessage(live: unknown): Uint8Array {
+  const encoder = encoding.createEncoder();
+  encoding.writeVarUint(encoder, MESSAGE_LIVE);
+  encoding.writeVarString(encoder, JSON.stringify(live));
+  return encoding.toUint8Array(encoder);
 }
 
 const earlyListeners = new WeakMap<WebSocket, (data: ArrayBuffer | Buffer) => void>();
@@ -214,6 +237,10 @@ function send(ws: WebSocket, message: Uint8Array): void {
 export class CollabServer {
   private readonly docs = new Map<string, Promise<SharedDoc>>();
   private readonly pingTimer: NodeJS.Timeout;
+  /** Estado del directo que se envía a quien se conecta (lo aporta el motor de directo). */
+  liveSnapshot?: (rundownId: string, orgId: string) => Promise<unknown>;
+  /** Aviso de cambios en las líneas de una escaleta. */
+  onDocChanged?: (rundownId: string, orgId: string) => void;
 
   constructor(
     private readonly db: Db,
@@ -274,6 +301,50 @@ export class CollabServer {
     shared.conns.set(ws, conn);
     shared.sendInitial(ws);
     for (const bytes of pending.splice(0)) this.safeHandle(shared, ws, conn, bytes);
+    if (this.liveSnapshot) {
+      try {
+        const live = await this.liveSnapshot(rundownId, info.orgId);
+        if (live) send(ws, liveMessage(live));
+      } catch (err) {
+        this.log.warn({ err, rundownId }, 'No se pudo enviar el estado del directo');
+      }
+    }
+  }
+
+  /** Envía el estado del directo a todas las personas conectadas a la escaleta. */
+  broadcastLive(rundownId: string, live: unknown): void {
+    void this.docs.get(rundownId)?.then((shared) => shared.broadcast(liveMessage(live)));
+  }
+
+  /**
+   * Usa el documento de una escaleta desde el servidor (motor de directo),
+   * aunque no haya nadie conectado. Se guarda y se descarga al terminar si
+   * no lo usa nadie más.
+   */
+  async withDoc<T>(
+    rundownId: string,
+    orgId: string,
+    fn: (doc: Y.Doc) => T | Promise<T>,
+  ): Promise<T> {
+    const entry = this.getDoc(rundownId, orgId);
+    const shared = await entry;
+    shared.holds++;
+    try {
+      return await fn(shared.doc);
+    } finally {
+      shared.holds--;
+      await this.releaseIfIdle(rundownId, shared);
+    }
+  }
+
+  private async releaseIfIdle(rundownId: string, shared: SharedDoc): Promise<void> {
+    if (shared.conns.size > 0 || shared.holds > 0) return;
+    await shared.save();
+    const entry = this.docs.get(rundownId);
+    if (shared.conns.size === 0 && shared.holds === 0 && entry && (await entry) === shared) {
+      this.docs.delete(rundownId);
+      shared.destroy();
+    }
   }
 
   private safeHandle(shared: SharedDoc, ws: WebSocket, conn: ConnState, bytes: Uint8Array): void {
@@ -323,14 +394,8 @@ export class CollabServer {
     const shared = await entry.catch(() => undefined);
     if (!shared) return;
     shared.removeConnection(ws);
-    if (shared.conns.size === 0) {
-      await shared.save();
-      // Puede haberse conectado alguien mientras se guardaba.
-      if (shared.conns.size === 0 && this.docs.get(rundownId) === entry) {
-        this.docs.delete(rundownId);
-        shared.destroy();
-      }
-    }
+    // Puede conectarse alguien mientras se guarda: releaseIfIdle lo comprueba.
+    await this.releaseIfIdle(rundownId, shared);
   }
 
   /** Persiste el documento y la proyección de líneas. */
