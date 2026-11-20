@@ -42,6 +42,8 @@ export const orgSettingsSchema = z.object({
   cameraAutoOut: z.boolean().default(false),
   /** Precargar en CasparCG el VTR de la línea SIGUIENTE (arranque instantáneo con GO). */
   prerollNext: z.boolean().default(true),
+  /** IA: tokens al mes para toda la empresa (0 = sin límite). */
+  aiMonthlyTokens: z.number().int().min(0).max(1_000_000_000).default(0),
   cgDesign: cgDesignSchema.prefault({}),
 });
 export type OrgSettings = z.infer<typeof orgSettingsSchema>;
@@ -49,6 +51,7 @@ export const orgSettingsPatch = z.object({
   graphicSeconds: z.number().int().min(1).max(120).optional(),
   cameraAutoOut: z.boolean().optional(),
   prerollNext: z.boolean().optional(),
+  aiMonthlyTokens: z.number().int().min(0).max(1_000_000_000).optional(),
   cgDesign: cgDesignSchema.partial().optional(),
 });
 

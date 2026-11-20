@@ -113,6 +113,20 @@
       "when": 1795143869509,
       "tag": "0015_devices_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1795158951268,
+      "tag": "0016_ai",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1795158951834,
+      "tag": "0017_ai_rls",
+      "breakpoints": true
     }
   ]
 }

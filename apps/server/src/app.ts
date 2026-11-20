@@ -27,6 +27,8 @@ import { StationSync } from './station/sync-worker';
 import { LicenseManager } from './station/license';
 import { CgManager } from './cg/cg-manager';
 import { MixerManager } from './mixers/mixer-manager';
+import { SecretBox } from './services/secrets';
+import { aiRoutes } from './routes/ai';
 import { cgRoutes } from './routes/cg';
 import { readFileSync } from 'node:fs';
 
@@ -43,6 +45,8 @@ export interface AppDeps {
   license?: LicenseManager;
   cg?: CgManager;
   mixers?: MixerManager;
+  /** Cifrado de secretos (claves de IA). */
+  secrets?: SecretBox;
 }
 
 /** Cabecera que la web envía en toda petición que modifica datos (defensa CSRF). */
@@ -81,6 +85,10 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   deps.collab = new CollabServer(deps.db, app.log);
   deps.live = new LiveManager(deps.db, deps.collab, app.log, {
     minGoIntervalMs: deps.config.minGoIntervalMs,
+  });
+  deps.secrets = await SecretBox.load({
+    secretKey: deps.config.secretKey,
+    dataDir: deps.config.dataDir,
   });
   deps.cg = new CgManager(deps.db, deps.collab, app.log, {
     serverBaseUrl:
@@ -192,6 +200,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await workspaceRoutes(app, deps);
   await stationRoutes(app, deps);
   await cgRoutes(app, deps);
+  await aiRoutes(app, deps);
 
   const webDist = deps.config.webDist ? path.resolve(deps.config.webDist) : undefined;
   const serveWeb = !!webDist && existsSync(path.join(webDist, 'index.html'));

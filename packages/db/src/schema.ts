@@ -429,3 +429,45 @@ export const devices = pgTable(
   },
   (t) => [index('devices_org_idx').on(t.orgId)],
 );
+
+/** Proveedores de IA de cada empresa; la clave va cifrada (AES-256-GCM). */
+export const aiProviders = pgTable(
+  'ai_providers',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    /** anthropic | openai | gemini | mistral | ollama */
+    kind: text('kind').notNull(),
+    name: text('name').notNull(),
+    model: text('model').notNull(),
+    baseUrl: text('base_url').notNull().default(''),
+    apiKeyEnc: text('api_key_enc'),
+    isDefault: boolean('is_default').notNull().default(false),
+    enabled: boolean('enabled').notNull().default(true),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index('ai_providers_org_idx').on(t.orgId)],
+);
+
+/** Registro de consumo de IA (límites por empresa). */
+export const aiUsage = pgTable(
+  'ai_usage',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    providerId: uuid('provider_id').references(() => aiProviders.id, { onDelete: 'set null' }),
+    feature: text('feature').notNull(),
+    model: text('model').notNull().default(''),
+    inputTokens: integer('input_tokens').notNull().default(0),
+    outputTokens: integer('output_tokens').notNull().default(0),
+    ok: boolean('ok').notNull().default(true),
+    createdAt: createdAt(),
+  },
+  (t) => [index('ai_usage_org_date_idx').on(t.orgId, t.createdAt)],
+);

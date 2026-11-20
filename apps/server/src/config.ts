@@ -35,6 +35,8 @@ const envSchema = z.object({
   /** HTTPS directo (Station en red local): certificado y clave en PEM. */
   TLS_CERT_FILE: z.string().optional(),
   TLS_KEY_FILE: z.string().optional(),
+  /** Clave maestra para cifrar secretos (claves de IA). Sin ella se crea en DATA_DIR. */
+  SECRET_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
   /** Dirección con la que otros equipos (CasparCG) ven este servidor, p. ej. http://192.168.1.20:8080. */
   PUBLIC_URL: z.preprocess(emptyToUndefined, z.string().url().optional()),
   /** Clave pública de licencias (solo fuera de producción; en producción va compilada). */
@@ -62,6 +64,7 @@ export interface AppConfig {
   webDist: string | undefined;
   dataDir: string;
   publicUrl: string | undefined;
+  secretKey: string | undefined;
   tls: { certFile: string; keyFile: string } | undefined;
   licensePublicKey: string | undefined;
   logLevel: string;
@@ -103,6 +106,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     webDist: e.WEB_DIST,
     dataDir: path.resolve(e.DATA_DIR),
     publicUrl: e.PUBLIC_URL,
+    secretKey: e.SECRET_KEY,
     tls:
       e.TLS_CERT_FILE && e.TLS_KEY_FILE
         ? { certFile: e.TLS_CERT_FILE, keyFile: e.TLS_KEY_FILE }
