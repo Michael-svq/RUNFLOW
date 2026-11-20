@@ -9,6 +9,7 @@ export interface TestContext {
   app: FastifyInstance;
   handle: DbHandle;
   collab: CollabServer;
+  deps: AppDeps;
   close(): Promise<void>;
 }
 
@@ -27,6 +28,7 @@ export async function createTestContext(env: Record<string, string> = {}): Promi
     app,
     handle,
     collab: deps.collab!,
+    deps,
     async close() {
       await app.close();
       await handle.close();
@@ -35,11 +37,11 @@ export async function createTestContext(env: Record<string, string> = {}): Promi
 }
 
 /** Vacía todas las tablas (con el propietario, que no está sujeto a RLS). */
-export async function resetDb(): Promise<void> {
-  const client = new pg.Client({ connectionString: process.env.TEST_OWNER_URL });
+export async function resetDb(ownerUrl = process.env.TEST_OWNER_URL): Promise<void> {
+  const client = new pg.Client({ connectionString: ownerUrl });
   await client.connect();
   await client.query(
-    'truncate table chat_messages, rundown_versions, rundown_templates, fridge_items, outputs, people, asrun_log, views, rundown_lines, rundowns, programs, audit_log, sessions, memberships, roles, users, organizations restart identity cascade',
+    'truncate table stations, chat_messages, rundown_versions, rundown_templates, fridge_items, outputs, people, asrun_log, views, rundown_lines, rundowns, programs, audit_log, sessions, memberships, roles, users, organizations restart identity cascade',
   );
   await client.end();
 }

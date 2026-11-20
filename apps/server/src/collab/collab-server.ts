@@ -397,6 +397,28 @@ export class CollabServer {
     }
   }
 
+  /**
+   * Mantiene abierto el documento de una escaleta (sincronización con la nube
+   * desde una Station) hasta llamar a `release`.
+   */
+  async acquire(
+    rundownId: string,
+    orgId: string,
+  ): Promise<{ doc: Y.Doc; release: () => Promise<void> }> {
+    const shared = await this.getDoc(rundownId, orgId);
+    shared.holds++;
+    let released = false;
+    return {
+      doc: shared.doc,
+      release: async () => {
+        if (released) return;
+        released = true;
+        shared.holds--;
+        await this.releaseIfIdle(rundownId, shared);
+      },
+    };
+  }
+
   private async releaseIfIdle(rundownId: string, shared: SharedDoc): Promise<void> {
     if (shared.conns.size > 0 || shared.holds > 0) return;
     await shared.save();

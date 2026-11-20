@@ -5,5 +5,6 @@
 import setup from './global-setup';
 
 process.env.TEST_DATABASE_NAME ??= 'runflow_e2e';
+process.env.TEST_SKIP_STATION_DB = '1';
 await setup();
 console.log(`Base de datos ${process.env.TEST_DATABASE_NAME} lista`);

@@ -26,4 +26,6 @@ await app.listen({ port: config.port, host: config.host });
 await deps
   .live!.resume()
   .catch((err: unknown) => app.log.error({ err }, 'No se pudieron retomar los directos'));
+// Station enlazada con la nube: empieza a sincronizar.
+deps.stationSync?.start();
 app.log.info(`RunFlow (${config.mode}) escuchando en ${config.host}:${config.port}`);

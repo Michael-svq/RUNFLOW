@@ -386,3 +386,25 @@ export const rundownVersions = pgTable(
   },
   (t) => [index('versions_rundown_idx').on(t.rundownId, t.createdAt)],
 );
+
+/* ---------- M6: RunFlow Station ---------- */
+
+/** Stations emparejadas con una empresa de la nube (modo híbrido). */
+export const stations = pgTable(
+  'stations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    /** SHA-256 del token de la Station (el token solo se muestra al crearla). */
+    tokenHash: text('token_hash').notNull().unique(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
+    lastVersion: text('last_version'),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  },
+  (t) => [index('stations_org_idx').on(t.orgId)],
+);

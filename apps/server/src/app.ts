@@ -22,6 +22,8 @@ import { liveRoutes } from './routes/live';
 import { peopleRoutes } from './routes/people';
 import { outputRoutes } from './routes/outputs';
 import { workspaceRoutes } from './routes/workspace';
+import { stationRoutes } from './routes/stations';
+import { StationSync } from './station/sync-worker';
 
 export interface AppDeps {
   db: Db;
@@ -30,6 +32,8 @@ export interface AppDeps {
   /** Los crea buildApp. */
   collab?: CollabServer;
   live?: LiveManager;
+  /** Solo en una Station enlazada con la nube (modo híbrido). */
+  stationSync?: StationSync;
 }
 
 /** Cabecera que la web envía en toda petición que modifica datos (defensa CSRF). */
@@ -59,7 +63,17 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   deps.live = new LiveManager(deps.db, deps.collab, app.log, {
     minGoIntervalMs: deps.config.minGoIntervalMs,
   });
+  const { mode, cloudUrl, stationToken } = deps.config;
+  if (mode === 'station' && cloudUrl && stationToken) {
+    deps.stationSync = new StationSync(deps.db, deps.collab, app.log, {
+      cloudUrl: cloudUrl.replace(/\/+$/, ''),
+      token: stationToken,
+      intervalMs: deps.config.stationSyncIntervalMs,
+      version: deps.version,
+    });
+  }
   app.addHook('onClose', async () => {
+    await deps.stationSync?.close();
     deps.live!.close();
     await deps.collab!.close();
   });
@@ -122,6 +136,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await peopleRoutes(app, deps);
   await outputRoutes(app, deps);
   await workspaceRoutes(app, deps);
+  await stationRoutes(app, deps);
 
   const webDist = deps.config.webDist ? path.resolve(deps.config.webDist) : undefined;
   const serveWeb = !!webDist && existsSync(path.join(webDist, 'index.html'));

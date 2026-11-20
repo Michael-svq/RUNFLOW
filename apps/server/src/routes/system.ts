@@ -8,6 +8,8 @@ import type { AppDeps } from '../app';
 import { startSession } from './auth';
 
 async function needsSetup(deps: AppDeps): Promise<boolean> {
+  // Una Station enlazada con la nube recibe empresa y usuarios de la nube.
+  if (deps.stationSync) return false;
   const [row] = await withSystem(deps.db, (tx) =>
     tx.select({ count: sql<number>`count(*)::int` }).from(users),
   );
@@ -32,6 +34,8 @@ export async function systemRoutes(app: FastifyInstance, deps: AppDeps): Promise
     '/api/setup',
     { config: { rateLimit: { max: deps.config.authRateLimit, timeWindow: '1 minute' } } },
     async (req, reply) => {
+      if (deps.stationSync)
+        throw conflict('station_linked', 'Esta Station está enlazada con la nube');
       const input = parse(setupInput, req.body);
       const result = await withSystem(deps.db, async (tx) => {
         // Evita que dos peticiones simultáneas creen dos administradores.

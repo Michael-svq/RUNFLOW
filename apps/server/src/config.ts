@@ -19,6 +19,10 @@ const envSchema = z.object({
   AUTH_RATE_LIMIT: z.coerce.number().int().min(1).default(10),
   /** Tiempo mínimo entre dos GO manuales (protección contra doble pulsación). */
   MIN_GO_INTERVAL_MS: z.coerce.number().int().min(0).max(10_000).default(700),
+  /** Station en modo híbrido: dirección de la nube y token de la Station. */
+  CLOUD_URL: z.string().url().optional(),
+  STATION_TOKEN: z.string().optional(),
+  STATION_SYNC_INTERVAL_MS: z.coerce.number().int().min(100).default(15_000),
   WEB_DIST: z.string().optional(),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
 });
@@ -36,6 +40,9 @@ export interface AppConfig {
   sessionTtlDays: number;
   authRateLimit: number;
   minGoIntervalMs: number;
+  cloudUrl: string | undefined;
+  stationToken: string | undefined;
+  stationSyncIntervalMs: number;
   /** Carpeta con la web compilada; si existe, el servidor la sirve. */
   webDist: string | undefined;
   logLevel: string;
@@ -71,6 +78,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     sessionTtlDays: e.SESSION_TTL_DAYS,
     authRateLimit: e.AUTH_RATE_LIMIT,
     minGoIntervalMs: e.MIN_GO_INTERVAL_MS,
+    cloudUrl: e.CLOUD_URL,
+    stationToken: e.STATION_TOKEN,
+    stationSyncIntervalMs: e.STATION_SYNC_INTERVAL_MS,
     webDist: e.WEB_DIST,
     logLevel: e.LOG_LEVEL ?? (e.NODE_ENV === 'production' ? 'info' : 'debug'),
   };
