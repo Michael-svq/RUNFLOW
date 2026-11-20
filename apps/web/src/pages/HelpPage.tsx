@@ -77,6 +77,7 @@ const SECTIONS: { id: string; title: string; items: string[] }[] = [
       'En Equipo se convoca a cada persona con su puesto y hora de citación; «Copiar enlace», WhatsApp o Email le envían un enlace para confirmar sin cuenta.',
       'Invitados (llegada, maquillaje, set) y Logística (transporte, catering, escenografía…) se marcan según avanzan; todo se actualiza para el equipo cada pocos segundos.',
       '«Hoja de llamada» abre la versión para imprimir o guardar en PDF; «Duplicar» copia la convocatoria a otra fecha con el mismo equipo.',
+      'Presupuesto (en cada convocatoria o en la pestaña general): partidas con previsto y real; el resumen por categoría muestra la desviación y lo pendiente de pago, y «Exportar CSV» lo abre en cualquier hoja de cálculo.',
     ],
   },
   {

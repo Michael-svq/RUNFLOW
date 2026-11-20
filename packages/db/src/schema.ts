@@ -719,3 +719,34 @@ export const logisticsItems = pgTable(
   },
   (t) => [index('logistics_items_event_idx').on(t.eventId)],
 );
+
+/* ---------- F3.2 Presupuesto ---------- */
+
+/** Partidas de presupuesto (céntimos), por programa y/o convocatoria. */
+export const budgetLines = pgTable(
+  'budget_lines',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    programId: uuid('program_id').references(() => programs.id, { onDelete: 'set null' }),
+    eventId: uuid('event_id').references(() => productionEvents.id, { onDelete: 'set null' }),
+    category: text('category').notNull().default('otros'),
+    concept: text('concept').notNull(),
+    provider: text('provider').notNull().default(''),
+    plannedCents: bigint('planned_cents', { mode: 'number' }).notNull().default(0),
+    actualCents: bigint('actual_cents', { mode: 'number' }),
+    date: date('date', { mode: 'string' }),
+    invoice: text('invoice').notNull().default(''),
+    paid: boolean('paid').notNull().default(false),
+    notes: text('notes').notNull().default(''),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('budget_lines_org_date_idx').on(t.orgId, t.date),
+    index('budget_lines_event_idx').on(t.eventId),
+  ],
+);

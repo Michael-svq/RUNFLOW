@@ -31,6 +31,7 @@ Web (PWA) multiempresa en la nube y funcionamiento local con **RunFlow Station**
 | F2.4 API pública REST, tokens con permisos y webhooks firmados                                 | ✅        |
 | F2.1 Media: subir, previsualizar, marcar TC, proxies y copia a CasparCG                        | ✅        |
 | F3.1 Producción: calendario, personal, hojas de llamada con confirmación, invitados, logística | ✅        |
+| F3.2 Presupuesto: partidas por programa o convocatoria, previsto/real, desviación y CSV        | ✅        |
 | Beta privada (equipos reales) y resto de la Fase III                                           | Siguiente |
 
 ## Estructura

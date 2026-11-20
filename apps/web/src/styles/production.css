@@ -231,3 +231,35 @@ a.rf-btn {
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* Presupuesto (F3.2) */
+.rf-budget {
+  display: grid;
+  gap: var(--rf-space-3);
+}
+.rf-budget .is-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rf-budget .is-over {
+  color: var(--rf-danger);
+  font-weight: 700;
+}
+.rf-budget__summary tfoot th {
+  border-top: 2px solid var(--rf-border-strong);
+}
+.rf-budget__lines .rf-input--sm {
+  min-width: 6.5rem;
+}
+.rf-budget__lines .rf-select--sm {
+  min-width: 7.5rem;
+}
+.rf-budget__lines .rf-budget__money {
+  min-width: 5.5rem;
+  width: 6.5rem;
+  text-align: right;
+}
+.rf-budget__lines .rf-budget__date {
+  min-width: 8.5rem;
+}

@@ -24,6 +24,7 @@ import { Alert, Badge, Button, Dialog, SelectField, Spinner, TextField } from '@
 import { api, errorMessage } from '../api/client';
 import { useCan } from '../auth/session';
 import { PageHeader } from '../components/PageHeader';
+import { BudgetPanel } from '../production/BudgetPanel';
 import {
   dayKey,
   fmtDateTime,
@@ -50,37 +51,45 @@ const statusTone = (s: EventStatus | CallStatus | GuestStatus) =>
       : 'muted';
 
 export function ProductionPage() {
-  const [tab, setTab] = useState<'calendar' | 'crew'>('calendar');
+  const [tab, setTab] = useState<'calendar' | 'crew' | 'budget'>('calendar');
+  const canBudget = useCan('budget.view');
+  const tabs = [
+    ['calendar', 'Calendario'],
+    ['crew', 'Personal'],
+    ...(canBudget ? [['budget', 'Presupuesto']] : []),
+  ] as [typeof tab, string][];
   return (
     <>
       <PageHeader
         number="11"
         title="Producción"
-        intro="Directos, grabaciones y ensayos: quién va y a qué hora, invitados y logística, al día para todo el equipo."
+        intro="Directos, grabaciones y ensayos: quién va y a qué hora, invitados, logística y presupuesto, al día para todo el equipo."
         actions={
           <div className="rf-tabs" role="tablist" aria-label="Producción">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === 'calendar'}
-              className={`rf-tabs__tab${tab === 'calendar' ? ' is-active' : ''}`}
-              onClick={() => setTab('calendar')}
-            >
-              Calendario
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === 'crew'}
-              className={`rf-tabs__tab${tab === 'crew' ? ' is-active' : ''}`}
-              onClick={() => setTab('crew')}
-            >
-              Personal
-            </button>
+            {tabs.map(([k, label]) => (
+              <button
+                key={k}
+                type="button"
+                role="tab"
+                aria-selected={tab === k}
+                className={`rf-tabs__tab${tab === k ? ' is-active' : ''}`}
+                onClick={() => setTab(k)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         }
       />
-      {tab === 'calendar' ? <Calendar /> : <CrewDirectory />}
+      {tab === 'calendar' ? (
+        <Calendar />
+      ) : tab === 'crew' ? (
+        <CrewDirectory />
+      ) : (
+        <section className="rf-card" aria-label="Presupuesto">
+          <BudgetPanel />
+        </section>
+      )}
     </>
   );
 }
@@ -411,7 +420,8 @@ function EventDetail({
     queryFn: () => api.get<ProductionEventDetail>(`/api/production/events/${id}`),
     refetchInterval: REFRESH,
   });
-  const [tab, setTab] = useState<'calls' | 'guests' | 'logistics'>('calls');
+  const [tab, setTab] = useState<'calls' | 'guests' | 'logistics' | 'budget'>('calls');
+  const canBudget = useCan('budget.view');
   const [editing, setEditing] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
@@ -497,6 +507,7 @@ function EventDetail({
             ['calls', `Equipo (${event.crewConfirmed}/${calls.length})`],
             ['guests', `Invitados (${guests.length})`],
             ['logistics', `Logística (${logistics.filter((l) => !l.done).length} pend.)`],
+            ...(canBudget ? ([['budget', 'Presupuesto']] as const) : []),
           ] as const
         ).map(([k, label]) => (
           <button
@@ -528,6 +539,7 @@ function EventDetail({
       {tab === 'logistics' && (
         <LogisticsTab eventId={event.id} items={logistics} canManage={canManage} run={run} />
       )}
+      {tab === 'budget' && <BudgetPanel eventId={event.id} />}
 
       {editing && (
         <EventDialog

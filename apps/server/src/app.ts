@@ -34,6 +34,7 @@ import { sourceRoutes } from './routes/sources';
 import { publicApiRoutes } from './routes/public-api';
 import { mediaRoutes } from './routes/media';
 import { productionRoutes } from './routes/production';
+import { budgetRoutes } from './routes/budget';
 import { MediaStore } from './media/store';
 import { WebhookDispatcher } from './api/webhooks';
 import { SourcePoller } from './sources/poller';
@@ -232,6 +233,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   deps.media = new MediaStore(deps.config.dataDir);
   await mediaRoutes(app, deps);
   await productionRoutes(app, deps);
+  await budgetRoutes(app, deps);
   deps.sources = new SourcePoller(deps.db, app.log, {
     intervalMs: deps.config.sourcesPollMs,
     allowPrivate: deps.config.sourcesAllowPrivate,
