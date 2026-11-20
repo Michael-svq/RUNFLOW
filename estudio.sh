@@ -8,12 +8,12 @@ case "${1:-arrancar}" in
   borrar) "${compose[@]}" down -v; echo "Estudio borrado."; exit 0 ;;
 esac
 command -v docker >/dev/null || { echo "Falta Docker: https://www.docker.com/products/docker-desktop/"; exit 1; }
-"${compose[@]}" up -d --build
-echo "Esperando a RunFlow..."
-for _ in $(seq 1 90); do
-  curl -fsS http://localhost:3000/api/health >/dev/null 2>&1 && break
-  sleep 2
-done
+if ! "${compose[@]}" up -d --build --wait --wait-timeout 300; then
+  echo "RunFlow no ha arrancado bien:"
+  "${compose[@]}" ps
+  "${compose[@]}" logs --tail 60 app
+  exit 1
+fi
 echo
 echo "Listo:"
 echo "  RunFlow ........... http://localhost:3000  (demo@runflow.test / runflow-demo)"

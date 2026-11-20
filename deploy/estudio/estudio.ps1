@@ -64,24 +64,16 @@ if ($Accion -eq 'borrar') {
 }
 
 Write-Host 'Preparando el estudio (la primera vez tarda unos minutos)...'
-docker @Compose up -d --build
+# --wait espera a que Docker dé por sanos los servicios (comprobación dentro
+# del contenedor, sin depender de la red de Windows).
+docker @Compose up -d --build --wait --wait-timeout 300
 if ($LASTEXITCODE -ne 0) {
-  Write-Host 'No se pudo arrancar el estudio. Revisa los mensajes de arriba.' -ForegroundColor Red
-  Pausa
-  exit 1
-}
-
-Write-Host 'Esperando a RunFlow...'
-$listo = $false
-for ($i = 0; $i -lt 90; $i++) {
-  try {
-    $r = Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 'http://localhost:3000/api/health'
-    if ($r.StatusCode -eq 200) { $listo = $true; break }
-  } catch { }
-  Start-Sleep -Seconds 2
-}
-if (-not $listo) {
-  Write-Host 'RunFlow tarda en responder. Mira el registro con:  docker compose -f docker-compose.estudio.yml logs app' -ForegroundColor Yellow
+  Write-Host ''
+  Write-Host 'RunFlow no ha arrancado bien. Estado y últimas líneas del registro:' -ForegroundColor Yellow
+  docker @Compose ps
+  docker @Compose logs --tail 60 app
+  Write-Host ''
+  Write-Host 'Copia todo lo de arriba para revisarlo.' -ForegroundColor Yellow
   Pausa
   exit 1
 }

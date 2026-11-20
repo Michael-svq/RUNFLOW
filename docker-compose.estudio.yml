@@ -51,6 +51,13 @@ services:
       SOURCES_ALLOW_PRIVATE: 'true'
     volumes:
       - app-data:/data
+    # Comprobación rápida para que el lanzador sepa cuándo está listo.
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000/api/health || exit 1']
+      interval: 5s
+      timeout: 5s
+      start_period: 120s
+      retries: 3
     ports:
       - '127.0.0.1:3000:3000'
       # OSC de un CasparCG real instalado en este ordenador (posición de los vídeos).
