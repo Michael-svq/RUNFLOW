@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import type * as Y from 'yjs';
 import { DEFAULT_READING_WPS, formatDuration, graphicSummary } from '@runflow/core';
-import { lineScript, type LineSnapshot } from '@runflow/sync';
+import { lineScript, type LineSnapshot, type ScriptGraphicBlock } from '@runflow/sync';
 
 export interface ScriptColumns {
   grafismo: string;
   lectura: string;
+  /** Rótulos de la línea (para ▶/■ en directo). */
+  graphics: ScriptGraphicBlock[];
 }
 
 /**
@@ -42,6 +44,7 @@ export function useScriptColumns(
       out.set(l.id, {
         grafismo: s.graphics.map(graphicSummary).join('\n'),
         lectura: s.pasoWords > 0 ? formatDuration(s.readingSeconds) : '',
+        graphics: s.graphics,
       });
     }
     return out;

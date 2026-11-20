@@ -207,7 +207,7 @@ export async function cgRoutes(app: FastifyInstance, deps: AppDeps): Promise<voi
 
   app.get('/api/rundowns/:id/cg', { preHandler: view }, async (req) => {
     const { id, actor } = await rundownOf(req);
-    return { cg: cg().state(id, actor.orgId) };
+    return { cg: await cg().snapshot(id, actor.orgId) };
   });
 
   app.post('/api/rundowns/:id/cg/take', { preHandler: fire }, async (req) => {

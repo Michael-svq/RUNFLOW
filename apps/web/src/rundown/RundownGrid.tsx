@@ -10,6 +10,7 @@ import {
   type KeyboardEvent,
   type MouseEvent,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
 } from 'react';
 import { LINE_TYPES, type ColumnDef, type ViewColumn } from '@runflow/core';
 import type { CellChange, CellValue, LineSnapshot } from '@runflow/sync';
@@ -68,6 +69,8 @@ interface Props {
   extraMenu?: (ctx: { lineIds: string[]; focusLineId: string | null }) => ExtraMenuItem[];
   /** La barra espaciadora queda reservada para el GO. */
   reserveSpace?: boolean;
+  /** Contenido propio de una celda (rótulos con ▶/■, estado del VTR…). */
+  renderCell?: (line: LineSnapshot, key: string) => ReactNode | undefined;
 }
 
 interface Pos {
@@ -103,6 +106,7 @@ export function RundownGrid({
   rowInfo,
   extraMenu,
   reserveSpace,
+  renderCell,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [anchor, setAnchor] = useState<CellRef | null>(null);
@@ -658,6 +662,7 @@ export function RundownGrid({
                 key={line.id}
                 line={line}
                 info={rowInfo?.get(line.id)}
+                renderCell={renderCell}
                 rowNumber={r}
                 columns={columns}
                 pinnedLeft={pinnedLeft}
@@ -821,6 +826,7 @@ function MenuItem({
 interface RowProps {
   line: LineSnapshot;
   info: RowInfo | undefined;
+  renderCell: Props['renderCell'];
   rowNumber: number;
   columns: GridColumn[];
   pinnedLeft: (number | undefined)[];
@@ -938,11 +944,18 @@ const Row = memo(function Row(props: RowProps) {
                     ⋮⋮
                   </span>
                 )}
-                <span className="rf-cell__text">
-                  {c.def.kind === 'computed'
-                    ? (info?.computed[key] ?? '')
-                    : displayValue(c.def, value)}
-                </span>
+                {(() => {
+                  const custom = props.renderCell?.(line, key);
+                  return custom !== undefined ? (
+                    <span className="rf-cell__custom">{custom}</span>
+                  ) : (
+                    <span className="rf-cell__text">
+                      {c.def.kind === 'computed'
+                        ? (info?.computed[key] ?? '')
+                        : displayValue(c.def, value)}
+                    </span>
+                  );
+                })()}
                 {key === 'num' && info?.state === 'onAir' && (
                   <span className="rf-row-tag rf-row-tag--onair">EN AIRE</span>
                 )}

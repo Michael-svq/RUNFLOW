@@ -132,12 +132,7 @@ export class CgManager {
     private readonly log: FastifyBaseLogger,
     private readonly options: { serverBaseUrl: string },
   ) {
-    collab.cgSnapshot = async (rundownId, orgId) => {
-      const rc = this.rundowns.get(rundownId);
-      if (rc && rc.orgId === orgId) return rc.state;
-      const org = this.orgs.has(orgId) ? await this.org(orgId) : null;
-      return org ? { ...initialCgState(), devices: this.deviceMap(org) } : null;
-    };
+    collab.cgSnapshot = (rundownId, orgId) => this.snapshot(rundownId, orgId);
   }
 
   /* ---------- Empresa: ajustes y equipos ---------- */
@@ -283,8 +278,12 @@ export class CgManager {
     return rc;
   }
 
-  state(rundownId: string, orgId: string): CgState {
-    return this.rundown(rundownId, orgId).state;
+  /** Estado de RunFlow CG de una escaleta, con el de los equipos de la empresa. */
+  async snapshot(rundownId: string, orgId: string): Promise<CgState> {
+    const org = await this.org(orgId);
+    const rc = this.rundowns.get(rundownId);
+    const base = rc && rc.orgId === orgId ? rc.state : initialCgState();
+    return { ...base, devices: this.deviceMap(org) };
   }
 
   private enqueue<T>(rc: RundownCg, fn: () => Promise<T>): Promise<T> {

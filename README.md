@@ -6,6 +6,7 @@ Web (PWA) multiempresa en la nube y funcionamiento local con **RunFlow Station**
 - Plan completo: [`docs/PLAN.md`](docs/PLAN.md)
 - Decisiones técnicas: [`docs/adr/`](docs/adr)
 - Despliegue: [`docs/DESPLIEGUE.md`](docs/DESPLIEGUE.md)
+- RunFlow CG y CasparCG: [`docs/CASPARCG.md`](docs/CASPARCG.md)
 
 ## Estado
 
@@ -18,7 +19,8 @@ Web (PWA) multiempresa en la nube y funcionamiento local con **RunFlow Station**
 | M4 Teleprompter y salidas por enlace                                                     | ✅        |
 | M5 Chat, plantillas, nevera, versiones, papelera, importar/exportar, PDF                 | ✅        |
 | M6 RunFlow Station (servidor local, modo híbrido con la nube, licencias)                 | ✅        |
-| M7 RunFlow CG (CasparCG)                                                                 | Siguiente |
+| M7 RunFlow CG (CasparCG: rótulos ▶/■ y por TC, VTR, plantillas, configuración)          | ✅        |
+| M8 Mezcladores (OBS, vMix, ATEM)                                                         | Siguiente |
 
 ## Estructura
 

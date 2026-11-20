@@ -29,7 +29,7 @@ export default defineConfig({
       },
       workbox: {
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//],
+        navigateFallbackDenylist: [/^\/api\//, /^\/cg\//],
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}'],
         cleanupOutdatedCaches: true,
       },
@@ -39,12 +39,16 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': { target: 'http://localhost:3000', changeOrigin: false, ws: true },
+      // Plantillas de RunFlow CG (vista previa)
+      '/cg': { target: 'http://localhost:3000', changeOrigin: false },
     },
   },
   preview: {
     port: 4173,
     proxy: {
       '/api': { target: 'http://localhost:3000', changeOrigin: false, ws: true },
+      // Plantillas de RunFlow CG (vista previa)
+      '/cg': { target: 'http://localhost:3000', changeOrigin: false },
     },
   },
   build: {

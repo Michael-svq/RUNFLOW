@@ -20,6 +20,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { SetupPage } from './pages/SetupPage';
 import { UsersPage } from './pages/UsersPage';
 import { StationPage } from './pages/StationPage';
+import { ConfigPage } from './pages/ConfigPage';
 import { useCan, useMe } from './auth/session';
 
 function RequireUsersPermission() {
@@ -28,6 +29,10 @@ function RequireUsersPermission() {
 
 function RequireStationPermission() {
   return useCan('station.admin') ? <StationPage /> : <Navigate to="/inicio" replace />;
+}
+
+function RequireConfigPermission() {
+  return useCan('org.configure') ? <ConfigPage /> : <Navigate to="/inicio" replace />;
 }
 
 function RequirePlatformAdmin() {
@@ -60,6 +65,7 @@ export function App() {
           <Route path="/nevera" element={<FridgePage />} />
           <Route path="/archivo" element={<ArchivePage />} />
           <Route path="/station" element={<RequireStationPermission />} />
+          <Route path="/configuracion" element={<RequireConfigPermission />} />
           <Route path="/escaletas/:id" element={<RundownPage />} />
           <Route path="/plataforma" element={<RequirePlatformAdmin />} />
           {NAV_ITEMS.filter((i) => i.milestone).map((item) => (

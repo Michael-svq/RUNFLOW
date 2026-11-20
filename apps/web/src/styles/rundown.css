@@ -836,3 +836,123 @@ tr:hover .rf-drag-handle {
 .rf-clock__value--main {
   font-size: 19px;
 }
+
+/* ---------- RunFlow CG (M7) ---------- */
+.rf-cell__custom {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+}
+.rf-cg-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rf-cg-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+.rf-cg-item__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rf-cg-item.is-onair {
+  background: #d93025;
+  color: #fff;
+  font-weight: 700;
+}
+.rf-cg-item.is-done {
+  color: var(--rf-text-faint);
+}
+.rf-cg-btn {
+  flex: none;
+  width: 20px;
+  height: 18px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--rf-border);
+  border-radius: 3px;
+  background: var(--rf-surface-2);
+  color: var(--rf-text);
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+}
+.rf-cg-btn:hover {
+  border-color: var(--rf-accent);
+}
+.rf-cg-item.is-onair .rf-cg-btn {
+  background: #fff;
+  color: #d93025;
+  border-color: #fff;
+}
+.rf-play {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rf-play.is-preloaded {
+  color: var(--rf-success);
+  font-weight: 700;
+}
+.rf-play.is-missing {
+  color: var(--rf-danger);
+  font-weight: 700;
+}
+.rf-play.is-playing {
+  color: var(--rf-success);
+  font-weight: 700;
+}
+.rf-play.is-paused {
+  color: var(--rf-warning);
+}
+.rf-play__bar {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--rf-surface-2);
+  overflow: hidden;
+}
+.rf-play__bar > span {
+  display: block;
+  height: 100%;
+  background: currentColor;
+}
+.rf-cgbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rf-space-2) var(--rf-space-3);
+  padding: var(--rf-space-1) var(--rf-space-3);
+  margin-bottom: var(--rf-space-2);
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius-sm, 6px);
+  background: var(--rf-surface);
+  font-size: var(--rf-text-sm);
+}
+.rf-cgbar__device.is-ok {
+  color: var(--rf-success);
+}
+.rf-cgbar__device.is-down {
+  color: var(--rf-danger);
+}
+.rf-cgbar__warning {
+  color: var(--rf-warning);
+  font-weight: 700;
+  max-width: 50ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rf-cgbar__clip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rf-space-1);
+}

@@ -18,6 +18,7 @@ import {
   moveLine,
   renumber,
   setCells,
+  type LineSnapshot,
 } from '@runflow/sync';
 import { Alert, Badge, Button, Dialog, SelectField, Spinner, TextField } from '@runflow/ui';
 import { api, ApiError, errorMessage } from '../api/client';
@@ -53,6 +54,7 @@ import {
   VersionsTab,
   fridgeKey,
 } from '../rundown/panels';
+import { CgBar, CgProvider, GraphicsCell, PlayCell, useCgContextValue } from '../rundown/cg';
 import { useScriptColumns } from '../script/useScripts';
 import { LINE_FLAGS } from '@runflow/core';
 import {
@@ -113,7 +115,8 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
   const canControl = canPrompter || canGo;
   const canTemplates = useCan('templates.manage');
   const user = useMemo(() => ({ id: me.user.id, name: me.user.name }), [me.user.id, me.user.name]);
-  const { session, status, loaded, live, stage, setStage } = useRundownSession(
+  const canFire = useCan('cg.fire');
+  const { session, status, loaded, live, stage, setStage, cg, setCg } = useRundownSession(
     org.id,
     rundown.id,
     user,
@@ -145,6 +148,22 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
   const timing = useTiming(lines, rundown, live, nowSecond);
   const clock = useClockFormat(rundown.timezone);
   const scriptColumns = useScriptColumns(session?.doc, lines);
+  const graphicsByLine = useMemo(
+    () => new Map([...scriptColumns].map(([id, c]) => [id, c.graphics])),
+    [scriptColumns],
+  );
+  const cgCtx = useCgContextValue({
+    rundownId: rundown.id,
+    state: cg,
+    graphics: graphicsByLine,
+    canFire,
+    apply: setCg,
+  });
+  const renderCell = useCallback((line: LineSnapshot, key: string) => {
+    if (key === 'grafismo') return <GraphicsCell lineId={line.id} />;
+    if (key === 'play') return <PlayCell line={line} />;
+    return undefined;
+  }, []);
   const rowInfo = useRowInfo(timing, clock, scriptColumns);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [scriptOpen, setScriptOpen] = useState(() => {
@@ -335,402 +354,409 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
   const dateText = dateRaw.charAt(0).toUpperCase() + dateRaw.slice(1);
 
   return (
-    <div className="rf-rundown">
-      <div className="rf-rundown__head">
-        <div className="rf-rundown__title">
-          <Link to="/escaletas" className="rf-rundown__back">
-            ‹ {t('grid.back')}
-          </Link>
-          <h1>
-            {rundown.title}{' '}
-            <Badge tone={rundown.status === 'en_aire' ? 'accent' : 'default'}>
-              {statusLabel(rundown.status)}
-            </Badge>
-          </h1>
-          <p className="rf-muted">
-            {rundown.title !== rundown.programName && `${rundown.programName} · `}
-            {dateText} ·{' '}
-            <span className="rf-tabular">
-              {rundown.startTime.slice(0, 5)}–{rundown.endTime.slice(0, 5)}
+    <CgProvider value={cgCtx.value}>
+      <div className="rf-rundown">
+        <div className="rf-rundown__head">
+          <div className="rf-rundown__title">
+            <Link to="/escaletas" className="rf-rundown__back">
+              ‹ {t('grid.back')}
+            </Link>
+            <h1>
+              {rundown.title}{' '}
+              <Badge tone={rundown.status === 'en_aire' ? 'accent' : 'default'}>
+                {statusLabel(rundown.status)}
+              </Badge>
+            </h1>
+            <p className="rf-muted">
+              {rundown.title !== rundown.programName && `${rundown.programName} · `}
+              {dateText} ·{' '}
+              <span className="rf-tabular">
+                {rundown.startTime.slice(0, 5)}–{rundown.endTime.slice(0, 5)}
+              </span>
+            </p>
+          </div>
+          <div className="rf-rundown__summary rf-tabular">
+            <span>{t('grid.lines', { count: summary.lineCount })}</span>
+            <span className={summary.estimatedSeconds > planned ? 'rf-text-danger' : undefined}>
+              {t('grid.estimated', {
+                estimated: formatDuration(summary.estimatedSeconds),
+                planned: formatDuration(planned),
+              })}
             </span>
-          </p>
+          </div>
         </div>
-        <div className="rf-rundown__summary rf-tabular">
-          <span>{t('grid.lines', { count: summary.lineCount })}</span>
-          <span className={summary.estimatedSeconds > planned ? 'rf-text-danger' : undefined}>
-            {t('grid.estimated', {
-              estimated: formatDuration(summary.estimatedSeconds),
-              planned: formatDuration(planned),
-            })}
-          </span>
-        </div>
-      </div>
 
-      <LiveClocks rundown={rundown} timing={timing} live={live} lines={lines} now={now} />
-      <LiveBar
-        live={live}
-        lines={lines}
-        timing={timing}
-        commands={commands}
-        canGo={canGo && status !== 'denied' && status !== 'deleted'}
-        error={liveError}
-        onShowAsrun={() => setDialog('asrun')}
-        keyboard={keyboardGo}
-        onKeyboardChange={setKeyboardGo}
-      />
-      <div className="rf-toolbar" role="toolbar" aria-label="Escaleta">
-        <label className="rf-toolbar__view">
-          <span className="rf-visually-hidden">{t('grid.view')}</span>
-          <select
-            className="rf-select"
-            value={views.selected.id}
-            onChange={(e) => views.select(e.target.value)}
-            aria-label={t('grid.view')}
-          >
-            <optgroup label={t('grid.builtinViews')}>
-              {views.options
-                .filter((v) => v.builtin)
-                .map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.name}
-                  </option>
-                ))}
-            </optgroup>
-            {views.options.some((v) => !v.builtin) && (
-              <optgroup label={t('grid.savedViews')}>
+        <LiveClocks rundown={rundown} timing={timing} live={live} lines={lines} now={now} />
+        <LiveBar
+          live={live}
+          lines={lines}
+          timing={timing}
+          commands={commands}
+          canGo={canGo && status !== 'denied' && status !== 'deleted'}
+          error={liveError}
+          onShowAsrun={() => setDialog('asrun')}
+          keyboard={keyboardGo}
+          onKeyboardChange={setKeyboardGo}
+        />
+        <CgBar canGo={canGo} />
+        {cgCtx.error && <Alert tone="error">RunFlow CG: {cgCtx.error}</Alert>}
+        <div className="rf-toolbar" role="toolbar" aria-label="Escaleta">
+          <label className="rf-toolbar__view">
+            <span className="rf-visually-hidden">{t('grid.view')}</span>
+            <select
+              className="rf-select"
+              value={views.selected.id}
+              onChange={(e) => views.select(e.target.value)}
+              aria-label={t('grid.view')}
+            >
+              <optgroup label={t('grid.builtinViews')}>
                 {views.options
-                  .filter((v) => !v.builtin)
+                  .filter((v) => v.builtin)
                   .map((v) => (
                     <option key={v.id} value={v.id}>
                       {v.name}
-                      {v.shared ? ' ·' : ''}
                     </option>
                   ))}
               </optgroup>
+              {views.options.some((v) => !v.builtin) && (
+                <optgroup label={t('grid.savedViews')}>
+                  {views.options
+                    .filter((v) => !v.builtin)
+                    .map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.name}
+                        {v.shared ? ' ·' : ''}
+                      </option>
+                    ))}
+                </optgroup>
+              )}
+            </select>
+          </label>
+          <Button size="sm" onClick={() => setDialog('columns')}>
+            {t('grid.columns')}
+          </Button>
+          {views.dirty && (
+            <>
+              <Button size="sm" variant="primary" onClick={() => setDialog('saveView')}>
+                {t('grid.saveView')}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={views.reset} title={t('grid.resetView')}>
+                ↺
+              </Button>
+            </>
+          )}
+          <span className="rf-toolbar__sep" />
+          {editable && (
+            <>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={actions.undo}
+                disabled={!undoState.canUndo}
+                title={`${t('grid.undo')} (Ctrl+Z)`}
+                aria-label={t('grid.undo')}
+              >
+                ↶
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={actions.redo}
+                disabled={!undoState.canRedo}
+                title={`${t('grid.redo')} (Ctrl+Y)`}
+                aria-label={t('grid.redo')}
+              >
+                ↷
+              </Button>
+            </>
+          )}
+          {editable && canEditStructure && (
+            <Button
+              size="sm"
+              onClick={() => actions.insertAt(lines.length)}
+              title={t('grid.addLineTitle')}
+            >
+              + {t('grid.addLine')}
+            </Button>
+          )}
+          <ToolbarMenu label="Escaleta">
+            {canEditStructure && (
+              <button type="button" role="menuitem" onClick={() => setDialog('meta')}>
+                {t('rundowns.edit')}
+              </button>
             )}
-          </select>
-        </label>
-        <Button size="sm" onClick={() => setDialog('columns')}>
-          {t('grid.columns')}
-        </Button>
-        {views.dirty && (
-          <>
-            <Button size="sm" variant="primary" onClick={() => setDialog('saveView')}>
-              {t('grid.saveView')}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={views.reset} title={t('grid.resetView')}>
-              ↺
-            </Button>
-          </>
-        )}
-        <span className="rf-toolbar__sep" />
-        {editable && (
-          <>
+            {canTemplates && (
+              <button type="button" role="menuitem" onClick={() => setDialog('template')}>
+                Guardar como plantilla
+              </button>
+            )}
+            <button type="button" role="menuitem" onClick={() => setDialog('io')}>
+              Importar/Exportar
+            </button>
+            <button type="button" role="menuitem" onClick={() => setDialog('print')}>
+              Imprimir / PDF
+            </button>
+            <button type="button" role="menuitem" onClick={() => setDialog('asrun')}>
+              Registro de emisión
+            </button>
+          </ToolbarMenu>
+          <Button size="sm" variant="ghost" onClick={() => setDialog('outputs')}>
+            Salidas
+          </Button>
+          {canControl && (
+            <Link
+              to={`/escaletas/${rundown.id}/prompter`}
+              className="rf-btn rf-btn--ghost rf-btn--sm"
+            >
+              Prompter
+            </Link>
+          )}
+          {canControl && session && (
             <Button
               size="sm"
-              variant="ghost"
-              onClick={actions.undo}
-              disabled={!undoState.canUndo}
-              title={`${t('grid.undo')} (Ctrl+Z)`}
-              aria-label={t('grid.undo')}
+              variant={stage?.text ? 'secondary' : 'ghost'}
+              onClick={() => setDialog('message')}
+              title={stage?.text ? `En pantalla: ${stage.text}` : 'Enviar un mensaje al plató'}
             >
-              ↶
+              Mensaje{stage?.text ? ' ●' : ''}
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={actions.redo}
-              disabled={!undoState.canRedo}
-              title={`${t('grid.redo')} (Ctrl+Y)`}
-              aria-label={t('grid.redo')}
-            >
-              ↷
-            </Button>
-          </>
-        )}
-        {editable && canEditStructure && (
+          )}
           <Button
             size="sm"
-            onClick={() => actions.insertAt(lines.length)}
-            title={t('grid.addLineTitle')}
+            variant={scriptOpen ? 'secondary' : 'ghost'}
+            onClick={toggleScript}
+            aria-pressed={scriptOpen}
+            title="Mostrar u ocultar el panel (guion, chat, nevera, versiones)"
           >
-            + {t('grid.addLine')}
+            Panel{chat.unread > 0 && !scriptOpen ? ` · ${chat.unread} chat` : ''}
           </Button>
-        )}
-        <ToolbarMenu label="Escaleta">
-          {canEditStructure && (
-            <button type="button" role="menuitem" onClick={() => setDialog('meta')}>
-              {t('rundowns.edit')}
-            </button>
-          )}
-          {canTemplates && (
-            <button type="button" role="menuitem" onClick={() => setDialog('template')}>
-              Guardar como plantilla
-            </button>
-          )}
-          <button type="button" role="menuitem" onClick={() => setDialog('io')}>
-            Importar/Exportar
-          </button>
-          <button type="button" role="menuitem" onClick={() => setDialog('print')}>
-            Imprimir / PDF
-          </button>
-          <button type="button" role="menuitem" onClick={() => setDialog('asrun')}>
-            Registro de emisión
-          </button>
-        </ToolbarMenu>
-        <Button size="sm" variant="ghost" onClick={() => setDialog('outputs')}>
-          Salidas
-        </Button>
-        {canControl && (
-          <Link
-            to={`/escaletas/${rundown.id}/prompter`}
-            className="rf-btn rf-btn--ghost rf-btn--sm"
-          >
-            Prompter
-          </Link>
-        )}
-        {canControl && session && (
           <Button
             size="sm"
-            variant={stage?.text ? 'secondary' : 'ghost'}
-            onClick={() => setDialog('message')}
-            title={stage?.text ? `En pantalla: ${stage.text}` : 'Enviar un mensaje al plató'}
+            variant="ghost"
+            onClick={() => setDialog('shortcuts')}
+            aria-label={t('grid.shortcuts')}
           >
-            Mensaje{stage?.text ? ' ●' : ''}
+            ⌨
           </Button>
-        )}
-        <Button
-          size="sm"
-          variant={scriptOpen ? 'secondary' : 'ghost'}
-          onClick={toggleScript}
-          aria-pressed={scriptOpen}
-          title="Mostrar u ocultar el panel (guion, chat, nevera, versiones)"
-        >
-          Panel{chat.unread > 0 && !scriptOpen ? ` · ${chat.unread} chat` : ''}
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => setDialog('shortcuts')}
-          aria-label={t('grid.shortcuts')}
-        >
-          ⌨
-        </Button>
-        <span className="rf-toolbar__spacer" />
-        {!canEditCells && <Badge tone="muted">{t('grid.readOnly')}</Badge>}
-        <div className="rf-presence" aria-label="Personas en la escaleta">
-          {people.map((p) => (
+          <span className="rf-toolbar__spacer" />
+          {!canEditCells && <Badge tone="muted">{t('grid.readOnly')}</Badge>}
+          <div className="rf-presence" aria-label="Personas en la escaleta">
+            {people.map((p) => (
+              <span
+                key={p.name + p.color}
+                className="rf-presence__avatar"
+                style={{ background: p.color }}
+                title={p.name}
+              >
+                {p.name
+                  .split(/\s+/)
+                  .slice(0, 2)
+                  .map((w) => w[0])
+                  .join('')
+                  .toUpperCase()}
+              </span>
+            ))}
             <span
-              key={p.name + p.color}
-              className="rf-presence__avatar"
-              style={{ background: p.color }}
-              title={p.name}
+              className="rf-presence__avatar rf-presence__avatar--me"
+              style={{ background: colorFor(me.user.id) }}
+              title={me.user.name}
             >
-              {p.name
+              {me.user.name
                 .split(/\s+/)
                 .slice(0, 2)
                 .map((w) => w[0])
                 .join('')
                 .toUpperCase()}
             </span>
-          ))}
-          <span
-            className="rf-presence__avatar rf-presence__avatar--me"
-            style={{ background: colorFor(me.user.id) }}
-            title={me.user.name}
-          >
-            {me.user.name
-              .split(/\s+/)
-              .slice(0, 2)
-              .map((w) => w[0])
-              .join('')
-              .toUpperCase()}
-          </span>
+          </div>
+          <ConnectionBadge status={status} />
         </div>
-        <ConnectionBadge status={status} />
-      </div>
 
-      {status === 'deleted' && <Alert tone="warning">{t('grid.deleted')}</Alert>}
-      {status === 'denied' && <Alert tone="error">{t('grid.notFound')}</Alert>}
+        {status === 'deleted' && <Alert tone="warning">{t('grid.deleted')}</Alert>}
+        {status === 'denied' && <Alert tone="error">{t('grid.notFound')}</Alert>}
 
-      {!session || !loaded ? (
-        <div className="rf-center">
-          <Spinner label={t('common.loading')} />
-        </div>
-      ) : lines.length === 0 ? (
-        <div className="rf-card rf-empty">
-          <p>{t('grid.empty')}</p>
-          {editable && canEditStructure && (
-            <Button variant="primary" onClick={() => actions.insertAt(0)}>
-              {t('grid.emptyAction')}
-            </Button>
-          )}
-        </div>
-      ) : (
-        <div className="rf-rundown__body">
-          <RundownGrid
-            lines={lines}
-            columns={gridColumns}
-            canEditCells={editable}
-            canEditStructure={editable && canEditStructure}
-            presence={presence}
-            actions={actions}
-            onColumnsChange={views.setColumns}
-            onCursor={onCursor}
-            rowInfo={rowInfo}
-            extraMenu={extraMenu}
-            reserveSpace={canGo && keyboardGo}
-          />
-          {scriptOpen && (
-            <aside className="rf-script-panel" aria-label="Panel">
-              <div className="rf-panel-tabs" role="tablist">
-                {(
-                  [
-                    ['guion', 'Guion'],
-                    ['chat', chat.unread ? `Chat (${chat.unread})` : 'Chat'],
-                    ['nevera', 'Nevera'],
-                    ['versiones', 'Versiones'],
-                  ] as [PanelTab, string][]
-                ).map(([tab, label]) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    role="tab"
-                    aria-selected={panelTab === tab}
-                    className={`rf-panel-tabs__tab${panelTab === tab ? ' is-active' : ''}`}
-                    onClick={() => setPanelTab(tab)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-              <div
-                className="rf-panel-body"
-                role="tabpanel"
-                aria-label={panelTab === 'guion' ? 'Guion' : panelTab}
-              >
-                {panelTab === 'guion' &&
-                  (selectedLine && session ? (
-                    <ScriptEditor
-                      key={selectedLine.id}
-                      doc={session.doc}
-                      provider={session.provider}
-                      line={selectedLine}
-                      editable={canEditScript && status !== 'denied' && status !== 'deleted'}
-                      user={scriptUser}
-                      onUseReadingTime={
-                        canEditCells
-                          ? (seconds) =>
-                              actions.setCells([
-                                { id: selectedLine.id, key: 't_est', value: seconds },
-                              ])
-                          : undefined
-                      }
-                    />
-                  ) : (
-                    <p className="rf-script-panel__empty">
-                      Selecciona una línea para ver o escribir su guion.
-                    </p>
+        {!session || !loaded ? (
+          <div className="rf-center">
+            <Spinner label={t('common.loading')} />
+          </div>
+        ) : lines.length === 0 ? (
+          <div className="rf-card rf-empty">
+            <p>{t('grid.empty')}</p>
+            {editable && canEditStructure && (
+              <Button variant="primary" onClick={() => actions.insertAt(0)}>
+                {t('grid.emptyAction')}
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="rf-rundown__body">
+            <RundownGrid
+              lines={lines}
+              columns={gridColumns}
+              canEditCells={editable}
+              canEditStructure={editable && canEditStructure}
+              presence={presence}
+              actions={actions}
+              onColumnsChange={views.setColumns}
+              onCursor={onCursor}
+              rowInfo={rowInfo}
+              extraMenu={extraMenu}
+              reserveSpace={canGo && keyboardGo}
+              renderCell={renderCell}
+            />
+            {scriptOpen && (
+              <aside className="rf-script-panel" aria-label="Panel">
+                <div className="rf-panel-tabs" role="tablist">
+                  {(
+                    [
+                      ['guion', 'Guion'],
+                      ['chat', chat.unread ? `Chat (${chat.unread})` : 'Chat'],
+                      ['nevera', 'Nevera'],
+                      ['versiones', 'Versiones'],
+                    ] as [PanelTab, string][]
+                  ).map(([tab, label]) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      role="tab"
+                      aria-selected={panelTab === tab}
+                      className={`rf-panel-tabs__tab${panelTab === tab ? ' is-active' : ''}`}
+                      onClick={() => setPanelTab(tab)}
+                    >
+                      {label}
+                    </button>
                   ))}
-                {panelTab === 'chat' && <ChatTab chat={chat} meId={me.user.id} />}
-                {panelTab === 'nevera' && session && (
-                  <FridgeTab
-                    doc={session.doc}
-                    insertIndex={
-                      selectedLine
-                        ? lines.findIndex((l) => l.id === selectedLine.id) + 1
-                        : lines.length
-                    }
-                    canInsert={editable && canEditStructure}
-                    onInserted={(id) => setSelectedLineId(id)}
-                  />
-                )}
-                {panelTab === 'versiones' && (
-                  <VersionsTab
-                    rundownId={rundown.id}
-                    canSave={editable}
-                    canRestore={canEditStructure}
-                  />
-                )}
-              </div>
-            </aside>
-          )}
-        </div>
-      )}
+                </div>
+                <div
+                  className="rf-panel-body"
+                  role="tabpanel"
+                  aria-label={panelTab === 'guion' ? 'Guion' : panelTab}
+                >
+                  {panelTab === 'guion' &&
+                    (selectedLine && session ? (
+                      <ScriptEditor
+                        key={selectedLine.id}
+                        doc={session.doc}
+                        provider={session.provider}
+                        line={selectedLine}
+                        editable={canEditScript && status !== 'denied' && status !== 'deleted'}
+                        user={scriptUser}
+                        onUseReadingTime={
+                          canEditCells
+                            ? (seconds) =>
+                                actions.setCells([
+                                  { id: selectedLine.id, key: 't_est', value: seconds },
+                                ])
+                            : undefined
+                        }
+                      />
+                    ) : (
+                      <p className="rf-script-panel__empty">
+                        Selecciona una línea para ver o escribir su guion.
+                      </p>
+                    ))}
+                  {panelTab === 'chat' && <ChatTab chat={chat} meId={me.user.id} />}
+                  {panelTab === 'nevera' && session && (
+                    <FridgeTab
+                      doc={session.doc}
+                      insertIndex={
+                        selectedLine
+                          ? lines.findIndex((l) => l.id === selectedLine.id) + 1
+                          : lines.length
+                      }
+                      canInsert={editable && canEditStructure}
+                      onInserted={(id) => setSelectedLineId(id)}
+                    />
+                  )}
+                  {panelTab === 'versiones' && (
+                    <VersionsTab
+                      rundownId={rundown.id}
+                      canSave={editable}
+                      canRestore={canEditStructure}
+                    />
+                  )}
+                </div>
+              </aside>
+            )}
+          </div>
+        )}
 
-      <div className="rf-legend" aria-label={t('grid.legend')}>
-        {LINE_STATUSES.map((s) => (
-          <span key={s.value} className="rf-legend__item">
-            {s.label}{' '}
-            <span className="rf-legend__chip" style={{ background: s.bg, color: s.fg }}>
-              {s.value}
+        <div className="rf-legend" aria-label={t('grid.legend')}>
+          {LINE_STATUSES.map((s) => (
+            <span key={s.value} className="rf-legend__item">
+              {s.label}{' '}
+              <span className="rf-legend__chip" style={{ background: s.bg, color: s.fg }}>
+                {s.value}
+              </span>
             </span>
-          </span>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      {dialog === 'columns' && (
-        <ColumnsDialog
-          columns={views.columns}
-          onChange={views.setColumns}
-          onClose={() => setDialog(null)}
-        />
-      )}
-      {dialog === 'saveView' && (
-        <SaveViewDialog
-          current={views.selected}
-          canShare={canShare}
-          onSave={views.save}
-          onDelete={views.selected.canEdit ? () => views.remove(views.selected.id) : undefined}
-          onClose={() => setDialog(null)}
-        />
-      )}
-      {dialog === 'meta' && <MetaDialog rundown={rundown} onClose={() => setDialog(null)} />}
-      {dialog === 'template' && (
-        <TemplateDialog rundown={rundown} onClose={() => setDialog(null)} />
-      )}
-      {dialog === 'io' && session && (
-        <ImportExportDialog
-          rundown={rundown}
-          doc={session.doc}
-          lines={lines}
-          viewColumns={views.columns}
-          rowInfo={rowInfo}
-          canImport={editable && canEditStructure}
-          onClose={() => setDialog(null)}
-        />
-      )}
-      {dialog === 'print' && <PrintDialog rundownId={rundown.id} onClose={() => setDialog(null)} />}
-      {dialog === 'shortcuts' && <ShortcutsDialog onClose={() => setDialog(null)} />}
-      {dialog === 'asrun' && <AsrunDialog rundown={rundown} onClose={() => setDialog(null)} />}
-      {dialog === 'outputs' && (
-        <OutputsDialog
-          rundownId={rundown.id}
-          canManage={canControl}
-          onClose={() => setDialog(null)}
-        />
-      )}
-      {dialog === 'message' && session && (
-        <StageMessageDialog
-          provider={session.provider}
-          current={stage}
-          from={me.user.name}
-          onSent={setStage}
-          onClose={() => setDialog(null)}
-        />
-      )}
-      {hardTimeFor && (
-        <HardTimeDialog
-          current={String(
-            lines.find((l) => l.id === hardTimeFor)?.cells[LINE_FLAGS.hardTime] ?? '',
-          )}
-          onSave={(value) =>
-            actions.setCells([{ id: hardTimeFor, key: LINE_FLAGS.hardTime, value }])
-          }
-          onClose={() => setHardTimeFor(null)}
-        />
-      )}
-    </div>
+        {dialog === 'columns' && (
+          <ColumnsDialog
+            columns={views.columns}
+            onChange={views.setColumns}
+            onClose={() => setDialog(null)}
+          />
+        )}
+        {dialog === 'saveView' && (
+          <SaveViewDialog
+            current={views.selected}
+            canShare={canShare}
+            onSave={views.save}
+            onDelete={views.selected.canEdit ? () => views.remove(views.selected.id) : undefined}
+            onClose={() => setDialog(null)}
+          />
+        )}
+        {dialog === 'meta' && <MetaDialog rundown={rundown} onClose={() => setDialog(null)} />}
+        {dialog === 'template' && (
+          <TemplateDialog rundown={rundown} onClose={() => setDialog(null)} />
+        )}
+        {dialog === 'io' && session && (
+          <ImportExportDialog
+            rundown={rundown}
+            doc={session.doc}
+            lines={lines}
+            viewColumns={views.columns}
+            rowInfo={rowInfo}
+            canImport={editable && canEditStructure}
+            onClose={() => setDialog(null)}
+          />
+        )}
+        {dialog === 'print' && (
+          <PrintDialog rundownId={rundown.id} onClose={() => setDialog(null)} />
+        )}
+        {dialog === 'shortcuts' && <ShortcutsDialog onClose={() => setDialog(null)} />}
+        {dialog === 'asrun' && <AsrunDialog rundown={rundown} onClose={() => setDialog(null)} />}
+        {dialog === 'outputs' && (
+          <OutputsDialog
+            rundownId={rundown.id}
+            canManage={canControl}
+            onClose={() => setDialog(null)}
+          />
+        )}
+        {dialog === 'message' && session && (
+          <StageMessageDialog
+            provider={session.provider}
+            current={stage}
+            from={me.user.name}
+            onSent={setStage}
+            onClose={() => setDialog(null)}
+          />
+        )}
+        {hardTimeFor && (
+          <HardTimeDialog
+            current={String(
+              lines.find((l) => l.id === hardTimeFor)?.cells[LINE_FLAGS.hardTime] ?? '',
+            )}
+            onSave={(value) =>
+              actions.setCells([{ id: hardTimeFor, key: LINE_FLAGS.hardTime, value }])
+            }
+            onClose={() => setHardTimeFor(null)}
+          />
+        )}
+      </div>
+    </CgProvider>
   );
 }
 

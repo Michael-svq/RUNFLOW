@@ -126,7 +126,10 @@ test('M3: guion con paso, off y rótulos, en colaboración', async ({ page, brow
   await rotulo.getByLabel('TC entrada').fill('00:12');
   await rotulo.getByLabel('TC salida').fill('00:18');
   await expect(rotulo).not.toHaveClass(/has-issues/);
-  await expect(val(page, 0, 'grafismo')).toHaveText('TOT 00:12 ANA PÉREZ // MINISTRA DE HACIENDA');
+  // (con permiso de lanzar rótulos, la celda muestra cada rótulo con su ▶)
+  await expect(row(page, 0).locator('td[data-col="grafismo"] .rf-cg-item__text')).toHaveText(
+    'TOT 00:12 ANA PÉREZ // MINISTRA DE HACIENDA',
+  );
 
   // Longitud máxima: no deja escribir más de 40 caracteres en NOMBRE
   await rotulo.getByLabel('NOMBRE').fill('X'.repeat(60));

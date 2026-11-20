@@ -63,6 +63,7 @@ export const es = {
   'nav.profile': 'Configuración de usuario',
   'nav.platform': 'Plataforma',
   'nav.station': 'RunFlow Station',
+  'nav.config': 'Configuración',
   'nav.menu': 'Menú',
   'nav.logout': 'Salir',
   'nav.switchOrg': 'Cambiar de empresa',

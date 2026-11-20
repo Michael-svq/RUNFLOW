@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import * as decoding from 'lib0/decoding';
-import type { LiveState, PrompterState, StageMessage } from '@runflow/core';
-import { MSG_PROMPTER, MSG_STAGE, onCustom } from '../outputs/protocol';
+import type { CgState, LiveState, PrompterState, StageMessage } from '@runflow/core';
+import { MSG_CG, MSG_PROMPTER, MSG_STAGE, onCustom } from '../outputs/protocol';
 import { api } from '../api/client';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import { WebsocketProvider } from 'y-websocket';
@@ -87,6 +87,7 @@ export function useRundownSession(
   const [live, setLive] = useState<LiveState | null>(null);
   const [prompter, setPrompter] = useState<PrompterState | null>(null);
   const [stage, setStage] = useState<StageMessage | null>(null);
+  const [cg, setCg] = useState<CgState | null>(null);
 
   useEffect(() => {
     const doc = new Y.Doc();
@@ -109,6 +110,12 @@ export function useRundownSession(
     };
     onCustom<PrompterState | null>(provider, MSG_PROMPTER, (p) => alive && setPrompter(p));
     onCustom<StageMessage | null>(provider, MSG_STAGE, (m) => alive && setStage(m));
+    // RunFlow CG: por el WebSocket (mensaje 105) y al abrir por REST.
+    onCustom<CgState>(provider, MSG_CG, (c) => alive && setCg(c));
+    void api
+      .get<{ cg: CgState }>(`/api/rundowns/${rundownId}/cg`)
+      .then((r) => alive && setCg((prev) => prev ?? r.cg))
+      .catch(() => undefined);
     void api
       .get<{ live: LiveState }>(`/api/rundowns/${rundownId}/live`)
       .then((r) => applyLive(r.live))
@@ -161,11 +168,12 @@ export function useRundownSession(
       setSession(null);
       setLoaded(false);
       setLive(null);
+      setCg(null);
       setStatus('connecting');
     };
   }, [orgId, rundownId, user.id, user.name]);
 
-  return { session, status, loaded, live, prompter, stage, setStage };
+  return { session, status, loaded, live, prompter, stage, setStage, cg, setCg };
 }
 
 /* ---------- Líneas (instantánea reactiva) ---------- */

@@ -6,6 +6,8 @@ import type { WebsocketProvider } from 'y-websocket';
 export const MSG_LIVE = 100;
 export const MSG_PROMPTER = 101;
 export const MSG_STAGE = 102;
+/** Estado de RunFlow CG (rótulos en aire, VTR, equipos). */
+export const MSG_CG = 105;
 export const MSG_OUTPUT_SETTINGS = 103;
 
 export function onCustom<T>(
