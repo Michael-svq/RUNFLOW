@@ -3,7 +3,7 @@
 > Sistema de escaletas, guiones, rótulos, teleprompter y producción para TV local, educación y eventos.
 > Web (PWA) multiempresa en la nube **y** funcionamiento local sin conexión mediante **RunFlow Station**.
 
-Estado: **M0 a M9 y lanzamiento terminados** (falta: publicar staging, que necesita un servidor; probar M7–M8 con equipos reales y M9 con claves reales; verificación de email y textos legales). Fase II terminada: **F2.1 Media**, **F2.2 Fuentes**, **F2.3 Directo y streaming** y **F2.4 API pública**. Fase III terminada: **F3.1 Producción**, **F3.2 Presupuesto**, **F3.3 Pantallas** y **F3.4 Redes**. Fase IV: **F4.1 Timeline**, **F4.2 Automatización avanzada** y **F4.3 Iluminación** hechos. Siguiente: **beta privada** y el resto de la **Fase IV**. Documento vivo: se actualiza en cada hito.
+Estado: **M0 a M9 y lanzamiento terminados** (falta: publicar staging, que necesita un servidor; probar M7–M8 con equipos reales y M9 con claves reales; verificación de email y textos legales). Fase II terminada: **F2.1 Media**, **F2.2 Fuentes**, **F2.3 Directo y streaming** y **F2.4 API pública**. Fase III terminada: **F3.1 Producción**, **F3.2 Presupuesto**, **F3.3 Pantallas** y **F3.4 Redes**. Fase IV terminada: **F4.1 Timeline**, **F4.2 Automatización avanzada**, **F4.3 Iluminación** y **F4.4 Otros sistemas** (conector genérico; MOS y drivers específicos según demanda). Siguiente: **beta privada** con equipos reales. Documento vivo: se actualiza en cada hito.
 
 ---
 

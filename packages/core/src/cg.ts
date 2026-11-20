@@ -188,7 +188,60 @@ export function parseDmxSpec(
   return out.size ? out : null;
 }
 
-export const DEVICE_KINDS = ['casparcg', 'obs', 'vmix', 'atem', 'lighting'] as const;
+/* ---------- F4.4 Otros sistemas ---------- */
+
+export const GENERIC_PROTOCOLS = [
+  { value: 'http', label: 'HTTP (TriCaster, APIs web…)' },
+  { value: 'tcp', label: 'TCP texto (RossTalk para Ross/XPression…)' },
+  { value: 'udp', label: 'UDP texto' },
+  { value: 'osc', label: 'OSC' },
+] as const;
+export type GenericProtocol = (typeof GENERIC_PROTOCOLS)[number]['value'];
+
+/** Pistas del timeline (mismas claves que CUE_TRACKS de timeline.ts). */
+const genericTracks = z.enum([
+  'camara',
+  'vtr',
+  'rotulos',
+  'letras',
+  'fx',
+  'luces',
+  'audio',
+  'notas',
+]);
+
+export const genericConfigSchema = z.object({
+  protocol: z.enum(['http', 'tcp', 'udp', 'osc']).default('http'),
+  host: z.string().trim().max(255).default(''),
+  port: z.number().int().min(0).max(65535).default(0),
+  /** HTTP: dirección con variables ({cue}, {label}, {target}, {track}). */
+  url: z.string().trim().max(500).default(''),
+  method: z.enum(['GET', 'POST']).default('GET'),
+  /** HTTP POST: cuerpo (JSON o texto) con variables. */
+  body: z.string().max(2000).default(''),
+  /** TCP/UDP: comando de texto con variables (p. ej. «GPI {cue}»). */
+  command: z.string().max(500).default('{cue}'),
+  lineEnding: z.enum(['crlf', 'lf', 'none']).default('crlf'),
+  /** OSC: dirección y argumento con variables. */
+  oscAddress: z.string().trim().max(200).default('/runflow/{track}'),
+  oscArg: z.string().trim().max(200).default('{cue}'),
+  /** Pistas del timeline cuyos cues se mandan a este sistema. */
+  tracks: z.array(genericTracks).min(1).default(['fx']),
+});
+export type GenericConfig = z.infer<typeof genericConfigSchema>;
+
+/** Sustituye {cue}, {label}, {target} y {track} en una plantilla. */
+export function fillTemplate(
+  template: string,
+  vars: { cue: string; label: string; target: string; track: string },
+  encode: (v: string) => string = (v) => v,
+): string {
+  return template.replace(/\{(cue|label|target|track)\}/g, (_, k: keyof typeof vars) =>
+    encode(vars[k]),
+  );
+}
+
+export const DEVICE_KINDS = ['casparcg', 'obs', 'vmix', 'atem', 'lighting', 'generic'] as const;
 export type DeviceKind = (typeof DEVICE_KINDS)[number];
 export const MIXER_KINDS: DeviceKind[] = ['obs', 'vmix', 'atem'];
 export const DEVICE_KIND_LABEL: Record<DeviceKind, string> = {
@@ -197,6 +250,7 @@ export const DEVICE_KIND_LABEL: Record<DeviceKind, string> = {
   vmix: 'vMix',
   atem: 'ATEM',
   lighting: 'Iluminación',
+  generic: 'Otro sistema',
 };
 
 const name = z.string().trim().min(1, 'Obligatorio').max(60);
@@ -231,9 +285,21 @@ export const deviceInput = z.discriminatedUnion('kind', [
     enabled: z.boolean().default(true),
     config: lightingConfigSchema,
   }),
+  z.object({
+    name,
+    kind: z.literal('generic'),
+    enabled: z.boolean().default(true),
+    config: genericConfigSchema,
+  }),
 ]);
 export type DeviceInput = z.infer<typeof deviceInput>;
-export type DeviceConfig = CasparConfig | ObsConfig | VmixConfig | AtemConfig | LightingConfig;
+export type DeviceConfig =
+  | CasparConfig
+  | ObsConfig
+  | VmixConfig
+  | AtemConfig
+  | LightingConfig
+  | GenericConfig;
 
 export function parseDeviceConfig(kind: string, config: unknown): DeviceConfig | null {
   const schema =
@@ -247,7 +313,9 @@ export function parseDeviceConfig(kind: string, config: unknown): DeviceConfig |
             ? atemConfigSchema
             : kind === 'lighting'
               ? lightingConfigSchema
-              : null;
+              : kind === 'generic'
+                ? genericConfigSchema
+                : null;
   const parsed = schema?.safeParse(config);
   return parsed?.success ? parsed.data : null;
 }
@@ -263,6 +331,7 @@ export type DeviceDto = {
   | { kind: 'vmix'; config: VmixConfig }
   | { kind: 'atem'; config: AtemConfig }
   | { kind: 'lighting'; config: LightingConfig }
+  | { kind: 'generic'; config: GenericConfig }
 );
 
 /** Fuente de una línea: su columna FUENTE o, en un VTR sin fuente, «VTR». */

@@ -41,6 +41,8 @@ import { SocialPoller, socialOptions } from './social/poller';
 import { ScreensManager } from './screens/manager';
 import { CueRunner } from './automation/cue-runner';
 import { LightingManager } from './lighting/manager';
+import { SystemsManager } from './systems/manager';
+import { CUE_TRACK_KEYS } from '@runflow/core';
 import { MediaStore } from './media/store';
 import { WebhookDispatcher } from './api/webhooks';
 import { SourcePoller } from './sources/poller';
@@ -69,6 +71,7 @@ export interface AppDeps {
   screens?: ScreensManager;
   cues?: CueRunner;
   lighting?: LightingManager;
+  systems?: SystemsManager;
   social?: SocialPoller;
 }
 
@@ -153,6 +156,31 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     }
     return true;
   };
+  // F4.4 Otros sistemas: reciben los cues de las pistas que tengan asignadas.
+  deps.systems = new SystemsManager(deps.db, {
+    allowPrivate: deps.config.sourcesAllowPrivate || deps.config.env === 'test',
+  });
+  for (const track of CUE_TRACK_KEYS) {
+    const builtin = deps.cues.executors[track];
+    deps.cues.executors[track] = async (ctx) => {
+      const errors: string[] = [];
+      let done = false;
+      if (builtin) {
+        try {
+          done = (await builtin(ctx)) || done;
+        } catch (err) {
+          errors.push(err instanceof Error ? err.message : String(err));
+        }
+      }
+      try {
+        done = (await deps.systems!.fire(ctx.orgId, track, ctx.cue)) > 0 || done;
+      } catch (err) {
+        errors.push(err instanceof Error ? err.message : String(err));
+      }
+      if (errors.length) throw new Error(errors.join(' · '));
+      return done;
+    };
+  }
   deps.webhooks = new WebhookDispatcher(deps.db, () => deps.secrets!, deps.collab, app.log, {
     allowPrivate: deps.config.sourcesAllowPrivate || deps.config.env === 'test',
   });
@@ -180,6 +208,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
         void deps.cg!.invalidate(orgId);
         void deps.mixers!.invalidate(orgId);
         void deps.lighting?.invalidate(orgId);
+        deps.systems?.invalidate(orgId);
       },
     });
   }
@@ -199,6 +228,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     deps.social?.close();
     deps.cues?.close();
     deps.lighting?.close();
+    deps.systems?.close();
     deps.live!.close();
     await deps.collab!.close();
   });

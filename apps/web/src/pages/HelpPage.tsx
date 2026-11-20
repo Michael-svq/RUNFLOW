@@ -105,6 +105,7 @@ const SECTIONS: { id: string; title: string; items: string[] }[] = [
     id: 'station',
     title: 'RunFlow Station',
     items: [
+      'Otros sistemas (TriCaster, Ross/XPression, audio…): en 10 Configuración añade «Otro sistema» por HTTP, TCP, UDP u OSC, marca qué pistas del timeline recibe y escribe la plantilla con {cue}.',
       'Mesas de luces: en 10 Configuración añade un equipo de Iluminación (OSC, MIDI Show Control, Art-Net o sACN) y prueba un cue; en el timeline, la pista Luces lleva el número de cue o el nombre de la escena DMX.',
       'Un ordenador del estudio con RunFlow Station hace de servidor local: el resto de equipos entra con el navegador en su dirección.',
       'Enlazada con la nube, si se cae internet el directo sigue en el estudio y al volver todo se sincroniza.',

@@ -9,6 +9,7 @@ import {
   parseDeviceConfig,
   streamInput,
   type CasparConfig,
+  type GenericConfig,
   type LightingConfig,
   orgSettingsPatch,
   readOrgSettings,
@@ -22,6 +23,7 @@ import { audit } from '../services/audit';
 import { requireRundown } from '../services/rundowns';
 import { CgManager } from '../cg/cg-manager';
 import { LightingManager } from '../lighting/manager';
+import { SystemsManager } from '../systems/manager';
 import { MixerManager } from '../mixers/mixer-manager';
 import { templateHtml } from '../cg/templates';
 import type { AppDeps } from '../app';
@@ -120,6 +122,7 @@ export async function cgRoutes(app: FastifyInstance, deps: AppDeps): Promise<voi
       ...(await cg().deviceStatuses(orgId)),
       ...(await deps.mixers!.deviceStatuses(orgId)),
       ...(await deps.lighting!.deviceStatuses(orgId)),
+      ...(await deps.systems!.deviceStatuses(orgId)),
     };
     return rows.flatMap((r) => {
       const config = parseDeviceConfig(r.kind, r.config);
@@ -144,6 +147,7 @@ export async function cgRoutes(app: FastifyInstance, deps: AppDeps): Promise<voi
     await cg().invalidate(orgId);
     await deps.mixers!.invalidate(orgId);
     await deps.lighting?.invalidate(orgId);
+    deps.systems?.invalidate(orgId);
   };
 
   app.get('/api/devices', { preHandler: view }, async (req) => {
@@ -220,13 +224,15 @@ export async function cgRoutes(app: FastifyInstance, deps: AppDeps): Promise<voi
         ? { ok: true, ...(await CgManager.test(config as CasparConfig)) }
         : input.kind === 'lighting'
           ? { ok: true, ...(await LightingManager.test(config as LightingConfig)) }
-          : { ok: true, ...(await MixerManager.test(input.kind, config)) };
+          : input.kind === 'generic'
+            ? { ok: true, ...(await SystemsManager.test(config as GenericConfig)) }
+            : { ok: true, ...(await MixerManager.test(input.kind, config)) };
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : String(err) };
     }
   });
 
-  /** Disparar un cue de luces a mano (prueba desde Configuración, F4.3). */
+  /** Disparar un cue a mano en una mesa de luces u otro sistema (prueba, F4.3–F4.4). */
   app.post('/api/devices/:id/fire', { preHandler: configure }, async (req) => {
     const { id } = parse(idParams, req.params);
     const { target, seconds } = parse(
@@ -237,8 +243,11 @@ export async function cgRoutes(app: FastifyInstance, deps: AppDeps): Promise<voi
       req.body,
     );
     try {
-      const n = await deps.lighting!.fire(req.tenant!.orgId, target, seconds, id);
-      if (!n) throw new Error('Equipo de iluminación no encontrado o desactivado');
+      const orgId = req.tenant!.orgId;
+      const n =
+        (await deps.lighting!.fire(orgId, target, seconds, id)) ||
+        (await deps.systems!.fire(orgId, 'fx', { label: target, target }, id));
+      if (!n) throw new Error('Equipo no encontrado o desactivado');
       return { ok: true };
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : String(err) };

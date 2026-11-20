@@ -3,6 +3,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   DEVICE_KIND_LABEL,
   LIGHTING_PROTOCOLS,
+  GENERIC_PROTOCOLS,
+  CUE_TRACKS,
   DEVICE_KINDS,
   GRAPHIC_TYPES,
   VMIX_TRANSITIONS,
@@ -400,6 +402,22 @@ const DEFAULTS: Record<Kind, Pick<DeviceForm, 'name' | 'f' | 'b'>> = {
     },
     b: {},
   },
+  generic: {
+    name: 'Otro sistema',
+    f: {
+      protocol: 'http',
+      host: '',
+      port: '0',
+      url: 'http://192.168.1.60/v1/shortcut?name={cue}',
+      method: 'GET',
+      body: '',
+      command: '{cue}',
+      lineEnding: 'crlf',
+      oscAddress: '/runflow/{track}',
+      oscArg: '{cue}',
+    },
+    b: { track_fx: true },
+  },
 };
 
 const emptyDevice = (kind: Kind): DeviceForm => ({
@@ -410,7 +428,9 @@ const emptyDevice = (kind: Kind): DeviceForm => ({
   f: { ...DEFAULTS[kind].f },
   b: { ...DEFAULTS[kind].b },
   sources:
-    kind === 'casparcg' || kind === 'lighting' ? [] : DEFAULT_SOURCES.map(([k, v]) => [k, v]),
+    kind === 'casparcg' || kind === 'lighting' || kind === 'generic'
+      ? []
+      : DEFAULT_SOURCES.map(([k, v]) => [k, v]),
 });
 
 function toForm(d: DeviceDto): DeviceForm {
@@ -420,6 +440,7 @@ function toForm(d: DeviceDto): DeviceForm {
   let sources: [string, string][] = [];
   for (const [k, v] of Object.entries(d.config)) {
     if (k === 'sources' || k === 'presets') sources = Object.entries(v as Record<string, string>);
+    else if (k === 'tracks') for (const t of v as string[]) b[`track_${t}`] = true;
     else if (k === 'layers')
       for (const [lk, lv] of Object.entries(v as Record<string, number>)) f[lk] = String(lv);
     else if (typeof v === 'boolean') b[k] = v;
@@ -468,6 +489,20 @@ function toConfig(form: DeviceForm): Record<string, unknown> {
         transition: f.transition,
         sources,
       };
+    case 'generic':
+      return {
+        protocol: f.protocol,
+        host: (f.host ?? '').trim(),
+        port: n('port') || 0,
+        url: (f.url ?? '').trim(),
+        method: f.method,
+        body: f.body ?? '',
+        command: f.command ?? '',
+        lineEnding: f.lineEnding,
+        oscAddress: (f.oscAddress ?? '').trim(),
+        oscArg: (f.oscArg ?? '').trim(),
+        tracks: CUE_TRACKS.filter((t) => b[`track_${t.key}`]).map((t) => t.key),
+      };
     case 'lighting':
       return {
         protocol: f.protocol,
@@ -488,11 +523,19 @@ const INPUT_HINT: Record<Kind, string> = {
   obs: 'Nombre de la escena de OBS',
   vmix: 'Número o nombre de la entrada de vMix',
   atem: 'Número de entrada del ATEM (1 = Cámara 1, 3010 = Media Player 1…)',
+  generic: '',
   lighting:
     'Escenas DMX: nombre → canales (1=255,2=128,10-12=50%). En el cue de luces se escribe el nombre o los canales.',
 };
 
 function deviceSummary(d: DeviceDto): string {
+  if (d.kind === 'generic') {
+    const where = d.config.protocol === 'http' ? d.config.url : `${d.config.host}:${d.config.port}`;
+    const tracks = d.config.tracks
+      .map((t) => CUE_TRACKS.find((x) => x.key === t)?.label ?? t)
+      .join(', ');
+    return `${d.config.protocol.toUpperCase()} · ${where} · pistas: ${tracks}`;
+  }
   if (d.kind === 'lighting') {
     const proto = LIGHTING_PROTOCOLS.find((p) => p.value === d.config.protocol)!;
     return `${proto.label.split(' (')[0]} · ${d.config.host || 'difusión'}:${d.config.port || proto.port}${
@@ -632,10 +675,11 @@ function Devices() {
       </div>
       <p className="rf-muted rf-small">
         CasparCG para rótulos y VTR; OBS, vMix o ATEM como mezclador; mesas de luces por OSC, MIDI
-        Show Control, Art-Net o sACN para los cues de luces del timeline. Con GO, el mezclador corta
-        a la FUENTE de la línea (CAM 1, VTR…) según su mapa de fuentes. CasparCG también lee la
-        posición de los vídeos por OSC: en <code>casparcg.config</code> añade este servidor como
-        cliente OSC en el puerto indicado.
+        Show Control, Art-Net o sACN para los cues de luces del timeline; y otros sistemas
+        (TriCaster, Ross/XPression…) por HTTP, TCP, UDP u OSC para los cues de las pistas que
+        elijas. Con GO, el mezclador corta a la FUENTE de la línea (CAM 1, VTR…) según su mapa de
+        fuentes. CasparCG también lee la posición de los vídeos por OSC: en{' '}
+        <code>casparcg.config</code> añade este servidor como cliente OSC en el puerto indicado.
       </p>
       {list.isPending ? (
         <Spinner label="Cargando…" />
@@ -660,12 +704,17 @@ function Devices() {
                 </span>
               </div>
               <span className="rf-sidelist__confirm">
-                {d.kind === 'lighting' && d.enabled && (
+                {(d.kind === 'lighting' || d.kind === 'generic') && d.enabled && (
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={async () => {
-                      const target = window.prompt('Cue, escena o canales a disparar', '1');
+                      const target = window.prompt(
+                        d.kind === 'lighting'
+                          ? 'Cue, escena o canales a disparar'
+                          : 'Valor de {cue} para la prueba',
+                        '1',
+                      );
                       if (!target) return;
                       const r = await api
                         .post<{ ok: boolean; error?: string }>(`/api/devices/${d.id}/fire`, {
@@ -725,8 +774,10 @@ function Devices() {
             'host',
             form.kind === 'lighting'
               ? 'Dirección de la mesa o del nodo (vacío: difusión / multidifusión)'
-              : 'Dirección (IP o nombre)',
-            { required: form.kind !== 'lighting' },
+              : form.kind === 'generic'
+                ? 'Dirección IP (TCP, UDP u OSC)'
+                : 'Dirección (IP o nombre)',
+            { required: form.kind !== 'lighting' && form.kind !== 'generic' },
           )}
           {form.kind === 'casparcg' && (
             <>
@@ -787,6 +838,69 @@ function Devices() {
               ])}
             </>
           )}
+          {form.kind === 'generic' && (
+            <>
+              {select(
+                'protocol',
+                'Protocolo',
+                GENERIC_PROTOCOLS.map((p) => ({ value: p.value, label: p.label })),
+              )}
+              <p className="rf-muted rf-small">
+                Variables: {'{cue}'} (dato del cue o su texto), {'{label}'}, {'{target}'},{' '}
+                {'{track}'}.
+              </p>
+              {form.f.protocol === 'http' ? (
+                <>
+                  {field('url', 'Dirección (URL)', {
+                    placeholder: 'http://tricaster/v1/shortcut?name={cue}',
+                  })}
+                  {select('method', 'Método', [
+                    { value: 'GET', label: 'GET' },
+                    { value: 'POST', label: 'POST' },
+                  ])}
+                  {form.f.method === 'POST' &&
+                    field('body', 'Cuerpo', { placeholder: '{"cue":"{cue}"}' })}
+                </>
+              ) : (
+                <>
+                  {field('port', 'Puerto', num)}
+                  {form.f.protocol === 'osc' ? (
+                    <>
+                      {field('oscAddress', 'Dirección OSC')}
+                      {field('oscArg', 'Argumento (opcional)')}
+                    </>
+                  ) : (
+                    <>
+                      {field('command', 'Comando', { placeholder: 'GPI {cue}' })}
+                      {select('lineEnding', 'Fin de línea', [
+                        { value: 'crlf', label: 'CR LF' },
+                        { value: 'lf', label: 'LF' },
+                        { value: 'none', label: 'Ninguno' },
+                      ])}
+                    </>
+                  )}
+                </>
+              )}
+              <fieldset className="rf-config__checks">
+                <legend className="rf-field__label">Pistas del timeline que recibe</legend>
+                {CUE_TRACKS.map((t) => (
+                  <label key={t.key} className="rf-check">
+                    <input
+                      type="checkbox"
+                      checked={!!form.b[`track_${t.key}`]}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          b: { ...form.b, [`track_${t.key}`]: e.target.checked },
+                        })
+                      }
+                    />
+                    <span>{t.label}</span>
+                  </label>
+                ))}
+              </fieldset>
+            </>
+          )}
           {form.kind === 'lighting' && (
             <>
               {select(
@@ -820,6 +934,7 @@ function Devices() {
             </>
           )}
           {form.kind !== 'casparcg' &&
+            form.kind !== 'generic' &&
             (form.kind !== 'lighting' ||
               form.f.protocol === 'artnet' ||
               form.f.protocol === 'sacn') && (
