@@ -23,8 +23,15 @@ import { rundownLines, rundowns, withTenant, type Db } from '@runflow/db';
 const MESSAGE_SYNC = 0;
 const MESSAGE_AWARENESS = 1;
 const MESSAGE_QUERY_AWARENESS = 3;
-/** Mensaje propio: estado del directo (JSON). */
+/** Mensajes propios (JSON): estado del directo, posición del prompter y mensaje al plató. */
 export const MESSAGE_LIVE = 100;
+export const MESSAGE_PROMPTER = 101;
+export const MESSAGE_STAGE = 102;
+/** Ajustes de una salida (cuando se cambian desde el control). */
+export const MESSAGE_OUTPUT_SETTINGS = 103;
+/** Cierre: la salida se ha revocado. */
+export const CLOSE_REVOKED = 4404;
+const MAX_CUSTOM_BYTES = 8 * 1024;
 
 const SAVE_DEBOUNCE_MS = 800;
 const SAVE_MAX_WAIT_MS = 5_000;
@@ -40,6 +47,10 @@ export interface CollabConnection {
   orgId: string;
   userId: string;
   readOnly: boolean;
+  /** Puede mover el prompter y enviar mensajes al plató. */
+  canControl?: boolean;
+  /** Conexión de una salida por enlace (prompter, relojes…). */
+  outputId?: string;
 }
 
 interface ConnState extends CollabConnection {
@@ -58,6 +69,9 @@ class SharedDoc {
   dirty = false;
   /** Usos internos en curso (motor de directo) que impiden descargar el documento. */
   holds = 0;
+  /** Última posición del prompter y último mensaje al plató (se envían al conectarse). */
+  prompter: unknown = null;
+  stage: unknown = null;
 
   constructor(
     readonly rundownId: string,
@@ -172,6 +186,16 @@ class SharedDoc {
         this.sendAwareness(ws);
         break;
       }
+      case MESSAGE_PROMPTER:
+      case MESSAGE_STAGE: {
+        // Solo quien controla el prompter (no las salidas ni los lectores).
+        if (!conn.canControl || data.byteLength > MAX_CUSTOM_BYTES) break;
+        const payload = JSON.parse(decoding.readVarString(decoder)) as unknown;
+        if (type === MESSAGE_PROMPTER) this.prompter = payload;
+        else this.stage = payload;
+        this.broadcast(customMessage(type, payload), ws);
+        break;
+      }
       default:
         break;
     }
@@ -183,6 +207,8 @@ class SharedDoc {
     syncProtocol.writeSyncStep1(encoder, this.doc);
     send(ws, encoding.toUint8Array(encoder));
     this.sendAwareness(ws);
+    if (this.prompter) send(ws, customMessage(MESSAGE_PROMPTER, this.prompter));
+    if (this.stage) send(ws, customMessage(MESSAGE_STAGE, this.stage));
   }
 
   private sendAwareness(ws: WebSocket): void {
@@ -212,11 +238,15 @@ class SharedDoc {
   }
 }
 
-function liveMessage(live: unknown): Uint8Array {
+function customMessage(type: number, payload: unknown): Uint8Array {
   const encoder = encoding.createEncoder();
-  encoding.writeVarUint(encoder, MESSAGE_LIVE);
-  encoding.writeVarString(encoder, JSON.stringify(live));
+  encoding.writeVarUint(encoder, type);
+  encoding.writeVarString(encoder, JSON.stringify(payload));
   return encoding.toUint8Array(encoder);
+}
+
+function liveMessage(live: unknown): Uint8Array {
+  return customMessage(MESSAGE_LIVE, live);
 }
 
 const earlyListeners = new WeakMap<WebSocket, (data: ArrayBuffer | Buffer) => void>();
@@ -309,6 +339,24 @@ export class CollabServer {
         this.log.warn({ err, rundownId }, 'No se pudo enviar el estado del directo');
       }
     }
+  }
+
+  /** Envía los nuevos ajustes a las conexiones de una salida. */
+  broadcastOutputSettings(rundownId: string, outputId: string, settings: unknown): void {
+    void this.docs.get(rundownId)?.then((shared) => {
+      for (const [ws, conn] of shared.conns) {
+        if (conn.outputId === outputId) send(ws, customMessage(MESSAGE_OUTPUT_SETTINGS, settings));
+      }
+    });
+  }
+
+  /** Cierra las conexiones de una salida revocada. */
+  closeOutput(rundownId: string, outputId: string): void {
+    void this.docs.get(rundownId)?.then((shared) => {
+      for (const [ws, conn] of shared.conns) {
+        if (conn.outputId === outputId) ws.close(CLOSE_REVOKED, 'Salida revocada');
+      }
+    });
   }
 
   /** Envía el estado del directo a todas las personas conectadas a la escaleta. */

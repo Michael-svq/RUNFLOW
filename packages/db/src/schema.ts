@@ -282,3 +282,33 @@ export const people = pgTable(
     ),
   ],
 );
+
+/**
+ * Salidas por enlace (PLAN §14): prompter, presentador, relojes, agenda,
+ * mensajes y multivista. Se abren sin usuario con un token revocable.
+ */
+export const outputs = pgTable(
+  'outputs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    rundownId: uuid('rundown_id')
+      .notNull()
+      .references(() => rundowns.id, { onDelete: 'cascade' }),
+    /** prompter | presenter | clocks | agenda | messages | multiview */
+    kind: text('kind').notNull(),
+    name: text('name').notNull(),
+    /** SHA-256 del token; el token en claro solo se muestra al crearla. */
+    tokenHash: text('token_hash').notNull().unique(),
+    settings: jsonb('settings')
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  },
+  (t) => [index('outputs_rundown_idx').on(t.rundownId)],
+);

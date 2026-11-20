@@ -53,7 +53,14 @@ export async function collabRoutes(app: FastifyInstance, deps: AppDeps): Promise
       const canEdit =
         permissions.includes('rundown.edit_cells') ||
         permissions.includes('rundown.edit_structure');
-      await collab.handleConnection(socket, rundownId, { ...ctx, readOnly: !canEdit }, pending);
+      const canControl =
+        permissions.includes('prompter.control') || permissions.includes('live.go');
+      await collab.handleConnection(
+        socket,
+        rundownId,
+        { ...ctx, readOnly: !canEdit, canControl },
+        pending,
+      );
     } catch (err) {
       if ((err as { statusCode?: number }).statusCode === 404) {
         return socket.close(CLOSE_NOT_FOUND, 'Escaleta no encontrada');
