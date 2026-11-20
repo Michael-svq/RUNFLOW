@@ -122,6 +122,8 @@ export type UpdateProgramInput = z.infer<typeof updateProgramInput>;
 
 export const createRundownInput = z.object({
   programId: z.uuid('Elige un programa'),
+  /** Plantilla de la que partir (opcional). */
+  templateId: z.uuid().optional(),
   title: z.string().trim().max(160).optional(),
   airDate: dateSchema,
   startTime: clockSchema,
@@ -177,3 +179,48 @@ export type PersonInput = z.infer<typeof personInput>;
 export const listPeopleQuery = z.object({
   q: z.string().trim().max(80).optional(),
 });
+
+/* ---------- M5 ---------- */
+
+export const chatInput = z.object({
+  body: z.string().trim().min(1, 'Escribe un mensaje').max(2000),
+});
+
+export const templateInput = z.object({
+  name: trimmed(80),
+  description: z.string().trim().max(300).default(''),
+});
+export type TemplateInput = z.infer<typeof templateInput>;
+
+const scriptBlockSchema = z.union([
+  z.object({ kind: z.enum(['paso', 'off', 'nota']), text: z.string().max(20_000) }),
+  z.object({
+    kind: z.literal('rotulo'),
+    id: z.string().max(64),
+    type: z.string().max(10),
+    f0: z.string().max(200),
+    f1: z.string().max(200),
+    f2: z.string().max(200),
+    f3: z.string().max(200),
+    tcIn: z.string().max(10),
+    tcOut: z.string().max(10),
+  }),
+]);
+
+export const fridgeInput = z.object({
+  name: trimmed(120),
+  cells: z.record(z.string().max(40), z.union([z.string().max(2000), z.number()])).default({}),
+  script: z.array(scriptBlockSchema).max(200).default([]),
+});
+export type FridgeInput = z.infer<typeof fridgeInput>;
+
+export const versionInput = z.object({ label: z.string().trim().max(80).default('') });
+
+export const roleInput = z.object({
+  name: trimmed(60),
+  description: z.string().trim().max(200).default(''),
+  permissions: z.array(z.string().max(40)).max(50),
+});
+export type RoleInput = z.infer<typeof roleInput>;
+
+export const searchQuery = z.object({ q: z.string().trim().min(2, 'Mínimo 2 caracteres').max(80) });

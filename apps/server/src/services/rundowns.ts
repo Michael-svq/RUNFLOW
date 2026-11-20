@@ -14,6 +14,7 @@ import {
   organizations,
   programs,
   rundowns,
+  rundownTemplates,
   views,
   withTenant,
   type Db,
@@ -193,6 +194,20 @@ export async function createRundown(
         programId: 'Programa no válido',
       });
     }
+    // Escaleta a partir de una plantilla: se copia su documento (líneas y guiones).
+    let template: { ydoc: Uint8Array; lineCount: number } | undefined;
+    if (input.templateId) {
+      [template] = await tx
+        .select({ ydoc: rundownTemplates.ydoc, lineCount: rundownTemplates.lineCount })
+        .from(rundownTemplates)
+        .where(and(eq(rundownTemplates.id, input.templateId), eq(rundownTemplates.orgId, t.orgId)))
+        .limit(1);
+      if (!template) {
+        throw badRequest('validation', 'Revisa los datos del formulario', {
+          templateId: 'Plantilla no válida',
+        });
+      }
+    }
     const [row] = await tx
       .insert(rundowns)
       .values({
@@ -203,6 +218,7 @@ export async function createRundown(
         startTime: input.startTime,
         endTime: input.endTime,
         createdBy: t.userId,
+        ...(template ? { ydoc: template.ydoc, lineCount: template.lineCount } : {}),
       })
       .returning({ id: rundowns.id });
     await audit(tx, {

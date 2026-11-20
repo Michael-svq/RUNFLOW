@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import type { FastifyBaseLogger } from 'fastify';
 import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
@@ -6,8 +6,8 @@ import type { WebSocket } from 'ws';
 import * as awarenessProtocol from 'y-protocols/awareness';
 import * as syncProtocol from 'y-protocols/sync';
 import * as Y from 'yjs';
-import { readLines, summarize } from '@runflow/sync';
-import { rundownLines, rundowns, withTenant, type Db } from '@runflow/db';
+import { compactState, readLines, summarize } from '@runflow/sync';
+import { rundownLines, rundowns, rundownVersions, withTenant, type Db } from '@runflow/db';
 
 /*
  * Servidor de colaboración en tiempo real (protocolo estándar de Yjs:
@@ -29,6 +29,11 @@ export const MESSAGE_PROMPTER = 101;
 export const MESSAGE_STAGE = 102;
 /** Ajustes de una salida (cuando se cambian desde el control). */
 export const MESSAGE_OUTPUT_SETTINGS = 103;
+/** Nuevo mensaje de chat de la escaleta. */
+export const MESSAGE_CHAT = 104;
+/** Versión automática como mucho cada… */
+const AUTO_VERSION_MS = 10 * 60 * 1000;
+const MAX_AUTO_VERSIONS = 50;
 /** Cierre: la salida se ha revocado. */
 export const CLOSE_REVOKED = 4404;
 const MAX_CUSTOM_BYTES = 8 * 1024;
@@ -72,6 +77,8 @@ class SharedDoc {
   /** Última posición del prompter y último mensaje al plató (se envían al conectarse). */
   prompter: unknown = null;
   stage: unknown = null;
+  /** Última versión automática guardada (historial). */
+  lastVersionAt = 0;
 
   constructor(
     readonly rundownId: string,
@@ -359,6 +366,11 @@ export class CollabServer {
     });
   }
 
+  /** Envía un mensaje propio (chat, etc.) a todas las conexiones de la escaleta. */
+  broadcastCustom(rundownId: string, type: number, payload: unknown): void {
+    void this.docs.get(rundownId)?.then((shared) => shared.broadcast(customMessage(type, payload)));
+  }
+
   /** Envía el estado del directo a todas las personas conectadas a la escaleta. */
   broadcastLive(rundownId: string, live: unknown): void {
     void this.docs.get(rundownId)?.then((shared) => shared.broadcast(liveMessage(live)));
@@ -464,6 +476,23 @@ export class CollabServer {
             updatedAt: new Date(),
           })
           .where(and(eq(rundowns.id, shared.rundownId), eq(rundowns.orgId, shared.orgId)));
+        // Historial: una versión automática cada 10 minutos de actividad.
+        if (Date.now() - shared.lastVersionAt > AUTO_VERSION_MS && lines.length > 0) {
+          shared.lastVersionAt = Date.now();
+          await tx.insert(rundownVersions).values({
+            orgId: shared.orgId,
+            rundownId: shared.rundownId,
+            ydoc: compactState(shared.doc),
+            lineCount: lines.length,
+            kind: 'auto',
+          });
+          await tx.execute(sql`
+          delete from rundown_versions where id in (
+            select id from rundown_versions
+            where rundown_id = ${shared.rundownId} and kind = 'auto'
+            order by created_at desc offset ${MAX_AUTO_VERSIONS}
+          )`);
+        }
         await tx.delete(rundownLines).where(eq(rundownLines.rundownId, shared.rundownId));
         if (lines.length > 0) {
           await tx.insert(rundownLines).values(

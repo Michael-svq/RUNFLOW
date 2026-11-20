@@ -312,3 +312,77 @@ export const outputs = pgTable(
   },
   (t) => [index('outputs_rundown_idx').on(t.rundownId)],
 );
+
+/* ---------- M5: chat, plantillas, nevera e historial ---------- */
+
+/** Chat por escaleta. */
+export const chatMessages = pgTable(
+  'chat_messages',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    rundownId: uuid('rundown_id')
+      .notNull()
+      .references(() => rundowns.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    userName: text('user_name').notNull(),
+    body: text('body').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index('chat_rundown_idx').on(t.rundownId, t.id)],
+);
+
+/** Plantillas de escaleta (Deportes, Informativo…): el documento completo con guiones. */
+export const rundownTemplates = pgTable('rundown_templates', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  orgId: uuid('org_id')
+    .notNull()
+    .references(() => organizations.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  description: text('description').notNull().default(''),
+  ydoc: bytea('ydoc').notNull(),
+  lineCount: integer('line_count').notNull().default(0),
+  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: createdAt(),
+});
+
+/** Nevera: líneas preparadas (celdas + guion) para usar más adelante. */
+export const fridgeItems = pgTable('fridge_items', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  orgId: uuid('org_id')
+    .notNull()
+    .references(() => organizations.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  cells: jsonb('cells')
+    .notNull()
+    .default(sql`'{}'::jsonb`),
+  script: jsonb('script')
+    .notNull()
+    .default(sql`'[]'::jsonb`),
+  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: createdAt(),
+});
+
+/** Historial de versiones de una escaleta (automáticas y manuales). */
+export const rundownVersions = pgTable(
+  'rundown_versions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    rundownId: uuid('rundown_id')
+      .notNull()
+      .references(() => rundowns.id, { onDelete: 'cascade' }),
+    ydoc: bytea('ydoc').notNull(),
+    lineCount: integer('line_count').notNull().default(0),
+    /** auto | manual | restore */
+    kind: text('kind').notNull().default('auto'),
+    label: text('label').notNull().default(''),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [index('versions_rundown_idx').on(t.rundownId, t.createdAt)],
+);

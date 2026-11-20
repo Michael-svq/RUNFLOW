@@ -131,3 +131,53 @@ export interface PersonDto {
   title: string;
   notes: string;
 }
+
+export interface ChatMessageDto {
+  id: number;
+  userId: string | null;
+  userName: string;
+  body: string;
+  createdAt: string;
+}
+
+export interface TemplateDto {
+  id: string;
+  name: string;
+  description: string;
+  lineCount: number;
+  createdAt: string;
+}
+
+export interface FridgeItemDto {
+  id: string;
+  name: string;
+  cells: Record<string, string | number>;
+  script: unknown[];
+  createdAt: string;
+}
+
+export interface VersionDto {
+  id: string;
+  kind: 'auto' | 'manual' | 'restore';
+  label: string;
+  lineCount: number;
+  createdAt: string;
+  createdBy: string | null;
+}
+
+export interface TrashItemDto {
+  id: string;
+  title: string;
+  programName: string;
+  airDate: string;
+  deletedAt: string;
+}
+
+export interface SearchResultDto {
+  rundownId: string;
+  rundownTitle: string;
+  airDate: string;
+  lineId: string;
+  num: string;
+  name: string;
+}
