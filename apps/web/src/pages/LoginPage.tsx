@@ -65,7 +65,7 @@ export function LoginPage() {
               ¿Aún no tienes cuenta? <Link to="/registro">Créala gratis</Link> ·{' '}
             </>
           )}
-          <Link to="/ayuda">Ayuda</Link>
+          <Link to="/recuperar">¿Has olvidado la contraseña?</Link> · <Link to="/ayuda">Ayuda</Link>
         </p>
       </form>
     </AuthLayout>

@@ -63,6 +63,8 @@ export const users = pgTable(
     passwordHash: text('password_hash').notNull(),
     isPlatformAdmin: boolean('is_platform_admin').notNull().default(false),
     mustChangePassword: boolean('must_change_password').notNull().default(false),
+    /** Email comprobado (enlace de verificación o de recuperación). */
+    emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
     lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -838,4 +840,24 @@ export const socialPosts = pgTable(
     index('social_posts_org_status_idx').on(t.orgId, t.status, t.createdAt),
     uniqueIndex('social_posts_org_ext_idx').on(t.orgId, t.network, t.externalId),
   ],
+);
+
+/* ---------- Lanzamiento: verificación de email y recuperación de contraseña ---------- */
+
+/** Enlaces de un solo uso enviados por email (solo se guarda su hash). */
+export const emailTokens = pgTable(
+  'email_tokens',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** verify | reset */
+    purpose: text('purpose').notNull(),
+    tokenHash: text('token_hash').notNull().unique(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [index('email_tokens_user_idx').on(t.userId, t.purpose)],
 );

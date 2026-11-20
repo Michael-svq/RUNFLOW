@@ -8,6 +8,7 @@ import { t } from '../i18n';
 import { useTheme } from '../lib/theme';
 import { NAV_ITEMS } from './nav';
 import { useStationStatus } from '../pages/StationPage';
+import { VerifyEmailBanner } from '../pages/AccountPages';
 
 function initials(name: string): string {
   return name
@@ -189,6 +190,7 @@ export function AppLayout() {
         </header>
         <main className="rf-content" id="contenido">
           {me.mode === 'station' && <StationBanner />}
+          {!me.user.emailVerified && <VerifyEmailBanner email={me.user.email} />}
           <Outlet />
         </main>
       </div>

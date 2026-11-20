@@ -29,6 +29,8 @@ import { ProductionPage } from './pages/ProductionPage';
 import { CallReplyPage, CallSheetPage } from './pages/CallSheetPage';
 import { ScreenPage } from './pages/ScreenPage';
 import { SocialPage } from './pages/SocialPage';
+import { ForgotPasswordPage, ResetPasswordPage, VerifyEmailPage } from './pages/AccountPages';
+import { LegalPage } from './pages/LegalPage';
 import { useCan, useMe } from './auth/session';
 
 function RequireUsersPermission() {
@@ -69,6 +71,10 @@ export function App() {
       <Route path="/ayuda" element={<HelpPage />} />
       <Route path="/convocatoria/:token" element={<CallReplyPage />} />
       <Route path="/pantalla/:token" element={<ScreenPage />} />
+      <Route path="/recuperar" element={<ForgotPasswordPage />} />
+      <Route path="/restablecer/:token" element={<ResetPasswordPage />} />
+      <Route path="/verificar/:token" element={<VerifyEmailPage />} />
+      <Route path="/legal/:page" element={<LegalPage />} />
       <Route element={<RequireOrg />}>
         <Route path="/escaletas/:id/prompter" element={<PrompterPage />} />
         <Route path="/escaletas/:id/imprimir" element={<PrintPage />} />

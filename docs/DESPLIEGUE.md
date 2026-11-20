@@ -37,30 +37,34 @@ docker compose --env-file .env.compose exec db pg_dump -U runflow runflow > runf
 
 Ver `.env.example`. Las importantes:
 
-| Variable                | Uso                                                           |
-| ----------------------- | ------------------------------------------------------------- |
-| `DATABASE_URL`          | Conexión de la aplicación (rol sin privilegios, sujeto a RLS) |
-| `DATABASE_OWNER_URL`    | Conexión del propietario, solo para migraciones               |
-| `RUNFLOW_MODE`          | `cloud` o `station`                                           |
-| `COOKIE_SECURE`         | `true` detrás de HTTPS                                        |
-| `TRUST_PROXY`           | `true` si hay un proxy inverso delante                        |
-| `AUTH_RATE_LIMIT`       | Intentos por minuto en login (10)                             |
-| `DATA_DIR`              | Datos (licencia, clave, ficheros de Media); `/data` en Docker |
-| `SECRET_KEY`            | Clave maestra de cifrado (claves de IA); si no, en `DATA_DIR` |
-| `PUBLIC_URL`            | Dirección pública (redirecciones de Stripe, plantillas CG)    |
-| `PLAN_LIMITS`           | `true` en la nube SaaS: aplica los límites de cada plan       |
-| `SIGNUP_ENABLED`        | `true` en la nube SaaS: registro autoservicio en `/registro`  |
-| `STRIPE_SECRET_KEY`     | Cobro con Stripe (clave secreta)                              |
-| `STRIPE_WEBHOOK_SECRET` | Secreto del webhook `POST /api/billing/webhook`               |
-| `STRIPE_PRICE_BASIC`    | Id del precio (suscripción) del plan Básico                   |
-| `STRIPE_PRICE_PRO`      | Id del precio (suscripción) del plan Profesional              |
-| `CLOUD_URL`             | Station híbrida: dirección de la nube                         |
-| `STATION_TOKEN`         | Station híbrida: token creado en la nube                      |
-| `TLS_CERT_FILE`         | HTTPS directo (Station): certificado PEM                      |
-| `TLS_KEY_FILE`          | HTTPS directo (Station): clave PEM                            |
-| `MEDIA_MAX_MB`          | Tamaño máximo por fichero en 05 Media (4096)                  |
-| `SOCIAL_POLL_MS`        | Lectura de búsquedas de redes en ms (120000; 0 = a mano)      |
-| `MEDIA_PROXIES`         | `false` para no generar vistas previas ligeras con ffmpeg     |
+| Variable                                                         | Uso                                                           |
+| ---------------------------------------------------------------- | ------------------------------------------------------------- |
+| `DATABASE_URL`                                                   | Conexión de la aplicación (rol sin privilegios, sujeto a RLS) |
+| `DATABASE_OWNER_URL`                                             | Conexión del propietario, solo para migraciones               |
+| `RUNFLOW_MODE`                                                   | `cloud` o `station`                                           |
+| `COOKIE_SECURE`                                                  | `true` detrás de HTTPS                                        |
+| `TRUST_PROXY`                                                    | `true` si hay un proxy inverso delante                        |
+| `AUTH_RATE_LIMIT`                                                | Intentos por minuto en login (10)                             |
+| `DATA_DIR`                                                       | Datos (licencia, clave, ficheros de Media); `/data` en Docker |
+| `SECRET_KEY`                                                     | Clave maestra de cifrado (claves de IA); si no, en `DATA_DIR` |
+| `PUBLIC_URL`                                                     | Dirección pública (redirecciones de Stripe, plantillas CG)    |
+| `PLAN_LIMITS`                                                    | `true` en la nube SaaS: aplica los límites de cada plan       |
+| `SIGNUP_ENABLED`                                                 | `true` en la nube SaaS: registro autoservicio en `/registro`  |
+| `STRIPE_SECRET_KEY`                                              | Cobro con Stripe (clave secreta)                              |
+| `STRIPE_WEBHOOK_SECRET`                                          | Secreto del webhook `POST /api/billing/webhook`               |
+| `STRIPE_PRICE_BASIC`                                             | Id del precio (suscripción) del plan Básico                   |
+| `STRIPE_PRICE_PRO`                                               | Id del precio (suscripción) del plan Profesional              |
+| `CLOUD_URL`                                                      | Station híbrida: dirección de la nube                         |
+| `STATION_TOKEN`                                                  | Station híbrida: token creado en la nube                      |
+| `TLS_CERT_FILE`                                                  | HTTPS directo (Station): certificado PEM                      |
+| `TLS_KEY_FILE`                                                   | HTTPS directo (Station): clave PEM                            |
+| `MEDIA_MAX_MB`                                                   | Tamaño máximo por fichero en 05 Media (4096)                  |
+| `SMTP_URL`                                                       | Correo saliente `smtps://usuario:clave@servidor:465`          |
+| `MAIL_FROM`                                                      | Remitente de los emails (verificación, contraseña)            |
+| `REQUIRE_EMAIL_VERIFICATION`                                     | `true` en la nube: verificar el email antes de usar RunFlow   |
+| `LEGAL_OWNER` / `LEGAL_TAX_ID` / `LEGAL_ADDRESS` / `LEGAL_EMAIL` | Titular en los textos legales                                 |
+| `SOCIAL_POLL_MS`                                                 | Lectura de búsquedas de redes en ms (120000; 0 = a mano)      |
+| `MEDIA_PROXIES`                                                  | `false` para no generar vistas previas ligeras con ffmpeg     |
 
 ## RunFlow Station
 
@@ -174,3 +178,13 @@ plan ni sección de facturación.
 
 Pendiente para el alta pública: verificación del email (necesita un proveedor de email
 transaccional) y textos legales (condiciones y privacidad).
+
+## Correo y textos legales (nube SaaS)
+
+- Con `SMTP_URL` RunFlow envía el enlace de verificación al registrarse y el de «¿Has olvidado la
+  contraseña?». Sin él, los emails se escriben en el registro del servidor (útil en una Station
+  sin correo; allí las cuentas las crea la administración y ya quedan verificadas).
+- `REQUIRE_EMAIL_VERIFICATION=true` bloquea el uso hasta abrir el enlace (el aviso permite
+  reenviarlo).
+- `/legal/terminos`, `/legal/privacidad` y `/legal/cookies` son plantillas con los datos de
+  `LEGAL_*`: revísalas con asesoría antes de abrir el servicio.

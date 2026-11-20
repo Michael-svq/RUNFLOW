@@ -23,7 +23,7 @@ beforeEach(async () => {
 describe('primera configuración', () => {
   it('indica que hace falta configurar cuando no hay usuarios', async () => {
     const res = await new Client(ctx.app).get('/api/setup/status');
-    expect(res.body).toEqual({ needsSetup: true, signupEnabled: false });
+    expect(res.body).toMatchObject({ needsSetup: true, signupEnabled: false });
   });
 
   it('crea empresa, roles y administrador de plataforma, y deja la sesión iniciada', async () => {
@@ -37,7 +37,7 @@ describe('primera configuración', () => {
 
     const roles = await admin.get('/api/roles');
     expect(roles.body.roles.map((r: { key: string }) => r.key)).toContain('redactor');
-    expect((await new Client(ctx.app).get('/api/setup/status')).body).toEqual({
+    expect((await new Client(ctx.app).get('/api/setup/status')).body).toMatchObject({
       needsSetup: false,
       signupEnabled: false,
     });

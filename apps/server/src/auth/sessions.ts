@@ -18,6 +18,7 @@ export interface SessionUser {
   name: string;
   isPlatformAdmin: boolean;
   mustChangePassword: boolean;
+  emailVerified: boolean;
 }
 
 export async function createSession(
@@ -66,6 +67,7 @@ export async function resolveSession(
         name: users.name,
         isPlatformAdmin: users.isPlatformAdmin,
         mustChangePassword: users.mustChangePassword,
+        emailVerifiedAt: users.emailVerifiedAt,
       })
       .from(sessions)
       .innerJoin(users, eq(users.id, sessions.userId))
@@ -95,6 +97,7 @@ export async function resolveSession(
       name: row.name,
       isPlatformAdmin: row.isPlatformAdmin,
       mustChangePassword: row.mustChangePassword,
+      emailVerified: !!row.emailVerifiedAt,
     };
   });
 }

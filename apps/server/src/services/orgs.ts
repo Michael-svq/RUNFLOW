@@ -47,6 +47,8 @@ export async function createOrganizationWithAdmin(
     mustChangePassword: boolean;
     isPlatformAdmin?: boolean;
     actorUserId: string | null;
+    /** Registro autoservicio: el email queda sin verificar hasta abrir el enlace. */
+    emailUnverified?: boolean;
   },
 ): Promise<{ orgId: string; adminUserId: string; existingAccount: boolean }> {
   const [org] = await tx
@@ -93,6 +95,7 @@ export async function createOrganizationWithAdmin(
       passwordHash: await hashPassword(input.adminPassword),
       mustChangePassword: input.mustChangePassword,
       isPlatformAdmin: input.isPlatformAdmin ?? false,
+      emailVerifiedAt: input.emailUnverified ? null : new Date(),
     });
   }
 

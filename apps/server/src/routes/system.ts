@@ -5,6 +5,7 @@ import { users, withSystem } from '@runflow/db';
 import { conflict, HttpError, parse } from '../errors';
 import { createOrganizationWithAdmin } from '../services/orgs';
 import type { AppDeps } from '../app';
+import { sendVerification } from './email';
 import { startSession } from './auth';
 
 async function needsSetup(deps: AppDeps): Promise<boolean> {
@@ -26,6 +27,7 @@ export async function systemRoutes(app: FastifyInstance, deps: AppDeps): Promise
     return {
       needsSetup: await needsSetup(deps),
       signupEnabled: deps.config.signupEnabled && deps.config.mode === 'cloud',
+      legal: deps.config.legal,
     };
   });
 
@@ -97,8 +99,13 @@ export async function systemRoutes(app: FastifyInstance, deps: AppDeps): Promise
           mustChangePassword: false,
           isPlatformAdmin: false,
           actorUserId: null,
+          emailUnverified: true,
         });
       });
+      // Enlace de verificación al email del registro.
+      await sendVerification(deps, result.adminUserId, input.email).catch((err: unknown) =>
+        app.log.warn({ err }, 'No se pudo enviar el email de verificación'),
+      );
       reply.status(201);
       return startSession(app, deps, req, reply, result.adminUserId, result.orgId);
     },

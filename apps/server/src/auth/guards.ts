@@ -32,7 +32,17 @@ export function requireAuth(options: { allowPasswordChange?: boolean } = {}): Ho
     if (req.auth.mustChangePassword && !options.allowPasswordChange) {
       throw new HttpError(403, 'password_change_required', 'Debes cambiar tu contraseña');
     }
+    // Nube SaaS con REQUIRE_EMAIL_VERIFICATION: primero hay que verificar el email.
+    if (requireVerified && !req.auth.emailVerified && !options.allowPasswordChange) {
+      throw new HttpError(403, 'email_unverified', 'Verifica tu email para continuar');
+    }
   };
+}
+
+let requireVerified = false;
+/** Lo activa la aplicación según la configuración. */
+export function setRequireEmailVerification(on: boolean): void {
+  requireVerified = on;
 }
 
 /** Exige empresa activa con membresía activa y carga los permisos del rol. */

@@ -63,13 +63,21 @@ export async function startSession(
         name: users.name,
         isPlatformAdmin: users.isPlatformAdmin,
         mustChangePassword: users.mustChangePassword,
+        emailVerifiedAt: users.emailVerifiedAt,
       })
       .from(users)
       .where(eq(users.id, userId)),
   );
+  const { emailVerifiedAt, ...rest } = user!;
   return buildMe(
     deps.db,
-    { sessionId: session.sessionId, userId, activeOrgId, ...user! },
+    {
+      sessionId: session.sessionId,
+      userId,
+      activeOrgId,
+      ...rest,
+      emailVerified: !!emailVerifiedAt,
+    },
     deps.config.mode,
   );
 }

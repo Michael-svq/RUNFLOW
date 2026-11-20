@@ -29,6 +29,7 @@ Web (PWA) multiempresa en la nube y funcionamiento local con **RunFlow Station**
 | M8 Mezcladores (OBS, vMix, ATEM), mapa de fuentes y mando (Companion, Stream Deck)             | ✅        |
 | M9 IA (Anthropic, OpenAI, Gemini, Mistral, Ollama en local) en el guion                        | ✅        |
 | Lanzamiento: planes, Stripe, registro autoservicio, portada pública y ayuda                    | ✅        |
+| Cuentas: verificación de email, recuperar contraseña por enlace y textos legales               | ✅        |
 | F2.2 Fuentes: RSS/Atom de agencias y medios a la nevera o a la escaleta                        | ✅        |
 | F2.3 Directo y streaming: emitir y grabar en OBS, vMix y ATEM; reloj de bloque en salidas      | ✅        |
 | F2.4 API pública REST, tokens con permisos y webhooks firmados                                 | ✅        |

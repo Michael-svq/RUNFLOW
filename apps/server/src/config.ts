@@ -43,6 +43,16 @@ const envSchema = z.object({
   SOURCES_POLL_MS: z.coerce.number().int().min(0).default(300_000),
   /** Permite leer fuentes de la red interna (en una Station siempre). */
   SOURCES_ALLOW_PRIVATE: bool.default(false),
+  /** Correo saliente: smtp(s)://usuario:clave@servidor:puerto (sin él, se escribe en el registro). */
+  SMTP_URL: z.preprocess(emptyToUndefined, z.string().optional()),
+  MAIL_FROM: z.string().default('RunFlow <no-reply@runflow.local>'),
+  /** Datos del titular para los textos legales (aviso legal, privacidad). */
+  LEGAL_OWNER: z.string().default(''),
+  LEGAL_TAX_ID: z.string().default(''),
+  LEGAL_ADDRESS: z.string().default(''),
+  LEGAL_EMAIL: z.string().default(''),
+  /** Nube SaaS: hay que verificar el email antes de usar la aplicación. */
+  REQUIRE_EMAIL_VERIFICATION: bool.default(false),
   /** Cada cuánto se leen las búsquedas de redes sociales (ms; 0 = no se leen solas). */
   SOCIAL_POLL_MS: z.coerce.number().int().min(0).default(120_000),
   /** Direcciones de las API de redes (solo para pruebas o proxies). */
@@ -95,6 +105,10 @@ export interface AppConfig {
   mediaProxies: boolean;
   sourcesAllowPrivate: boolean;
   socialPollMs: number;
+  smtpUrl: string | undefined;
+  mailFrom: string;
+  requireEmailVerification: boolean;
+  legal: { owner: string; taxId: string; address: string; email: string };
   socialBases: { bluesky?: string; x?: string; youtube?: string };
   signupEnabled: boolean;
   stripe:
@@ -153,6 +167,15 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     mediaProxies: e.MEDIA_PROXIES,
     sourcesAllowPrivate: e.SOURCES_ALLOW_PRIVATE || e.RUNFLOW_MODE === 'station',
     socialPollMs: e.SOCIAL_POLL_MS,
+    smtpUrl: e.SMTP_URL,
+    mailFrom: e.MAIL_FROM,
+    requireEmailVerification: e.REQUIRE_EMAIL_VERIFICATION,
+    legal: {
+      owner: e.LEGAL_OWNER,
+      taxId: e.LEGAL_TAX_ID,
+      address: e.LEGAL_ADDRESS,
+      email: e.LEGAL_EMAIL,
+    },
     socialBases: {
       bluesky: e.SOCIAL_BLUESKY_API,
       x: e.SOCIAL_X_API,

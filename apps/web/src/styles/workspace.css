@@ -855,3 +855,27 @@
   margin: 4px 0 0;
   padding-left: 20px;
 }
+
+/* Textos legales */
+.rf-legal {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--rf-space-5) var(--rf-space-4);
+  line-height: 1.6;
+}
+.rf-legal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rf-space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--rf-space-4);
+}
+.rf-legal__head nav {
+  display: flex;
+  gap: var(--rf-space-3);
+}
+.rf-legal__body h2 {
+  font-size: var(--rf-text-lg);
+  margin-top: var(--rf-space-4);
+}

@@ -36,6 +36,9 @@ import { mediaRoutes } from './routes/media';
 import { productionRoutes } from './routes/production';
 import { budgetRoutes } from './routes/budget';
 import { screenRoutes } from './routes/screens';
+import { emailRoutes } from './routes/email';
+import { Mailer } from './services/mailer';
+import { setRequireEmailVerification } from './auth/guards';
 import { socialRoutes } from './routes/social';
 import { SocialPoller, socialOptions } from './social/poller';
 import { ScreensManager } from './screens/manager';
@@ -72,6 +75,7 @@ export interface AppDeps {
   cues?: CueRunner;
   lighting?: LightingManager;
   systems?: SystemsManager;
+  mailer?: Mailer;
   social?: SocialPoller;
 }
 
@@ -122,6 +126,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
   deps.mixers = new MixerManager(deps.db, deps.collab, app.log);
   // Con cada cambio del directo: CasparCG y mezcladores a la vez.
+  deps.mailer = new Mailer({ smtpUrl: deps.config.smtpUrl, from: deps.config.mailFrom }, app.log);
+  setRequireEmailVerification(deps.config.requireEmailVerification);
   deps.screens = new ScreensManager(deps.db, deps.collab, app.log);
   // F4.2 Automatización: cues del timeline ejecutados en directo.
   deps.cues = new CueRunner(deps.collab, app.log);
@@ -315,6 +321,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await productionRoutes(app, deps);
   await budgetRoutes(app, deps);
   await screenRoutes(app, deps);
+  await emailRoutes(app, deps);
   await socialRoutes(app, deps);
   deps.social = new SocialPoller(deps.db, () => deps.secrets!, app.log, {
     ...socialOptions(deps.config),

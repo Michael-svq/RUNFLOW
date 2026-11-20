@@ -129,6 +129,9 @@ export function LandingPage() {
       <footer className="rf-landing__footer">
         <span>RunFlow</span>
         <Link to="/ayuda">Ayuda</Link>
+        <Link to="/legal/terminos">Condiciones</Link>
+        <Link to="/legal/privacidad">Privacidad</Link>
+        <Link to="/legal/cookies">Cookies</Link>
       </footer>
     </div>
   );

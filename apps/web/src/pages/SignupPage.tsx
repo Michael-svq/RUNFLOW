@@ -79,7 +79,14 @@ export function SignupPage() {
         <label className="rf-check">
           <input type="checkbox" checked={accept} onChange={(e) => setAccept(e.target.checked)} />
           <span>
-            Acepto las condiciones del servicio y la política de privacidad
+            Acepto las{' '}
+            <Link to="/legal/terminos" target="_blank">
+              condiciones del servicio
+            </Link>{' '}
+            y la{' '}
+            <Link to="/legal/privacidad" target="_blank">
+              política de privacidad
+            </Link>
             {form.fieldErrors.acceptTerms && (
               <span className="rf-field__error"> · {form.fieldErrors.acceptTerms}</span>
             )}

@@ -158,6 +158,8 @@ export async function createMember(
         name: input.name,
         passwordHash,
         mustChangePassword: true,
+        // Lo da de alta un administrador de la empresa.
+        emailVerifiedAt: new Date(),
       });
     }
 

@@ -27,6 +27,7 @@ export interface MeResponse {
     email: string;
     isPlatformAdmin: boolean;
     mustChangePassword: boolean;
+    emailVerified: boolean;
   };
   organizations: MeOrganization[];
   activeOrg: (MeOrganization & { permissions: Permission[] }) | null;
@@ -65,6 +66,8 @@ export interface SetupStatusResponse {
   needsSetup: boolean;
   /** La nube admite registro autoservicio (/registro). */
   signupEnabled?: boolean;
+  /** Datos del titular para los textos legales. */
+  legal?: { owner: string; taxId: string; address: string; email: string };
 }
 
 export interface ApiErrorBody {

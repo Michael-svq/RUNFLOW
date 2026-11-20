@@ -40,6 +40,7 @@ export async function buildMe(
         email: users.email,
         isPlatformAdmin: users.isPlatformAdmin,
         mustChangePassword: users.mustChangePassword,
+        emailVerifiedAt: users.emailVerifiedAt,
       })
       .from(users)
       .where(eq(users.id, session.userId)),
@@ -60,8 +61,9 @@ export async function buildMe(
     role: { id: o.roleId, key: o.roleKey, name: o.roleName },
   });
 
+  const { emailVerifiedAt, ...userData } = user!;
   return {
-    user: user!,
+    user: { ...userData, emailVerified: !!emailVerifiedAt },
     organizations: orgs.map(toOrg),
     activeOrg: active
       ? { ...toOrg(active), permissions: active.permissions.filter(isPermission) }
