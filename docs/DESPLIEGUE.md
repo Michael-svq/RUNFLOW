@@ -45,7 +45,9 @@ Ver `.env.example`. Las importantes:
 | `COOKIE_SECURE`      | `true` detrás de HTTPS                                        |
 | `TRUST_PROXY`        | `true` si hay un proxy inverso delante                        |
 | `AUTH_RATE_LIMIT`    | Intentos por minuto en login (10)                             |
-| `DATA_DIR`           | Carpeta de datos (licencia de la Station); `/data` en Docker  |
+| `DATA_DIR`           | Carpeta de datos (licencia, clave maestra); `/data` en Docker |
+| `SECRET_KEY`         | Clave maestra de cifrado (claves de IA); si no, en `DATA_DIR` |
+| `PUBLIC_URL`         | Dirección con la que CasparCG ve este servidor (plantillas)   |
 | `CLOUD_URL`          | Station híbrida: dirección de la nube                         |
 | `STATION_TOKEN`      | Station híbrida: token creado en la nube                      |
 | `TLS_CERT_FILE`      | HTTPS directo (Station): certificado PEM                      |

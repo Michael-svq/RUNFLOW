@@ -3,7 +3,7 @@
 > Sistema de escaletas, guiones, rótulos, teleprompter y producción para TV local, educación y eventos.
 > Web (PWA) multiempresa en la nube **y** funcionamiento local sin conexión mediante **RunFlow Station**.
 
-Estado: **M0 a M8 terminados** (falta publicar el entorno de staging, que necesita un servidor; M7–M8 probados con CasparCG, OBS y vMix simulados, falta la prueba con equipos reales). Siguiente: **M9 IA**. Pendiente de M2: bloques/segmentos con reloj propio. Documento vivo: se actualiza en cada hito.
+Estado: **M0 a M9 terminados** (Fase I completa salvo publicar staging, que necesita un servidor, y probar M7–M8 con equipos reales y M9 con claves reales). Siguiente: **beta y lanzamiento** (planes, pagos) y **Fase II**. Pendiente de M2: bloques/segmentos con reloj propio. Documento vivo: se actualiza en cada hito.
 
 ---
 

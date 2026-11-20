@@ -8,6 +8,7 @@ Web (PWA) multiempresa en la nube y funcionamiento local con **RunFlow Station**
 - Despliegue: [`docs/DESPLIEGUE.md`](docs/DESPLIEGUE.md)
 - RunFlow CG y CasparCG: [`docs/CASPARCG.md`](docs/CASPARCG.md)
 - Mezcladores y mando: [`docs/MEZCLADORES.md`](docs/MEZCLADORES.md)
+- Inteligencia artificial: [`docs/IA.md`](docs/IA.md)
 
 ## Estado
 
@@ -22,7 +23,8 @@ Web (PWA) multiempresa en la nube y funcionamiento local con **RunFlow Station**
 | M6 RunFlow Station (servidor local, modo híbrido con la nube, licencias)                 | ✅        |
 | M7 RunFlow CG (CasparCG: rótulos ▶/■ y por TC, VTR, plantillas, configuración)          | ✅        |
 | M8 Mezcladores (OBS, vMix, ATEM), mapa de fuentes y mando (Companion, Stream Deck)       | ✅        |
-| M9 IA (varios proveedores, Ollama en local)                                              | Siguiente |
+| M9 IA (Anthropic, OpenAI, Gemini, Mistral, Ollama en local) en el guion                  | ✅        |
+| Beta y lanzamiento (planes, pagos, staging)                                              | Siguiente |
 
 ## Estructura
 
@@ -32,6 +34,7 @@ apps/
   web/        Aplicación web (React + Vite, PWA)
   station/    Lanzador de RunFlow Station (PostgreSQL integrado, mDNS, HTTPS)
 packages/
+  ai/         IA multiproveedor (Anthropic, OpenAI, Gemini, Mistral, Ollama) y funciones de redacción
   core/       Permisos, roles, validaciones, catálogo de la escaleta y tipos compartidos
   sync/       Documento colaborativo de la escaleta (Yjs)
   db/         Esquema de base de datos, migraciones y aislamiento por empresa (RLS)

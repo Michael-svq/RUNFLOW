@@ -13,6 +13,7 @@ import {
 import { Alert, Badge, Button, SelectField, Spinner, TextField } from '@runflow/ui';
 import { api, errorMessage } from '../api/client';
 import { PageHeader } from '../components/PageHeader';
+import { AiConfig } from './AiConfig';
 
 /*
  * 10 Configuración (nivel Master de la empresa): rótulos y directo, diseño de
@@ -41,7 +42,7 @@ export function ConfigPage() {
       <PageHeader
         number="10"
         title="Configuración"
-        intro="Opciones Master de la empresa: rótulos, directo, diseño de la grafía y equipos del estudio."
+        intro="Opciones Master de la empresa: rótulos, directo, diseño de la grafía, equipos del estudio e inteligencia artificial."
       />
       {settings.isPending ? (
         <Spinner label="Cargando…" />
@@ -52,6 +53,7 @@ export function ConfigPage() {
           <LiveSettings settings={settings.data} />
           <DesignEditor settings={settings.data} />
           <Devices />
+          <AiConfig settings={settings.data} />
         </>
       )}
     </>

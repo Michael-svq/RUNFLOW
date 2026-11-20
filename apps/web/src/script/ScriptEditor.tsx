@@ -17,6 +17,8 @@ import { lineScript, scriptField, type LineSnapshot, type ScriptKind } from '@ru
 import { Button } from '@runflow/ui';
 import { ScriptContext } from './context';
 import { Rotulo, ScriptParagraph } from './extensions';
+import { AiDialog } from './AiDialog';
+import { download } from '../rundown/importExport';
 
 const KINDS: { kind: ScriptKind; label: string; hint: string }[] = [
   { kind: 'paso', label: 'Paso', hint: 'Lo que lee el presentador (Ctrl+1)' },
@@ -77,6 +79,9 @@ export function ScriptEditor({ doc, provider, line, editable, user, onUseReading
     editor?.setEditable(editable);
   }, [editor, editable]);
 
+  const [ai, setAi] = useState<{
+    selection: { from: number; to: number; text: string } | null;
+  } | null>(null);
   // Resumen en vivo (palabras, lectura, rótulos).
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -139,7 +144,34 @@ export function ScriptEditor({ doc, provider, line, editable, user, onUseReading
                 </option>
               ))}
             </select>
+            <button
+              type="button"
+              className="rf-script__ai"
+              title="Asistente de IA: corregir, escribir paso u off, ajustar, rótulos, traducir…"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                if (!editor) return;
+                const { from, to } = editor.state.selection;
+                setAi({
+                  selection:
+                    to > from
+                      ? { from, to, text: editor.state.doc.textBetween(from, to, '\n') }
+                      : null,
+                });
+              }}
+            >
+              ✦ IA
+            </button>
           </div>
+        )}
+        {ai && editor && (
+          <AiDialog
+            editor={editor}
+            line={line}
+            summary={summary}
+            selection={ai.selection}
+            onClose={() => setAi(null)}
+          />
         )}
 
         <EditorContent editor={editor} className="rf-script__editor" />
@@ -157,6 +189,22 @@ export function ScriptEditor({ doc, provider, line, editable, user, onUseReading
             <span className="rf-script__dot rf-script__dot--rotulo" /> Rótulos:{' '}
             {summary.graphics.length}
           </span>
+          {summary.offWords > 0 && (
+            <Button
+              size="sm"
+              variant="ghost"
+              title="Texto del off para herramientas de voz o de edición"
+              onClick={() =>
+                download(
+                  `${String(line.cells.num ?? '')}_${String(line.cells.nombre ?? 'linea').replace(/[^\w-]+/g, '_')}_off.txt`,
+                  summary.off.join('\n\n'),
+                  'text/plain;charset=utf-8',
+                )
+              }
+            >
+              Exportar off
+            </Button>
+          )}
           {editable && onUseReadingTime && summary.readingSeconds > 0 && (
             <Button
               size="sm"
