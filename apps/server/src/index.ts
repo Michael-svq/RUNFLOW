@@ -28,4 +28,6 @@ await deps
   .catch((err: unknown) => app.log.error({ err }, 'No se pudieron retomar los directos'));
 // Station enlazada con la nube: empieza a sincronizar.
 deps.stationSync?.start();
+// Fuentes RSS de las empresas.
+deps.sources?.start();
 app.log.info(`RunFlow (${config.mode}) escuchando en ${config.host}:${config.port}`);

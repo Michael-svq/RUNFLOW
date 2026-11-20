@@ -41,7 +41,7 @@ export async function resetDb(ownerUrl = process.env.TEST_OWNER_URL): Promise<vo
   const client = new pg.Client({ connectionString: ownerUrl });
   await client.connect();
   await client.query(
-    'truncate table ai_usage, ai_providers, devices, stations, chat_messages, rundown_versions, rundown_templates, fridge_items, outputs, people, asrun_log, views, rundown_lines, rundowns, programs, audit_log, sessions, memberships, roles, users, organizations restart identity cascade',
+    'truncate table source_items, sources, ai_usage, ai_providers, devices, stations, chat_messages, rundown_versions, rundown_templates, fridge_items, outputs, people, asrun_log, views, rundown_lines, rundowns, programs, audit_log, sessions, memberships, roles, users, organizations restart identity cascade',
   );
   await client.end();
 }

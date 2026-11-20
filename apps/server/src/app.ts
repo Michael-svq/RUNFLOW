@@ -30,6 +30,8 @@ import { MixerManager } from './mixers/mixer-manager';
 import { SecretBox } from './services/secrets';
 import { aiRoutes } from './routes/ai';
 import { billingRoutes } from './routes/billing';
+import { sourceRoutes } from './routes/sources';
+import { SourcePoller } from './sources/poller';
 import { cgRoutes } from './routes/cg';
 import { readFileSync } from 'node:fs';
 
@@ -48,6 +50,8 @@ export interface AppDeps {
   mixers?: MixerManager;
   /** Cifrado de secretos (claves de IA). */
   secrets?: SecretBox;
+  /** Lectura periódica de fuentes RSS (la arranca index.ts). */
+  sources?: SourcePoller;
 }
 
 /** Cabecera que la web envía en toda petición que modifica datos (defensa CSRF). */
@@ -127,6 +131,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     await deps.stationSync?.close();
     deps.cg!.close();
     deps.mixers!.close();
+    deps.sources?.close();
     deps.live!.close();
     await deps.collab!.close();
   });
@@ -204,6 +209,11 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await cgRoutes(app, deps);
   await aiRoutes(app, deps);
   await billingRoutes(app, deps);
+  await sourceRoutes(app, deps);
+  deps.sources = new SourcePoller(deps.db, app.log, {
+    intervalMs: deps.config.sourcesPollMs,
+    allowPrivate: deps.config.sourcesAllowPrivate,
+  });
 
   const webDist = deps.config.webDist ? path.resolve(deps.config.webDist) : undefined;
   const serveWeb = !!webDist && existsSync(path.join(webDist, 'index.html'));

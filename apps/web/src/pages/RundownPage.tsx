@@ -53,6 +53,7 @@ import {
   useChat,
   VersionsTab,
   fridgeKey,
+  SourcesTab,
 } from '../rundown/panels';
 import { CgBar, CgProvider, GraphicsCell, PlayCell, useCgContextValue } from '../rundown/cg';
 import { useScriptColumns } from '../script/useScripts';
@@ -173,7 +174,7 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
       return true;
     }
   });
-  type PanelTab = 'guion' | 'chat' | 'nevera' | 'versiones';
+  type PanelTab = 'guion' | 'chat' | 'nevera' | 'fuentes' | 'versiones';
   const [panelTab, setPanelTab] = useState<PanelTab>('guion');
   const chat = useChat(rundown.id, session?.provider, scriptOpen && panelTab === 'chat');
   const openPanel = (tab: PanelTab) => {
@@ -620,6 +621,7 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
                       ['guion', 'Guion'],
                       ['chat', chat.unread ? `Chat (${chat.unread})` : 'Chat'],
                       ['nevera', 'Nevera'],
+                      ['fuentes', 'Fuentes'],
                       ['versiones', 'Versiones'],
                     ] as [PanelTab, string][]
                   ).map(([tab, label]) => (
@@ -664,6 +666,18 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
                       </p>
                     ))}
                   {panelTab === 'chat' && <ChatTab chat={chat} meId={me.user.id} />}
+                  {panelTab === 'fuentes' && session && (
+                    <SourcesTab
+                      doc={session.doc}
+                      insertIndex={
+                        selectedLine
+                          ? lines.findIndex((l) => l.id === selectedLine.id) + 1
+                          : lines.length
+                      }
+                      canInsert={editable && canEditStructure}
+                      onInserted={(id) => setSelectedLineId(id)}
+                    />
+                  )}
                   {panelTab === 'nevera' && session && (
                     <FridgeTab
                       doc={session.doc}

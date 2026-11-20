@@ -35,6 +35,10 @@ const envSchema = z.object({
   /** HTTPS directo (Station en red local): certificado y clave en PEM. */
   TLS_CERT_FILE: z.string().optional(),
   TLS_KEY_FILE: z.string().optional(),
+  /** Cada cuánto se leen las fuentes RSS (ms; 0 = no se leen solas). */
+  SOURCES_POLL_MS: z.coerce.number().int().min(0).default(300_000),
+  /** Permite leer fuentes de la red interna (en una Station siempre). */
+  SOURCES_ALLOW_PRIVATE: bool.default(false),
   /** Nube SaaS: aplica los límites de cada plan (usuarios, programas, equipos, IA). */
   PLAN_LIMITS: bool.default(false),
   /** Nube SaaS: cualquiera puede crear una empresa desde /registro. */
@@ -76,6 +80,8 @@ export interface AppConfig {
   publicUrl: string | undefined;
   secretKey: string | undefined;
   planLimits: boolean;
+  sourcesPollMs: number;
+  sourcesAllowPrivate: boolean;
   signupEnabled: boolean;
   stripe:
     | {
@@ -128,6 +134,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     publicUrl: e.PUBLIC_URL,
     secretKey: e.SECRET_KEY,
     planLimits: e.PLAN_LIMITS,
+    sourcesPollMs: e.SOURCES_POLL_MS,
+    sourcesAllowPrivate: e.SOURCES_ALLOW_PRIVATE || e.RUNFLOW_MODE === 'station',
     signupEnabled: e.SIGNUP_ENABLED,
     stripe: e.STRIPE_SECRET_KEY
       ? {

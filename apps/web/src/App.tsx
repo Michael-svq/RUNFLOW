@@ -22,6 +22,7 @@ import { UsersPage } from './pages/UsersPage';
 import { StationPage } from './pages/StationPage';
 import { ConfigPage } from './pages/ConfigPage';
 import { SignupPage } from './pages/SignupPage';
+import { SourcesPage } from './pages/SourcesPage';
 import { HelpPage } from './pages/HelpPage';
 import { useCan, useMe } from './auth/session';
 
@@ -67,6 +68,7 @@ export function App() {
           <Route path="/perfil" element={<ProfilePage />} />
           <Route path="/escaletas" element={<RundownsPage />} />
           <Route path="/nevera" element={<FridgePage />} />
+          <Route path="/fuentes" element={<SourcesPage />} />
           <Route path="/archivo" element={<ArchivePage />} />
           <Route path="/station" element={<RequireStationPermission />} />
           <Route path="/configuracion" element={<RequireConfigPermission />} />

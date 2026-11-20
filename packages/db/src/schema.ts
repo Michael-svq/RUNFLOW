@@ -476,3 +476,47 @@ export const aiUsage = pgTable(
   },
   (t) => [index('ai_usage_org_date_idx').on(t.orgId, t.createdAt)],
 );
+
+/** Fuentes de noticias (RSS/Atom de agencias y medios). */
+export const sources = pgTable(
+  'sources',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    /** rss (RSS 2.0 o Atom) */
+    kind: text('kind').notNull().default('rss'),
+    url: text('url').notNull(),
+    enabled: boolean('enabled').notNull().default(true),
+    lastFetchedAt: timestamp('last_fetched_at', { withTimezone: true }),
+    lastError: text('last_error'),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index('sources_org_idx').on(t.orgId)],
+);
+
+export const sourceItems = pgTable(
+  'source_items',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    sourceId: uuid('source_id')
+      .notNull()
+      .references(() => sources.id, { onDelete: 'cascade' }),
+    guid: text('guid').notNull(),
+    title: text('title').notNull(),
+    summary: text('summary').notNull().default(''),
+    link: text('link').notNull().default(''),
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex('source_items_source_guid_idx').on(t.sourceId, t.guid),
+    index('source_items_org_date_idx').on(t.orgId, t.publishedAt),
+  ],
+);

@@ -13,7 +13,7 @@ export interface NavItem {
 
 /** Menú principal (PLAN §23, "Anexo menús" de la propuesta). */
 export const NAV_ITEMS: NavItem[] = [
-  { number: '01', path: '/fuentes', label: 'nav.sources', milestone: 'Fase II' },
+  { number: '01', path: '/fuentes', label: 'nav.sources' },
   { number: '02', path: '/nevera', label: 'nav.fridge' },
   { number: '03', path: '/social', label: 'nav.social', milestone: 'Fase III' },
   { number: '04', path: '/escaletas', label: 'nav.rundowns' },

@@ -7,6 +7,7 @@ import {
   lineTypeLabel,
   type ChatMessageDto,
   type FridgeItemDto,
+  type SourceItemDto,
   type VersionDto,
 } from '@runflow/core';
 import {
@@ -352,6 +353,89 @@ export function VersionsTab({
                     Restaurar
                   </Button>
                 ))}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/* ---------- Fuentes (F2.2) ---------- */
+
+export function SourcesTab({
+  doc,
+  insertIndex,
+  canInsert,
+  onInserted,
+}: {
+  doc: Y.Doc;
+  insertIndex: number;
+  canInsert: boolean;
+  onInserted: (lineId: string) => void;
+}) {
+  const [q, setQ] = useState('');
+  const items = useQuery({
+    queryKey: ['source-items', '', q],
+    queryFn: async () => {
+      const params = new URLSearchParams({ limit: '50' });
+      if (q.trim()) params.set('q', q.trim());
+      return (await api.get<{ items: SourceItemDto[] }>(`/api/source-items?${params}`)).items;
+    },
+    refetchInterval: 60_000,
+  });
+
+  const insert = (item: SourceItemDto) => {
+    let id = '';
+    doc.transact(() => {
+      id = insertLine(
+        doc,
+        {
+          index: insertIndex,
+          cells: { tipo: 'TEMA', nombre: item.title.slice(0, 120).toUpperCase() },
+        },
+        LOCAL_ORIGIN,
+      );
+      const note = [item.summary, item.link].filter(Boolean).join('\n');
+      if (note) writeScript(doc, id, [{ kind: 'nota', text: note }], LOCAL_ORIGIN);
+    }, LOCAL_ORIGIN);
+    onInserted(id);
+  };
+
+  return (
+    <div className="rf-sidelist">
+      <input
+        className="rf-input"
+        placeholder="Buscar en las fuentes…"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        aria-label="Buscar en las fuentes"
+      />
+      {items.isPending ? (
+        <Spinner label="Cargando…" />
+      ) : items.isError ? (
+        <Alert tone="error">{errorMessage(items.error)}</Alert>
+      ) : items.data.length === 0 ? (
+        <p className="rf-muted rf-small">
+          No hay noticias. Las fuentes (RSS de agencias y medios) se añaden en 01 Fuentes.
+        </p>
+      ) : (
+        <ul className="rf-sidelist__items">
+          {items.data.map((i) => (
+            <li key={i.id}>
+              <div>
+                <strong>{i.title}</strong>
+                <span className="rf-muted rf-small">
+                  {' '}
+                  {i.sourceName}
+                  {i.publishedAt && ` · ${timeFmt.format(new Date(i.publishedAt))}`}
+                </span>
+              </div>
+              {canInsert && (
+                <Button size="sm" onClick={() => insert(i)}>
+                  Insertar
+                </Button>
+              )}
             </li>
           ))}
         </ul>
