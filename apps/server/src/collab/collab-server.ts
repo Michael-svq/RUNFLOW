@@ -29,6 +29,7 @@ export const MESSAGE_PROMPTER = 101;
 export const MESSAGE_STAGE = 102;
 /** Ajustes de una salida (cuando se cambian desde el control). */
 export const MESSAGE_OUTPUT_SETTINGS = 103;
+export const MESSAGE_CG = 105;
 /** Nuevo mensaje de chat de la escaleta. */
 export const MESSAGE_CHAT = 104;
 /** Versión automática como mucho cada… */
@@ -276,6 +277,8 @@ export class CollabServer {
   private readonly pingTimer: NodeJS.Timeout;
   /** Estado del directo que se envía a quien se conecta (lo aporta el motor de directo). */
   liveSnapshot?: (rundownId: string, orgId: string) => Promise<unknown>;
+  /** Estado de RunFlow CG que se envía a quien se conecta (mensaje 105). */
+  cgSnapshot?: (rundownId: string, orgId: string) => Promise<unknown>;
   /** Aviso de cambios en las líneas de una escaleta. */
   onDocChanged?: (rundownId: string, orgId: string) => void;
 
@@ -346,6 +349,14 @@ export class CollabServer {
         this.log.warn({ err, rundownId }, 'No se pudo enviar el estado del directo');
       }
     }
+    if (this.cgSnapshot) {
+      try {
+        const cg = await this.cgSnapshot(rundownId, info.orgId);
+        if (cg) send(ws, customMessage(MESSAGE_CG, cg));
+      } catch (err) {
+        this.log.warn({ err, rundownId }, 'No se pudo enviar el estado de RunFlow CG');
+      }
+    }
   }
 
   /** Envía los nuevos ajustes a las conexiones de una salida. */
@@ -371,10 +382,10 @@ export class CollabServer {
     void this.docs.get(rundownId)?.then((shared) => shared.broadcast(customMessage(type, payload)));
   }
 
-  /** Envía el estado del directo a todas las personas conectadas a la escaleta. */
   /** Station enlazada: cada cambio del directo se envía también a la nube. */
   onLive: ((rundownId: string, live: unknown) => void) | undefined;
 
+  /** Envía el estado del directo a todas las personas conectadas a la escaleta. */
   broadcastLive(rundownId: string, live: unknown): void {
     this.onLive?.(rundownId, live);
     void this.docs.get(rundownId)?.then((shared) => shared.broadcast(liveMessage(live)));

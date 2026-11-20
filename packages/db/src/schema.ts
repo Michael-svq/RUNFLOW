@@ -40,6 +40,8 @@ export const organizations = pgTable('organizations', {
   /** cloud | hybrid | local */
   mode: text('mode').notNull().default('cloud'),
   timezone: text('timezone').notNull().default('Europe/Madrid'),
+  /** Configuración Master de la empresa (OrgSettings de @runflow/core). */
+  settings: jsonb('settings').notNull().default({}),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
@@ -407,4 +409,23 @@ export const stations = pgTable(
     revokedAt: timestamp('revoked_at', { withTimezone: true }),
   },
   (t) => [index('stations_org_idx').on(t.orgId)],
+);
+
+/** Equipos del estudio (CasparCG; mezcladores en M8). */
+export const devices = pgTable(
+  'devices',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    /** casparcg */
+    kind: text('kind').notNull(),
+    enabled: boolean('enabled').notNull().default(true),
+    config: jsonb('config').notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index('devices_org_idx').on(t.orgId)],
 );

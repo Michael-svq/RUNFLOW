@@ -4,6 +4,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import type { LiveState } from '@runflow/core';
 import {
+  devices,
   fridgeItems,
   memberships,
   organizations,
@@ -247,6 +248,7 @@ export async function stationRoutes(app: FastifyInstance, deps: AppDeps): Promis
         })),
         fridge: await tx.select().from(fridgeItems).where(eq(fridgeItems.orgId, s.orgId)),
         outputs: await tx.select().from(outputs).where(eq(outputs.orgId, s.orgId)),
+        devices: await tx.select().from(devices).where(eq(devices.orgId, s.orgId)),
       };
     });
   });

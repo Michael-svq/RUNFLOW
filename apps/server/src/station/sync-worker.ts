@@ -4,6 +4,7 @@ import WebSocket from 'ws';
 import { Awareness } from 'y-protocols/awareness';
 import { WebsocketProvider } from 'y-websocket';
 import {
+  devices,
   fridgeItems,
   memberships,
   organizations,
@@ -77,6 +78,7 @@ export class StationSync {
   private links = new Map<string, Link>();
   private orgId: string | null = null;
   private pendingLive = new Map<string, unknown>();
+  private lastConfig = '';
   private flushing = false;
   readonly status: SyncStatus = {
     enabled: true,
@@ -95,6 +97,7 @@ export class StationSync {
       cloudUrl: string;
       token: string;
       intervalMs: number;
+      onConfigChanged?: (orgId: string) => void;
       version: string;
     },
   ) {}
@@ -205,6 +208,11 @@ export class StationSync {
 
   /** Aplica la instantánea de la nube en la base de datos local. */
   private async apply(s: Snapshot): Promise<void> {
+    // Ajustes o equipos cambiados en la nube: RunFlow CG los vuelve a cargar.
+    const config = JSON.stringify([s.organization.settings, s.devices ?? []]);
+    const configChanged = config !== this.lastConfig;
+    this.lastConfig = config;
+    if (configChanged) queueMicrotask(() => this.options.onConfigChanged?.(s.organization.id));
     knownUsers = new Set(s.users.map((u) => u.id));
     await withSystem(this.db, async (tx) => {
       const org = dates(s.organization, ['createdAt', 'updatedAt']);
@@ -217,6 +225,7 @@ export class StationSync {
             name: org.name,
             plan: org.plan,
             timezone: org.timezone,
+            settings: org.settings,
             mode: 'hybrid',
             updatedAt: new Date(),
           },
@@ -323,6 +332,31 @@ export class StationSync {
           .values(dates(f, ['createdAt']))
           .onConflictDoNothing();
       }
+      // Equipos del estudio (CasparCG…): se configuran en la nube y los mueve la Station.
+      for (const d of s.devices ?? []) {
+        const row = dates(d);
+        await tx
+          .insert(devices)
+          .values(row as never)
+          .onConflictDoUpdate({
+            target: devices.id,
+            set: {
+              name: row.name,
+              kind: row.kind,
+              enabled: row.enabled,
+              config: row.config as never,
+            },
+          });
+      }
+      const keepDevices = (s.devices ?? []).map((d) => d.id);
+      await tx
+        .delete(devices)
+        .where(
+          and(
+            eq(devices.orgId, s.organization.id),
+            keepDevices.length ? notInArray(devices.id, keepDevices) : undefined,
+          ),
+        );
       for (const o of s.outputs) {
         const row = dates(o, ['createdAt', 'updatedAt', 'revokedAt']);
         await tx
@@ -446,6 +480,7 @@ interface Snapshot {
     mode: string;
     timezone: string;
     slug: string;
+    settings: unknown;
   } & Row;
   roles: (Row & {
     orgId: string;
@@ -490,5 +525,12 @@ interface Snapshot {
     name: string;
     tokenHash: string;
     settings: unknown;
+  })[];
+  devices?: (Row & {
+    orgId: string;
+    name: string;
+    kind: string;
+    enabled: boolean;
+    config: unknown;
   })[];
 }

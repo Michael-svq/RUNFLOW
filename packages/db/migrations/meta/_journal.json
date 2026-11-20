@@ -99,6 +99,20 @@
       "when": 1795141634221,
       "tag": "0013_stations_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1795143863964,
+      "tag": "0014_devices",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1795143869509,
+      "tag": "0015_devices_rls",
+      "breakpoints": true
     }
   ]
 }

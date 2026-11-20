@@ -417,9 +417,20 @@ export class LiveManager {
       .where(and(eq(rundowns.id, item.rundownId), eq(rundowns.orgId, item.orgId)));
   }
 
+  /** RunFlow CG (y mezcladores en M8): reaccionan a cada cambio del directo. */
+  onChange:
+    | ((rundownId: string, orgId: string, prev: LiveState, next: LiveState) => void)
+    | undefined;
+
   private async commit(item: LiveRundown, state: LiveState): Promise<LiveState> {
+    const prev = item.state;
     item.state = state;
     this.collab.broadcastLive(item.rundownId, state);
+    try {
+      this.onChange?.(item.rundownId, item.orgId, prev, state);
+    } catch (err) {
+      this.log.error({ err, rundownId: item.rundownId }, 'Error al avisar del cambio de directo');
+    }
     await this.schedule(item);
     return state;
   }

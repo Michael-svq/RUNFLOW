@@ -6,3 +6,4 @@ export * from './rundown';
 export * from './timing';
 export * from './graphics';
 export * from './outputs';
+export * from './cg';

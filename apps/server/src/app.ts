@@ -25,6 +25,8 @@ import { workspaceRoutes } from './routes/workspace';
 import { stationRoutes } from './routes/stations';
 import { StationSync } from './station/sync-worker';
 import { LicenseManager } from './station/license';
+import { CgManager } from './cg/cg-manager';
+import { cgRoutes } from './routes/cg';
 import { readFileSync } from 'node:fs';
 
 export interface AppDeps {
@@ -38,6 +40,7 @@ export interface AppDeps {
   stationSync?: StationSync;
   /** Solo en una Station. */
   license?: LicenseManager;
+  cg?: CgManager;
 }
 
 /** Cabecera que la web envía en toda petición que modifica datos (defensa CSRF). */
@@ -77,6 +80,12 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   deps.live = new LiveManager(deps.db, deps.collab, app.log, {
     minGoIntervalMs: deps.config.minGoIntervalMs,
   });
+  deps.cg = new CgManager(deps.db, deps.collab, app.log, {
+    serverBaseUrl:
+      deps.config.publicUrl ?? `http${deps.config.tls ? 's' : ''}://127.0.0.1:${deps.config.port}`,
+  });
+  deps.live.onChange = (rundownId, orgId, prev, next) =>
+    deps.cg!.onLive(rundownId, orgId, prev, next);
   const { mode, cloudUrl, stationToken } = deps.config;
   if (mode === 'station' && cloudUrl && stationToken) {
     deps.stationSync = new StationSync(deps.db, deps.collab, app.log, {
@@ -84,6 +93,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       token: stationToken,
       intervalMs: deps.config.stationSyncIntervalMs,
       version: deps.version,
+      onConfigChanged: (orgId) => void deps.cg!.invalidate(orgId),
     });
   }
   if (mode === 'station') {
@@ -96,6 +106,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   }
   app.addHook('onClose', async () => {
     await deps.stationSync?.close();
+    deps.cg!.close();
     deps.live!.close();
     await deps.collab!.close();
   });
@@ -167,6 +178,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await outputRoutes(app, deps);
   await workspaceRoutes(app, deps);
   await stationRoutes(app, deps);
+  await cgRoutes(app, deps);
 
   const webDist = deps.config.webDist ? path.resolve(deps.config.webDist) : undefined;
   const serveWeb = !!webDist && existsSync(path.join(webDist, 'index.html'));
