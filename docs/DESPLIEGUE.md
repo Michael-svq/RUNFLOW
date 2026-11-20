@@ -45,7 +45,7 @@ Ver `.env.example`. Las importantes:
 | `COOKIE_SECURE`         | `true` detrás de HTTPS                                        |
 | `TRUST_PROXY`           | `true` si hay un proxy inverso delante                        |
 | `AUTH_RATE_LIMIT`       | Intentos por minuto en login (10)                             |
-| `DATA_DIR`              | Carpeta de datos (licencia, clave maestra); `/data` en Docker |
+| `DATA_DIR`              | Datos (licencia, clave, ficheros de Media); `/data` en Docker |
 | `SECRET_KEY`            | Clave maestra de cifrado (claves de IA); si no, en `DATA_DIR` |
 | `PUBLIC_URL`            | Dirección pública (redirecciones de Stripe, plantillas CG)    |
 | `PLAN_LIMITS`           | `true` en la nube SaaS: aplica los límites de cada plan       |
@@ -58,6 +58,8 @@ Ver `.env.example`. Las importantes:
 | `STATION_TOKEN`         | Station híbrida: token creado en la nube                      |
 | `TLS_CERT_FILE`         | HTTPS directo (Station): certificado PEM                      |
 | `TLS_KEY_FILE`          | HTTPS directo (Station): clave PEM                            |
+| `MEDIA_MAX_MB`          | Tamaño máximo por fichero en 05 Media (4096)                  |
+| `MEDIA_PROXIES`         | `false` para no generar vistas previas ligeras con ffmpeg     |
 
 ## RunFlow Station
 

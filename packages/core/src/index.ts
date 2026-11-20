@@ -11,3 +11,4 @@ export * from './ai';
 export * from './plans';
 export * from './sources';
 export * from './public-api';
+export * from './media';

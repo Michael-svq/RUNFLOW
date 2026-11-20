@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm';
 import {
+  bigint,
   bigserial,
+  doublePrecision,
   boolean,
   customType,
   date,
@@ -564,4 +566,30 @@ export const webhooks = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index('webhooks_org_idx').on(t.orgId)],
+);
+
+/** Media (F2.1): vídeos, imágenes y audio de la empresa. */
+export const media = pgTable(
+  'media',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    /** Carpeta lógica (p. ej. «NOTICIAS/2026-11-20»). */
+    folder: text('folder').notNull().default(''),
+    name: text('name').notNull(),
+    /** Fichero guardado (id + extensión). */
+    fileName: text('file_name').notNull(),
+    mime: text('mime').notNull(),
+    size: bigint('size', { mode: 'number' }).notNull(),
+    durationS: doublePrecision('duration_s'),
+    width: integer('width'),
+    height: integer('height'),
+    /** none | pending | ready | error */
+    proxyStatus: text('proxy_status').notNull().default('none'),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [index('media_org_folder_idx').on(t.orgId, t.folder)],
 );

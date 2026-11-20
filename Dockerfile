@@ -28,7 +28,8 @@ ENV NODE_ENV=production \
     WEB_DIST=/app/web \
     DATA_DIR=/data
 WORKDIR /app
-RUN mkdir -p /data && chown node:node /data
+# ffmpeg/ffprobe: duración y vistas previas de 05 Media
+RUN apk add --no-cache ffmpeg && mkdir -p /data && chown node:node /data
 COPY --from=build /out/node_modules ./node_modules
 COPY --from=build /out/package.json ./package.json
 COPY --from=build /app/apps/server/dist ./dist

@@ -32,6 +32,8 @@ import { aiRoutes } from './routes/ai';
 import { billingRoutes } from './routes/billing';
 import { sourceRoutes } from './routes/sources';
 import { publicApiRoutes } from './routes/public-api';
+import { mediaRoutes } from './routes/media';
+import { MediaStore } from './media/store';
 import { WebhookDispatcher } from './api/webhooks';
 import { SourcePoller } from './sources/poller';
 import { cgRoutes } from './routes/cg';
@@ -55,6 +57,7 @@ export interface AppDeps {
   /** Lectura periódica de fuentes RSS (la arranca index.ts). */
   sources?: SourcePoller;
   webhooks?: WebhookDispatcher;
+  media?: MediaStore;
 }
 
 /** Cabecera que la web envía en toda petición que modifica datos (defensa CSRF). */
@@ -225,6 +228,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await billingRoutes(app, deps);
   await sourceRoutes(app, deps);
   await publicApiRoutes(app, deps);
+  deps.media = new MediaStore(deps.config.dataDir);
+  await mediaRoutes(app, deps);
   deps.sources = new SourcePoller(deps.db, app.log, {
     intervalMs: deps.config.sourcesPollMs,
     allowPrivate: deps.config.sourcesAllowPrivate,

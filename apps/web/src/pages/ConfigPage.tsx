@@ -364,6 +364,7 @@ const DEFAULTS: Record<Kind, Pick<DeviceForm, 'name' | 'f' | 'b'>> = {
       banner: '30',
       logo: '40',
       templateBaseUrl: '',
+      mediaPath: '',
     },
     b: {},
   },
@@ -420,6 +421,7 @@ function toConfig(form: DeviceForm): Record<string, unknown> {
         channel: n('channel'),
         layers: { vtr: n('vtr'), lower: n('lower'), banner: n('banner'), logo: n('logo') },
         templateBaseUrl: (f.templateBaseUrl ?? '').trim(),
+        mediaPath: (f.mediaPath ?? '').trim(),
       };
     case 'obs':
       return {
@@ -663,6 +665,9 @@ function Devices() {
               {field('logo', 'Capa fecha/mosca', num)}
               {field('templateBaseUrl', 'Dirección de RunFlow vista desde CasparCG (opcional)', {
                 placeholder: 'http://192.168.1.20:8080',
+              })}
+              {field('mediaPath', 'Carpeta de medios de CasparCG (opcional, para 05 Media)', {
+                placeholder: 'C:\\casparcg\\media o /mnt/caspar/media',
               })}
             </>
           )}

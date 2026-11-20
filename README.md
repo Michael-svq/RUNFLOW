@@ -28,7 +28,9 @@ Web (PWA) multiempresa en la nube y funcionamiento local con **RunFlow Station**
 | Lanzamiento: planes, Stripe, registro autoservicio, portada pública y ayuda               | ✅        |
 | F2.2 Fuentes: RSS/Atom de agencias y medios a la nevera o a la escaleta                   | ✅        |
 | F2.3 Directo y streaming: emitir y grabar en OBS, vMix y ATEM; reloj de bloque en salidas | ✅        |
-| Beta privada (equipos reales) y resto de la Fase II                                       | Siguiente |
+| F2.4 API pública REST, tokens con permisos y webhooks firmados                            | ✅        |
+| F2.1 Media: subir, previsualizar, marcar TC, proxies y copia a CasparCG                   | ✅        |
+| Beta privada (equipos reales) y Fase III (producción)                                     | Siguiente |
 
 ## Estructura
 

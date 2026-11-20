@@ -35,6 +35,10 @@ const envSchema = z.object({
   /** HTTPS directo (Station en red local): certificado y clave en PEM. */
   TLS_CERT_FILE: z.string().optional(),
   TLS_KEY_FILE: z.string().optional(),
+  /** Tamaño máximo de un fichero de media (MB). */
+  MEDIA_MAX_MB: z.coerce.number().int().min(1).max(20_000).default(4096),
+  /** Crear proxies de previsualización con ffmpeg (si está instalado). */
+  MEDIA_PROXIES: bool.default(true),
   /** Cada cuánto se leen las fuentes RSS (ms; 0 = no se leen solas). */
   SOURCES_POLL_MS: z.coerce.number().int().min(0).default(300_000),
   /** Permite leer fuentes de la red interna (en una Station siempre). */
@@ -81,6 +85,8 @@ export interface AppConfig {
   secretKey: string | undefined;
   planLimits: boolean;
   sourcesPollMs: number;
+  mediaMaxMb: number;
+  mediaProxies: boolean;
   sourcesAllowPrivate: boolean;
   signupEnabled: boolean;
   stripe:
@@ -135,6 +141,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     secretKey: e.SECRET_KEY,
     planLimits: e.PLAN_LIMITS,
     sourcesPollMs: e.SOURCES_POLL_MS,
+    mediaMaxMb: e.MEDIA_MAX_MB,
+    mediaProxies: e.MEDIA_PROXIES,
     sourcesAllowPrivate: e.SOURCES_ALLOW_PRIVATE || e.RUNFLOW_MODE === 'station',
     signupEnabled: e.SIGNUP_ENABLED,
     stripe: e.STRIPE_SECRET_KEY

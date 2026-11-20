@@ -52,6 +52,15 @@ XML estándar de CasparCG (`<componentData id="f0">…`).
 La columna **CLIP** guarda el archivo (sin extensión) y **PLAY** muestra ◼ preparado con su
 duración, ► en reproducción con barra y restante, 🔁 bucle o ⚠ si el clip no está en CasparCG.
 
+## Media → CasparCG
+
+En **05 Media** se suben vídeos, imágenes y audio (ffprobe lee duración y tamaño; ffmpeg crea una
+vista previa ligera de 480p). Cada fichero tiene un **nombre de clip** (`CARPETA/NOMBRE`, en
+mayúsculas y sin acentos) que es el que se escribe en la columna CLIP. Si en Configuración el
+CasparCG tiene **Carpeta de medios** (la carpeta `media` del servidor, accesible desde el equipo de
+RunFlow, normalmente la Station), el botón **A CasparCG** copia allí el vídeo con ese nombre.
+La previsualización muestra el código de tiempo y permite **marcar TC** para los rótulos.
+
 ## Sin equipos
 
 `apps/server/src/cg/simulator.ts` es un CasparCG simulado (AMCP + OSC) que usan las pruebas y

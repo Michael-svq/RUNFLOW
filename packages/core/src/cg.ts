@@ -81,6 +81,11 @@ export const casparConfigSchema = z.object({
    * (p. ej. http://192.168.1.20:8080). Vacía: la del propio servidor.
    */
   templateBaseUrl: z.union([z.literal(''), z.string().url()]).default(''),
+  /**
+   * Carpeta de medios de CasparCG vista desde este servidor (mismo equipo o
+   * carpeta compartida montada) para copiar ahí los vídeos de 05 Media.
+   */
+  mediaPath: z.string().trim().max(500).default(''),
 });
 export type CasparConfig = z.infer<typeof casparConfigSchema>;
 
