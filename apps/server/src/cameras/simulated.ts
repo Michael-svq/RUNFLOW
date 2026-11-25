@@ -128,7 +128,8 @@ export class SimulatedCamera implements CameraDriver {
     const patches = ['#b8432f', '#d6a52c', '#3f8f3f', '#2f9fb0', '#2c4fa8', '#a33f8f'];
     const body = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="${n3(cx - w / 2)} ${n3(cy - h / 2)} ${n3(w)} ${n3(h)}" preserveAspectRatio="xMidYMid slice">
 <defs>
-<linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6d7c8c"/><stop offset="1" stop-color="#4b5662"/></linearGradient>
+<linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7c7c7c"/><stop offset="1" stop-color="#585858"/></linearGradient>
+<linearGradient id="window" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e2dfd5"/><stop offset="1" stop-color="#aeaa9f"/></linearGradient>
 <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a4636"/><stop offset="1" stop-color="#33281f"/></linearGradient>
 <filter id="cam" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
 ${blur > 0.2 ? `<feGaussianBlur stdDeviation="${n3(blur)}"/>` : ''}
@@ -139,7 +140,7 @@ ${blur > 0.2 ? `<feGaussianBlur stdDeviation="${n3(blur)}"/>` : ''}
 <rect x="-2000" y="-2000" width="5600" height="4900" fill="#2b3036"/>
 <rect x="0" y="0" width="1600" height="620" fill="url(#wall)"/>
 <rect x="0" y="620" width="1600" height="280" fill="url(#floor)"/>
-<rect x="120" y="90" width="360" height="250" fill="#f2efe4"/>
+<rect x="120" y="90" width="360" height="250" fill="url(#window)"/>
 <rect x="120" y="90" width="360" height="250" fill="none" stroke="#2a2a2a" stroke-width="10"/>
 <rect x="1120" y="110" width="360" height="200" fill="#1d2b44"/>
 <text x="1300" y="225" font-family="Arial, sans-serif" font-size="56" font-weight="700" fill="#ff7a1a" text-anchor="middle">RUNFLOW</text>

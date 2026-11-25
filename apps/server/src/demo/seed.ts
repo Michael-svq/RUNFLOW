@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { insertLine, writeScript, type ScriptBlock } from '@runflow/sync';
 import { and, eq, sql } from 'drizzle-orm';
-import { memberships, roles, users, withSystem } from '@runflow/db';
+import { devices, memberships, roles, users, withSystem } from '@runflow/db';
 import { hashPassword } from '../auth/password';
 import type { AppDeps } from '../app';
 
@@ -72,6 +72,35 @@ export async function ensureDemoUsers(deps: AppDeps): Promise<number> {
     }
     return created;
   });
+}
+
+/**
+ * Dos cámaras PTZ simuladas para Control de cámara (si la empresa demo no tiene
+ * ninguna cámara). Devuelve cuántas crea.
+ */
+export async function ensureDemoCameras(deps: AppDeps): Promise<number> {
+  const created = await withSystem(deps.db, async (tx) => {
+    const [admin] = await tx
+      .select({ orgId: memberships.orgId })
+      .from(users)
+      .innerJoin(memberships, eq(memberships.userId, users.id))
+      .where(sql`lower(${users.email}) = ${DEMO_ACCOUNT.email}`)
+      .limit(1);
+    if (!admin) return { orgId: null, count: 0 };
+    const existing = await tx
+      .select({ id: devices.id })
+      .from(devices)
+      .where(and(eq(devices.orgId, admin.orgId), eq(devices.kind, 'camera')));
+    if (existing.length) return { orgId: admin.orgId, count: 0 };
+    const config = { protocol: 'simulated', host: '', port: 0, address: 1, snapshotUrl: '' };
+    await tx.insert(devices).values([
+      { orgId: admin.orgId, name: 'CAM 1', kind: 'camera', enabled: true, config },
+      { orgId: admin.orgId, name: 'CAM 2', kind: 'camera', enabled: true, config },
+    ]);
+    return { orgId: admin.orgId, count: 2 };
+  });
+  if (created.orgId) deps.cameras?.invalidate(created.orgId);
+  return created.count;
 }
 
 const rotulo = (type: string, f0: string, f1 = '', tcIn = '', tcOut = ''): ScriptBlock => ({

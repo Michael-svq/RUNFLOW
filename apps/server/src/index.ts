@@ -1,7 +1,7 @@
 import { createDb } from '@runflow/db';
 import { buildApp, type AppDeps } from './app';
 import { loadConfig, loadDotEnv } from './config';
-import { DEMO_ACCOUNT, ensureDemoUsers, seedDemo } from './demo/seed';
+import { DEMO_ACCOUNT, ensureDemoCameras, ensureDemoUsers, seedDemo } from './demo/seed';
 
 loadDotEnv();
 const config = loadConfig();
@@ -41,6 +41,7 @@ if (config.demo.seed) {
       runflowUrl: config.publicUrl ?? `http://localhost:${config.port}`,
     });
     const users = await ensureDemoUsers(deps);
+    await ensureDemoCameras(deps);
     if (created || users)
       app.log.info(
         `Estudio virtual listo: entra con ${DEMO_ACCOUNT.email} (o redac@, dirtv@, produ@runflow.test) / ${DEMO_ACCOUNT.password}`,

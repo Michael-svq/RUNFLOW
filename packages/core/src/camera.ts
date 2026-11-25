@@ -166,7 +166,11 @@ export function autoStep(
   const reasons: string[] = [];
   const error = auto.lumaTarget - stats.luma;
   const burnt = stats.clipHigh > auto.clipLimit;
-  if (burnt || error < -auto.tolerance) {
+  const nearBurn = stats.clipHigh > auto.clipLimit / 2;
+  if (burnt && error > auto.tolerance) {
+    // Oscura y con blancos quemados a la vez: no hay ajuste que arregle las dos cosas.
+    reasons.push('compromiso: blancos quemados e imagen oscura (revisa la luz del plató)');
+  } else if (burnt || error < -auto.tolerance) {
     // Demasiada luz: primero baja la ganancia y luego cierra el diafragma.
     const step = burnt ? Math.max(3, Math.abs(error) * 0.6) : Math.abs(error) * 0.6;
     if (image.gainDb > 0) {
@@ -179,9 +183,11 @@ export function autoStep(
       );
     }
   } else if (error > auto.tolerance) {
-    // Falta luz: primero abre el diafragma y luego sube la ganancia.
+    // Falta luz: primero abre el diafragma y luego sube la ganancia (si no quema).
     const step = error * 0.6;
-    if (image.iris < 100) {
+    if (nearBurn) {
+      reasons.push('falta luz, pero abrir quemaría los blancos');
+    } else if (image.iris < 100) {
       patch.iris = round1(clamp(image.iris + Math.max(1, step), 0, 100));
       reasons.push('imagen oscura: abre el diafragma');
     } else if (image.gainDb < auto.maxGainDb) {

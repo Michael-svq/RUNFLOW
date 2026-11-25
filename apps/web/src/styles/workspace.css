@@ -1151,3 +1151,224 @@
     max-width: 720px;
   }
 }
+
+/* ---------- Control de cámara ---------- */
+.rf-text-success {
+  color: var(--rf-success);
+}
+.rf-cam {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: var(--rf-space-3);
+  align-items: start;
+}
+.rf-cam__main,
+.rf-cam__side {
+  display: grid;
+  gap: var(--rf-space-3);
+  min-width: 0;
+}
+.rf-cam__panel,
+.rf-cam__monitor {
+  display: grid;
+  gap: var(--rf-space-2);
+}
+.rf-cam__panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rf-space-2);
+  flex-wrap: wrap;
+}
+.rf-cam__screen {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: var(--rf-radius-sm);
+  overflow: hidden;
+}
+.rf-cam__screen canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.rf-cam__empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--rf-space-4);
+  color: #a8a8a8;
+  text-align: center;
+  font-size: var(--rf-text-sm);
+}
+.rf-cam__scopes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, auto));
+  justify-content: start;
+  gap: var(--rf-space-2);
+  overflow-x: auto;
+}
+.rf-cam__scopes figure {
+  margin: 0;
+  display: grid;
+  gap: 2px;
+}
+.rf-cam__scopes canvas {
+  border: 1px solid #2a2f33;
+  border-radius: 3px;
+  background: #0b0d0e;
+  max-width: 100%;
+}
+.rf-cam__scopes figcaption {
+  font-size: var(--rf-text-xs);
+  font-weight: 700;
+  color: var(--rf-text-muted);
+}
+.rf-cam__stats {
+  grid-column: 1 / -1;
+  font-size: var(--rf-text-sm);
+  margin: 0;
+}
+.rf-cam__ptz {
+  display: flex;
+  gap: var(--rf-space-3);
+  align-items: center;
+}
+.rf-cam__joystick {
+  position: relative;
+  flex: none;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, transparent 30%, rgba(255, 255, 255, 0.04) 31%),
+    var(--rf-surface-2, #1b2326);
+  border: 2px solid var(--rf-border);
+  display: grid;
+  place-items: center;
+  touch-action: none;
+  cursor: grab;
+}
+.rf-cam__joystick:focus-visible {
+  outline: 2px solid var(--rf-accent);
+}
+.rf-cam__knob {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--rf-accent);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+.rf-cam__lens {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  align-items: center;
+}
+.rf-cam__lens > .rf-muted {
+  grid-column: 1 / -1;
+}
+.rf-cam__hold {
+  min-height: 30px;
+  border: 1px solid var(--rf-border);
+  border-radius: 4px;
+  background: var(--rf-surface);
+  color: var(--rf-text);
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+.rf-cam__hold:active {
+  background: var(--rf-accent);
+  color: var(--rf-on-accent);
+}
+.rf-cam__af {
+  grid-column: 1 / -1;
+}
+.rf-cam__slider {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) 56px;
+  align-items: center;
+  gap: var(--rf-space-2);
+  font-size: var(--rf-text-sm);
+}
+.rf-cam__slider input[type='range'] {
+  accent-color: var(--rf-accent);
+  width: 100%;
+}
+.rf-cam__slider output {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.rf-cam__presets {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+.rf-cam__preset {
+  height: 32px;
+  border: 1px solid var(--rf-border);
+  border-radius: 4px;
+  background: var(--rf-surface);
+  color: var(--rf-text-muted);
+  font-weight: 900;
+  cursor: pointer;
+}
+.rf-cam__preset.is-stored {
+  color: var(--rf-text);
+  border-color: var(--rf-accent);
+}
+.rf-cam__preset.is-saving {
+  border-style: dashed;
+  border-color: #e5484d;
+}
+.rf-cam__status {
+  margin: 0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--rf-accent) 14%, transparent);
+  font-size: var(--rf-text-sm);
+  font-weight: 700;
+}
+.rf-cam__copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rf-space-2);
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.rf-cam__profiles {
+  display: grid;
+  gap: var(--rf-space-2);
+}
+.rf-cam__profiles li {
+  display: grid;
+  gap: 4px;
+}
+.rf-cam__profile-actions {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.rf-cam__save {
+  display: flex;
+  gap: var(--rf-space-2);
+}
+.rf-cam__save .rf-input {
+  flex: 1;
+  min-width: 0;
+}
+@media (max-width: 1200px) {
+  .rf-cam {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .rf-cam__scopes {
+    grid-template-columns: repeat(2, minmax(0, auto));
+  }
+}

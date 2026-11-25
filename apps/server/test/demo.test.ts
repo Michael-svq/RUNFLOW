@@ -1,6 +1,12 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { readLines } from '@runflow/sync';
-import { DEMO_ACCOUNT, DEMO_USERS, ensureDemoUsers, seedDemo } from '../src/demo/seed';
+import {
+  DEMO_ACCOUNT,
+  DEMO_USERS,
+  ensureDemoCameras,
+  ensureDemoUsers,
+  seedDemo,
+} from '../src/demo/seed';
 import { Client, createTestContext, resetDb, type TestContext } from './helpers';
 
 /* Estudio virtual: datos de ejemplo la primera vez (DEMO_SEED). */
@@ -67,5 +73,12 @@ describe('estudio virtual', () => {
       expect.arrayContaining(['live.go', 'cg.fire', 'devices.configure', 'station.admin']),
     );
     expect((await dir.get('/api/devices')).status).toBe(200);
+
+    // Dos cámaras simuladas para Control de cámara (una sola vez).
+    expect(await ensureDemoCameras(ctx.deps)).toBe(2);
+    expect(await ensureDemoCameras(ctx.deps)).toBe(0);
+    const cams = (await dir.get('/api/cameras')).body.cameras;
+    expect(cams.map((c: { name: string }) => c.name)).toEqual(['CAM 1', 'CAM 2']);
+    expect(cams[0]).toMatchObject({ protocol: 'simulated', connected: true, snapshot: true });
   });
 });

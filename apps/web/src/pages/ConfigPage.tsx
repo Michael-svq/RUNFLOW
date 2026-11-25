@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   DEVICE_KIND_LABEL,
   LIGHTING_PROTOCOLS,
+  CAMERA_PROTOCOLS,
   GENERIC_PROTOCOLS,
   CUE_TRACKS,
   DEVICE_KINDS,
@@ -414,6 +415,11 @@ const DEFAULTS: Record<Kind, Pick<DeviceForm, 'name' | 'f' | 'b'>> = {
     },
     b: { track_fx: true },
   },
+  camera: {
+    name: 'CAM 1',
+    f: { protocol: 'visca', host: '192.168.0.100', port: '0', address: '1', snapshotUrl: '' },
+    b: {},
+  },
 };
 
 const emptyDevice = (kind: Kind): DeviceForm => ({
@@ -424,7 +430,7 @@ const emptyDevice = (kind: Kind): DeviceForm => ({
   f: { ...DEFAULTS[kind].f },
   b: { ...DEFAULTS[kind].b },
   sources:
-    kind === 'casparcg' || kind === 'lighting' || kind === 'generic'
+    kind === 'casparcg' || kind === 'lighting' || kind === 'generic' || kind === 'camera'
       ? []
       : DEFAULT_SOURCES.map(([k, v]) => [k, v]),
 });
@@ -511,6 +517,14 @@ function toConfig(form: DeviceForm): Record<string, unknown> {
         universe: n('universe'),
         presets: sources,
       };
+    case 'camera':
+      return {
+        protocol: f.protocol,
+        host: (f.host ?? '').trim(),
+        port: n('port') || 0,
+        address: n('address') || 1,
+        snapshotUrl: (f.snapshotUrl ?? '').trim(),
+      };
   }
 }
 
@@ -520,11 +534,18 @@ const INPUT_HINT: Record<Kind, string> = {
   vmix: 'Número o nombre de la entrada de vMix',
   atem: 'Número de entrada del ATEM (1 = Cámara 1, 3010 = Media Player 1…)',
   generic: '',
+  camera: '',
   lighting:
     'Escenas DMX: nombre → canales (1=255,2=128,10-12=50%). En el cue de luces se escribe el nombre o los canales.',
 };
 
 function deviceSummary(d: DeviceDto): string {
+  if (d.kind === 'camera') {
+    const proto = CAMERA_PROTOCOLS.find((p) => p.value === d.config.protocol)!;
+    return d.config.protocol === 'simulated'
+      ? 'Simulada'
+      : `${proto.label.split(' (')[0]} · ${d.config.host}:${d.config.port || proto.port}`;
+  }
   if (d.kind === 'generic') {
     const where = d.config.protocol === 'http' ? d.config.url : `${d.config.host}:${d.config.port}`;
     const tracks = d.config.tracks
@@ -772,8 +793,32 @@ export function Devices() {
               ? 'Dirección de la mesa o del nodo (vacío: difusión / multidifusión)'
               : form.kind === 'generic'
                 ? 'Dirección IP (TCP, UDP u OSC)'
-                : 'Dirección (IP o nombre)',
-            { required: form.kind !== 'lighting' && form.kind !== 'generic' },
+                : form.kind === 'camera'
+                  ? 'Dirección IP de la cámara'
+                  : 'Dirección (IP o nombre)',
+            {
+              required:
+                form.kind !== 'lighting' &&
+                form.kind !== 'generic' &&
+                !(form.kind === 'camera' && form.f.protocol === 'simulated'),
+            },
+          )}
+          {form.kind === 'camera' && (
+            <>
+              {select(
+                'protocol',
+                'Protocolo',
+                CAMERA_PROTOCOLS.map((p) => ({ value: p.value, label: p.label })),
+              )}
+              {form.f.protocol !== 'simulated' &&
+                field('port', 'Puerto (0 = el del protocolo: 52381 VISCA, 80 Panasonic)', num)}
+              {form.f.protocol === 'visca' &&
+                field('address', 'Dirección VISCA (1–7)', { type: 'number', min: 1, max: 7 })}
+              {form.f.protocol !== 'simulated' &&
+                field('snapshotUrl', 'Imagen fija JPEG para el monitor de señal (opcional)', {
+                  placeholder: 'http://192.168.0.100/snapshot.jpg',
+                })}
+            </>
           )}
           {form.kind === 'casparcg' && (
             <>
@@ -931,6 +976,7 @@ export function Devices() {
           )}
           {form.kind !== 'casparcg' &&
             form.kind !== 'generic' &&
+            form.kind !== 'camera' &&
             (form.kind !== 'lighting' ||
               form.f.protocol === 'artnet' ||
               form.f.protocol === 'sacn') && (

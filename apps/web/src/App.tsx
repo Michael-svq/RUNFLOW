@@ -18,6 +18,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { SetupPage } from './pages/SetupPage';
 import { UsersPage } from './pages/UsersPage';
 import { StationHubPage } from './pages/StationHubPage';
+import { CameraPage } from './pages/CameraPage';
 import { PlayerPage } from './pages/PlayerPage';
 import { GraphicsPage } from './pages/GraphicsPage';
 import { DesignPage } from './pages/DesignPage';
@@ -123,6 +124,14 @@ export function App() {
             }
           />
           <Route path="/reproductor" element={<PlayerPage />} />
+          <Route
+            path="/camaras"
+            element={
+              <RequireAny perms={['devices.configure', 'org.configure', 'live.go']}>
+                <CameraPage />
+              </RequireAny>
+            }
+          />
           <Route path="/escaletas/:id" element={<RundownPage />} />
           <Route path="/plataforma" element={<RequirePlatformAdmin />} />
         </Route>

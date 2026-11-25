@@ -43,6 +43,15 @@ describe('control automático de la señal', () => {
     expect(b.reason).toMatch(/cierra el diafragma/);
   });
 
+  it('oscura y quemada a la vez, o cerca de quemar: no abre y lo explica', () => {
+    const a = autoStep(stats({ luma: 30, clipHigh: 6 }), img(), DEFAULT_CAMERA_AUTO)!;
+    expect(a.patch).toEqual({});
+    expect(a.reason).toMatch(/compromiso/);
+    const b = autoStep(stats({ luma: 30, clipHigh: 1.5 }), img(), DEFAULT_CAMERA_AUTO)!;
+    expect(b.patch).toEqual({});
+    expect(b.reason).toMatch(/quemaría/);
+  });
+
   it('corrige la dominante de color con zonas neutras', () => {
     const a = autoStep(stats({ castR: 10, castB: -6 }), img(), DEFAULT_CAMERA_AUTO)!;
     expect(a.patch).toEqual({ rGain: -5, bGain: 3 });
