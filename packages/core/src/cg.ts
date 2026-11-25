@@ -6,6 +6,7 @@ import {
   TIMECODE_LINE_TYPES,
   type GraphicData,
 } from './graphics';
+import { cameraConfigSchema, cameraProfileSchema, type CameraConfig } from './camera';
 
 /*
  * RunFlow CG (PLAN §13 y §15): rótulos y playout de VTR con CasparCG.
@@ -45,6 +46,8 @@ export const orgSettingsSchema = z.object({
   /** IA: tokens al mes para toda la empresa (0 = sin límite). */
   aiMonthlyTokens: z.number().int().min(0).max(1_000_000_000).default(0),
   cgDesign: cgDesignSchema.prefault({}),
+  /** Memorias de ajustes de cámara (Control de cámara). */
+  cameraProfiles: z.array(cameraProfileSchema).max(50).default([]),
 });
 export type OrgSettings = z.infer<typeof orgSettingsSchema>;
 export const orgSettingsPatch = z.object({
@@ -53,6 +56,7 @@ export const orgSettingsPatch = z.object({
   prerollNext: z.boolean().optional(),
   aiMonthlyTokens: z.number().int().min(0).max(1_000_000_000).optional(),
   cgDesign: cgDesignSchema.partial().optional(),
+  cameraProfiles: z.array(cameraProfileSchema).max(50).optional(),
 });
 
 export function readOrgSettings(value: unknown): OrgSettings {
@@ -241,7 +245,15 @@ export function fillTemplate(
   );
 }
 
-export const DEVICE_KINDS = ['casparcg', 'obs', 'vmix', 'atem', 'lighting', 'generic'] as const;
+export const DEVICE_KINDS = [
+  'casparcg',
+  'obs',
+  'vmix',
+  'atem',
+  'lighting',
+  'generic',
+  'camera',
+] as const;
 export type DeviceKind = (typeof DEVICE_KINDS)[number];
 export const MIXER_KINDS: DeviceKind[] = ['obs', 'vmix', 'atem'];
 export const DEVICE_KIND_LABEL: Record<DeviceKind, string> = {
@@ -251,6 +263,7 @@ export const DEVICE_KIND_LABEL: Record<DeviceKind, string> = {
   atem: 'ATEM',
   lighting: 'Iluminación',
   generic: 'Otro sistema',
+  camera: 'Cámara PTZ',
 };
 
 const name = z.string().trim().min(1, 'Obligatorio').max(60);
@@ -291,6 +304,12 @@ export const deviceInput = z.discriminatedUnion('kind', [
     enabled: z.boolean().default(true),
     config: genericConfigSchema,
   }),
+  z.object({
+    name,
+    kind: z.literal('camera'),
+    enabled: z.boolean().default(true),
+    config: cameraConfigSchema,
+  }),
 ]);
 export type DeviceInput = z.infer<typeof deviceInput>;
 export type DeviceConfig =
@@ -299,7 +318,8 @@ export type DeviceConfig =
   | VmixConfig
   | AtemConfig
   | LightingConfig
-  | GenericConfig;
+  | GenericConfig
+  | CameraConfig;
 
 export function parseDeviceConfig(kind: string, config: unknown): DeviceConfig | null {
   const schema =
@@ -315,7 +335,9 @@ export function parseDeviceConfig(kind: string, config: unknown): DeviceConfig |
               ? lightingConfigSchema
               : kind === 'generic'
                 ? genericConfigSchema
-                : null;
+                : kind === 'camera'
+                  ? cameraConfigSchema
+                  : null;
   const parsed = schema?.safeParse(config);
   return parsed?.success ? parsed.data : null;
 }
@@ -332,6 +354,7 @@ export type DeviceDto = {
   | { kind: 'atem'; config: AtemConfig }
   | { kind: 'lighting'; config: LightingConfig }
   | { kind: 'generic'; config: GenericConfig }
+  | { kind: 'camera'; config: CameraConfig }
 );
 
 /** Fuente de una línea: su columna FUENTE o, en un VTR sin fuente, «VTR». */

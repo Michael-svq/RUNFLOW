@@ -9,6 +9,7 @@ import {
   parseDeviceConfig,
   streamInput,
   type CasparConfig,
+  type CameraConfig,
   type GenericConfig,
   type LightingConfig,
   orgSettingsPatch,
@@ -24,6 +25,7 @@ import { requireRundown } from '../services/rundowns';
 import { CgManager } from '../cg/cg-manager';
 import { LightingManager } from '../lighting/manager';
 import { SystemsManager } from '../systems/manager';
+import { CameraManager } from '../cameras/manager';
 import { MixerManager } from '../mixers/mixer-manager';
 import { templateHtml } from '../cg/templates';
 import type { AppDeps } from '../app';
@@ -128,6 +130,7 @@ export async function cgRoutes(app: FastifyInstance, deps: AppDeps): Promise<voi
       ...(await deps.mixers!.deviceStatuses(orgId)),
       ...(await deps.lighting!.deviceStatuses(orgId)),
       ...(await deps.systems!.deviceStatuses(orgId)),
+      ...(await deps.cameras!.deviceStatuses(orgId)),
     };
     return rows.flatMap((r) => {
       const config = parseDeviceConfig(r.kind, r.config);
@@ -153,6 +156,7 @@ export async function cgRoutes(app: FastifyInstance, deps: AppDeps): Promise<voi
     await deps.mixers!.invalidate(orgId);
     await deps.lighting?.invalidate(orgId);
     deps.systems?.invalidate(orgId);
+    deps.cameras?.invalidate(orgId);
   };
 
   app.get('/api/devices', { preHandler: view }, async (req) => {
@@ -231,7 +235,17 @@ export async function cgRoutes(app: FastifyInstance, deps: AppDeps): Promise<voi
           ? { ok: true, ...(await LightingManager.test(config as LightingConfig)) }
           : input.kind === 'generic'
             ? { ok: true, ...(await SystemsManager.test(config as GenericConfig)) }
-            : { ok: true, ...(await MixerManager.test(input.kind, config)) };
+            : input.kind === 'camera'
+              ? {
+                  ok: true,
+                  ...(await CameraManager.test(config as CameraConfig, {
+                    allowPrivate:
+                      deps.config.sourcesAllowPrivate ||
+                      deps.config.env === 'test' ||
+                      deps.config.mode === 'station',
+                  })),
+                }
+              : { ok: true, ...(await MixerManager.test(input.kind, config)) };
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : String(err) };
     }

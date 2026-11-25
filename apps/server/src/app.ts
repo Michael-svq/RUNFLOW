@@ -45,6 +45,8 @@ import { ScreensManager } from './screens/manager';
 import { CueRunner } from './automation/cue-runner';
 import { LightingManager } from './lighting/manager';
 import { SystemsManager } from './systems/manager';
+import { CameraManager } from './cameras/manager';
+import { cameraRoutes } from './routes/cameras';
 import { CUE_TRACK_KEYS } from '@runflow/core';
 import { MediaStore } from './media/store';
 import { WebhookDispatcher } from './api/webhooks';
@@ -75,6 +77,7 @@ export interface AppDeps {
   cues?: CueRunner;
   lighting?: LightingManager;
   systems?: SystemsManager;
+  cameras?: CameraManager;
   mailer?: Mailer;
   social?: SocialPoller;
 }
@@ -166,6 +169,13 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   deps.systems = new SystemsManager(deps.db, {
     allowPrivate: deps.config.sourcesAllowPrivate || deps.config.env === 'test',
   });
+  // Cámaras PTZ: en una Station están en la red del estudio.
+  deps.cameras = new CameraManager(deps.db, app.log, {
+    allowPrivate:
+      deps.config.sourcesAllowPrivate ||
+      deps.config.env === 'test' ||
+      deps.config.mode === 'station',
+  });
   for (const track of CUE_TRACK_KEYS) {
     const builtin = deps.cues.executors[track];
     deps.cues.executors[track] = async (ctx) => {
@@ -215,6 +225,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
         void deps.mixers!.invalidate(orgId);
         void deps.lighting?.invalidate(orgId);
         deps.systems?.invalidate(orgId);
+        deps.cameras?.invalidate(orgId);
       },
     });
   }
@@ -235,6 +246,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     deps.cues?.close();
     deps.lighting?.close();
     deps.systems?.close();
+    deps.cameras?.close();
     deps.live!.close();
     await deps.collab!.close();
   });
@@ -323,6 +335,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await screenRoutes(app, deps);
   await emailRoutes(app, deps);
   await socialRoutes(app, deps);
+  await cameraRoutes(app, deps);
   deps.social = new SocialPoller(deps.db, () => deps.secrets!, app.log, {
     ...socialOptions(deps.config),
     allowPrivate: deps.config.sourcesAllowPrivate,
