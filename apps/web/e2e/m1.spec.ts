@@ -259,6 +259,21 @@ test('M1: copiar y pegar desde una hoja de cálculo, deshacer y vistas', async (
   await page.keyboard.press('Alt+ArrowUp');
   await expect(val(page, 0, 'nombre')).toHaveText('PRESENTACION');
 
+  // Columna rosa: seleccionar dos filas completas y bajarlas/subirlas juntas
+  const second = await val(page, 1, 'nombre').textContent();
+  await row(page, 0).locator('.rf-rgrid__rowhead').click();
+  await row(page, 1)
+    .locator('.rf-rgrid__rowhead')
+    .click({ modifiers: ['Shift'] });
+  await expect(row(page, 1).locator('.rf-rgrid__rowhead')).toHaveAttribute('aria-selected', 'true');
+  await expect(row(page, 1).locator('td[data-col="tipo"]')).toHaveClass(/is-selected/);
+  await page.keyboard.press('Alt+ArrowDown');
+  await expect(val(page, 1, 'nombre')).toHaveText('PRESENTACION');
+  await expect(val(page, 2, 'nombre')).toHaveText(second!);
+  await page.keyboard.press('Alt+ArrowUp');
+  await expect(val(page, 0, 'nombre')).toHaveText('PRESENTACION');
+  await expect(val(page, 1, 'nombre')).toHaveText(second!);
+
   // Vista de Realización y guardado de una vista personal
   await page.getByLabel('Vista', { exact: true }).selectOption({ label: 'Realización' });
   await expect(page.locator('.rf-rgrid th', { hasText: 'TELÉFONOS' })).toHaveCount(0);

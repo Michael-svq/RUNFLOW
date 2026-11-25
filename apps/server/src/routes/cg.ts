@@ -31,7 +31,11 @@ import { assertPlan } from '../services/plans';
 
 const idParams = z.object({ id: z.uuid() });
 const graphicInput = z.object({ graphicId: z.string().min(1).max(64) });
-const clipInput = z.object({ action: z.enum(['pause', 'resume', 'stop', 'loop']) });
+const clipInput = z.object({
+  action: z.enum(['load', 'play', 'pause', 'resume', 'stop', 'loop', 'seek']),
+  lineId: z.string().uuid().optional(),
+  seconds: z.number().min(0).max(86_400).optional(),
+});
 const require = createRequire(import.meta.url);
 
 const FONTS: Record<string, string> = {
@@ -336,8 +340,8 @@ export async function cgRoutes(app: FastifyInstance, deps: AppDeps): Promise<voi
 
   app.post('/api/rundowns/:id/cg/clip', { preHandler: go }, async (req) => {
     const { id, actor } = await rundownOf(req);
-    const { action } = parse(clipInput, req.body);
+    const { action, lineId, seconds } = parse(clipInput, req.body);
     if (!deps.cg) throw new HttpError(503, 'cg_unavailable', 'RunFlow CG no disponible');
-    return { cg: await cg().clip(actor, id, action) };
+    return { cg: await cg().clip(actor, id, action, { lineId, seconds }) };
   });
 }

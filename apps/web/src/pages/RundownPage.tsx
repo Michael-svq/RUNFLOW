@@ -15,7 +15,7 @@ import {
   deleteLines,
   duplicateLine,
   insertLine,
-  moveLine,
+  moveLines,
   renumber,
   setCells,
   type LineSnapshot,
@@ -56,7 +56,16 @@ import {
   SourcesTab,
   SocialTab,
 } from '../rundown/panels';
-import { CgBar, CgProvider, GraphicsCell, PlayCell, useCgContextValue } from '../rundown/cg';
+import {
+  CgBar,
+  cgCommand,
+  CgProvider,
+  CgStatus,
+  GraphicsCell,
+  PlayCell,
+  useCgContextValue,
+  VtrTransport,
+} from '../rundown/cg';
 import { useScriptColumns } from '../script/useScripts';
 import { LINE_FLAGS } from '@runflow/core';
 import {
@@ -245,7 +254,7 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
       setCells: (changes) => doc && setCells(doc, changes, LOCAL_ORIGIN),
       insertAt: (index, cells) => (doc ? insertLine(doc, { index, cells }, LOCAL_ORIGIN) : ''),
       duplicate: (lineId) => doc && duplicateLine(doc, lineId, LOCAL_ORIGIN),
-      move: (lineId, to) => doc && moveLine(doc, lineId, to, LOCAL_ORIGIN),
+      move: (ids, to) => doc && moveLines(doc, ids, to, LOCAL_ORIGIN),
       remove: (ids) => doc && deleteLines(doc, ids, LOCAL_ORIGIN),
       renumber: () => doc && renumber(doc, 2, LOCAL_ORIGIN),
       undo: () => session?.undo.undo(),
@@ -300,6 +309,14 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
             label: 'Quitar siguiente elegida',
             onClick: () => void commands.setNext(null),
           });
+        const clip = typeof focusLine.cells.clip === 'string' ? focusLine.cells.clip.trim() : '';
+        if (clip && Object.keys(cgCtx.value.state?.devices ?? {}).length) {
+          items.push({
+            label: `Cargar vídeo (LOAD) ${clip}`,
+            onClick: () =>
+              void cgCommand(cgCtx.value, 'clip', { action: 'load', lineId: focusLine.id }),
+          });
+        }
       }
       if (focusLine && lineIds.length === 1 && session && (canEditStructure || canEditScript)) {
         items.push({
@@ -379,6 +396,7 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
       actions,
       canEditStructure,
       canEditScript,
+      cgCtx.value,
     ],
   );
 
@@ -394,35 +412,46 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
       <div className="rf-rundown">
         <div className="rf-rundown__head">
           <div className="rf-rundown__title">
-            <Link to="/escaletas" className="rf-rundown__back">
-              ‹ {t('grid.back')}
-            </Link>
             <h1>
+              <Link to="/escaletas" className="rf-rundown__back" title={t('grid.back')}>
+                ‹<span className="rf-visually-hidden"> {t('grid.back')}</span>
+              </Link>
               {rundown.title}{' '}
               <Badge tone={rundown.status === 'en_aire' ? 'accent' : 'default'}>
                 {statusLabel(rundown.status)}
               </Badge>
             </h1>
-            <p className="rf-muted">
-              {rundown.title !== rundown.programName && `${rundown.programName} · `}
-              {dateText} ·{' '}
-              <span className="rf-tabular">
-                {rundown.startTime.slice(0, 5)}–{rundown.endTime.slice(0, 5)}
+            <p className="rf-muted rf-rundown__meta">
+              <span>
+                {rundown.title !== rundown.programName && `${rundown.programName} · `}
+                {dateText} ·{' '}
+                <span className="rf-tabular">
+                  {rundown.startTime.slice(0, 5)}–{rundown.endTime.slice(0, 5)}
+                </span>
+              </span>
+              <span className="rf-tabular">{t('grid.lines', { count: summary.lineCount })}</span>
+              <span
+                className={`rf-tabular${summary.estimatedSeconds > planned ? ' rf-text-danger' : ''}`}
+              >
+                {t('grid.estimated', {
+                  estimated: formatDuration(summary.estimatedSeconds),
+                  planned: formatDuration(planned),
+                })}
               </span>
             </p>
           </div>
-          <div className="rf-rundown__summary rf-tabular">
-            <span>{t('grid.lines', { count: summary.lineCount })}</span>
-            <span className={summary.estimatedSeconds > planned ? 'rf-text-danger' : undefined}>
-              {t('grid.estimated', {
-                estimated: formatDuration(summary.estimatedSeconds),
-                planned: formatDuration(planned),
-              })}
-            </span>
-          </div>
+          <LiveClocks rundown={rundown} timing={timing} live={live} lines={lines} now={now} />
+          <CgBar canGo={canGo} mixers={mixers} rundownId={rundown.id} onMixers={setMixers} />
+          <Button
+            size="sm"
+            variant="secondary"
+            className="rf-rundown__asrun"
+            onClick={() => setDialog('asrun')}
+          >
+            Registro de emisión
+          </Button>
         </div>
 
-        <LiveClocks rundown={rundown} timing={timing} live={live} lines={lines} now={now} />
         <LiveBar
           live={live}
           lines={lines}
@@ -430,11 +459,17 @@ function RundownEditor({ rundown }: { rundown: RundownDto }) {
           commands={commands}
           canGo={canGo && status !== 'denied' && status !== 'deleted'}
           error={liveError}
-          onShowAsrun={() => setDialog('asrun')}
           keyboard={keyboardGo}
           onKeyboardChange={setKeyboardGo}
+          transport={
+            <VtrTransport
+              lines={lines}
+              onAirLineId={live?.onAir?.lineId ?? null}
+              nextLineId={timing.nextLineId}
+            />
+          }
+          status={<CgStatus mixers={mixers} />}
         />
-        <CgBar canGo={canGo} mixers={mixers} rundownId={rundown.id} onMixers={setMixers} />
         {cgCtx.error && <Alert tone="error">RunFlow CG: {cgCtx.error}</Alert>}
         <div className="rf-toolbar" role="toolbar" aria-label="Escaleta">
           <div className="rf-segmented" role="tablist" aria-label="Disposición">

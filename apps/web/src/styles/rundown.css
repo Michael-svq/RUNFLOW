@@ -8,6 +8,9 @@
   --rf-grid-cell-fg: #ffffff;
   --rf-grid-line: #434343;
   --rf-grid-bg: #5a5a5a;
+  --rf-rowhead: #e9a3c0;
+  --rf-rowhead-hover: #f07fae;
+  --rf-rowhead-on: #e0307a;
 }
 :root[data-theme='exterior'] {
   --rf-grid-head-bg: #434343;
@@ -33,33 +36,37 @@
 }
 .rf-rundown__head {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: var(--rf-space-4);
+  align-items: center;
+  gap: var(--rf-space-2) var(--rf-space-3);
   flex-wrap: wrap;
 }
+.rf-rundown__title {
+  min-width: 0;
+  max-width: 340px;
+}
 .rf-rundown__back {
-  font-size: var(--rf-text-sm);
-  font-weight: 700;
+  font-weight: 900;
   text-decoration: none;
+  padding-right: 2px;
 }
 .rf-rundown__title h1 {
-  font-size: var(--rf-text-xl);
+  font-size: var(--rf-text-lg);
   font-weight: 900;
   display: flex;
   align-items: center;
   gap: var(--rf-space-2);
-  margin-top: 2px;
+  line-height: 1.2;
 }
 .rf-rundown__title p {
-  font-size: var(--rf-text-sm);
+  font-size: var(--rf-text-xs);
 }
-.rf-rundown__summary {
+.rf-rundown__meta {
   display: flex;
-  gap: var(--rf-space-4);
-  font-size: var(--rf-text-sm);
-  color: var(--rf-text-muted);
-  font-weight: 700;
+  flex-wrap: wrap;
+  gap: 0 var(--rf-space-2);
+}
+.rf-rundown__asrun {
+  margin-left: auto;
 }
 
 .rf-toolbar {
@@ -137,7 +144,7 @@
   font-size: 12.5px;
   line-height: 1.3;
 }
-.rf-rgrid th {
+.rf-rgrid thead th {
   position: sticky;
   top: 0;
   z-index: 3;
@@ -157,14 +164,43 @@
   user-select: none;
   cursor: grab;
 }
-.rf-rgrid th.is-pinned {
+.rf-rgrid thead th.is-pinned {
   z-index: 4;
 }
-.rf-rgrid th.is-drop-before {
+.rf-rgrid thead th.is-drop-before {
   box-shadow: inset 3px 0 0 var(--rf-accent);
 }
-.rf-rgrid th.is-drop-after {
+.rf-rgrid thead th.is-drop-after {
   box-shadow: inset -3px 0 0 var(--rf-accent);
+}
+/* Columna rosa: selecciona filas completas y las mueve arrastrando. */
+.rf-rgrid thead th.rf-rgrid__corner {
+  left: 0;
+  z-index: 5;
+  padding: 0;
+  background: var(--rf-rowhead);
+  cursor: pointer;
+}
+.rf-rgrid__rowhead {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  padding: 0;
+  background: var(--rf-rowhead);
+  border-right: 1px solid var(--rf-grid-line);
+  border-bottom: 1px solid var(--rf-grid-line);
+  cursor: pointer;
+  user-select: none;
+}
+.rf-rgrid__rowhead:hover {
+  background: var(--rf-rowhead-hover);
+}
+.rf-rgrid__rowhead[aria-selected='true'] {
+  background: var(--rf-rowhead-on);
+  cursor: grab;
+}
+.rf-rgrid tr.is-onAir .rf-rgrid__rowhead {
+  box-shadow: inset 4px 0 0 #e5484d;
 }
 .rf-rgrid__resize {
   position: absolute;
@@ -780,7 +816,8 @@ tr:hover .rf-drag-handle {
   }
   .rf-shell:has(.rf-rundown) .rf-nav__label,
   .rf-shell:has(.rf-rundown) .rf-nav .rf-badge,
-  .rf-shell:has(.rf-rundown) .rf-sidebar__footer,
+  .rf-shell:has(.rf-rundown) .rf-theme-toggle__label,
+  .rf-shell:has(.rf-rundown) .rf-sidebar__area,
   .rf-shell:has(.rf-rundown) .rf-sidebar__brand svg {
     display: none;
   }
@@ -791,6 +828,14 @@ tr:hover .rf-drag-handle {
   .rf-shell:has(.rf-rundown) .rf-sidebar__brand .rf-logo__bar {
     width: 22px;
     height: 6px;
+  }
+  .rf-shell:has(.rf-rundown) .rf-sidebar__footer {
+    padding-left: var(--rf-space-2);
+    padding-right: var(--rf-space-2);
+  }
+  .rf-shell:has(.rf-rundown) .rf-theme-toggle {
+    justify-content: center;
+    padding: var(--rf-space-2) 0;
   }
   .rf-shell:has(.rf-rundown) .rf-nav__item {
     justify-content: center;
@@ -929,13 +974,95 @@ tr:hover .rf-drag-handle {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--rf-space-2) var(--rf-space-3);
-  padding: var(--rf-space-1) var(--rf-space-3);
-  margin-bottom: var(--rf-space-2);
-  border: 1px solid var(--rf-border);
-  border-radius: var(--rf-radius-sm, 6px);
-  background: var(--rf-surface);
+  gap: var(--rf-space-1) var(--rf-space-2);
   font-size: var(--rf-text-sm);
+  font-weight: 700;
+}
+.rf-cgbar__mixer {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rf-space-1);
+}
+.rf-cgbar__btn {
+  gap: 4px;
+}
+.rf-cgbar__onair,
+.rf-cgbar__rec {
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: #d93025;
+  color: #fff;
+  font-size: var(--rf-text-xs);
+  font-weight: 900;
+}
+.rf-led {
+  color: #8a8a8a;
+}
+.rf-led.is-on {
+  color: #ff3b30;
+  text-shadow: 0 0 6px #ff3b30;
+}
+.rf-cgstatus {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rf-space-2);
+  font-size: var(--rf-text-sm);
+}
+
+/* Transporte del VTR: LOAD ▶ ❚❚ ■ 🔁 y deslizador */
+.rf-transport {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius-sm);
+  background: color-mix(in srgb, var(--rf-text) 4%, transparent);
+}
+.rf-transport__btn {
+  min-width: 28px;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--rf-border);
+  border-radius: 3px;
+  background: var(--rf-surface);
+  color: var(--rf-text);
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.rf-transport__btn:hover:not(:disabled) {
+  border-color: var(--rf-accent);
+}
+.rf-transport__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.rf-transport__btn.is-on {
+  background: var(--rf-accent);
+  border-color: var(--rf-accent);
+  color: var(--rf-on-accent);
+}
+.rf-transport__btn--load {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+.rf-transport__scrub {
+  width: 140px;
+  accent-color: var(--rf-accent);
+}
+.rf-transport__time {
+  font-size: var(--rf-text-xs);
+  font-weight: 700;
+  white-space: nowrap;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rf-transport__name {
+  color: var(--rf-text-muted);
+  font-weight: 400;
 }
 .rf-cgbar__device.is-ok {
   color: var(--rf-success);
@@ -961,6 +1088,36 @@ tr:hover .rf-drag-handle {
 }
 .rf-cgbar__program strong {
   color: #d93025;
+}
+
+/* Relojes en la misma línea que el título (cabecera compacta) */
+.rf-rundown__head .rf-clocks {
+  flex-wrap: wrap;
+}
+.rf-rundown__head .rf-clock {
+  min-width: 0;
+  padding: 2px 8px;
+}
+.rf-rundown__head .rf-clock--line {
+  min-width: 180px;
+  flex: 0 1 auto;
+}
+.rf-rundown__head .rf-clock__label {
+  font-size: 9px;
+}
+.rf-rundown__head .rf-clock__value {
+  font-size: 14px;
+}
+.rf-rundown__head .rf-clock__value--main {
+  font-size: 16px;
+}
+.rf-rundown__head .rf-clock__hint {
+  display: none;
+}
+.rf-rundown__head .rf-clock__btn {
+  width: 20px;
+  height: 18px;
+  font-size: 10px;
 }
 
 /* Inicio de bloque (reloj propio) */

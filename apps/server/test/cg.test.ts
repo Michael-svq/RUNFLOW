@@ -230,6 +230,32 @@ describe('RunFlow CG', () => {
       'stopped',
     );
 
+    // LOAD: el clip queda en el primer fotograma, sin reproducir; búsqueda y PLAY.
+    const loaded = (await admin.post(`${cgUrl()}/clip`, { action: 'load', lineId: ids.vtr })).body
+      .cg.clip;
+    expect(loaded).toMatchObject({ lineId: ids.vtr, state: 'loaded', position: 0 });
+    expect(sim.sent('LOAD 1-10')[0]!.command).toBe('LOAD 1-10 "PIEZA_GOBIERNO"');
+    expect(sim.position(1, 10)).toBe(0);
+    const sought = (await admin.post(`${cgUrl()}/clip`, { action: 'seek', seconds: 2 })).body.cg
+      .clip;
+    expect(sought).toMatchObject({ state: 'loaded', position: 2 });
+    expect(sim.sent('CALL 1-10 SEEK')[0]!.command).toBe('CALL 1-10 SEEK 50');
+    expect(sim.position(1, 10)).toBeCloseTo(2, 1);
+    const playing = (await admin.post(`${cgUrl()}/clip`, { action: 'play' })).body.cg.clip;
+    expect(playing.state).toBe('playing');
+    expect(Date.now() - playing.startedAt).toBeGreaterThanOrEqual(1900);
+    expect(sim.sent('RESUME 1-10').length).toBeGreaterThanOrEqual(1);
+    await sleep(300);
+    expect(sim.position(1, 10)!).toBeGreaterThan(2.2);
+    expect((await admin.post(`${cgUrl()}/clip`, { action: 'stop' })).body.cg.clip.state).toBe(
+      'stopped',
+    );
+    // PLAY tras parar vuelve a cargar el clip desde el principio.
+    expect((await admin.post(`${cgUrl()}/clip`, { action: 'play' })).body.cg.clip.state).toBe(
+      'playing',
+    );
+    expect(sim.sent('PLAY 1-10').at(-1)!.command).toBe('PLAY 1-10 "PIEZA_GOBIERNO"');
+
     // Una redactora no lanza rótulos ni configura equipos.
     await admin.post('/api/users', {
       name: 'Rita',

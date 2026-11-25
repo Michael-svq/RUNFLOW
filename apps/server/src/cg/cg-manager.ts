@@ -117,6 +117,11 @@ interface Actor {
   userId: string;
 }
 
+export type ClipAction = 'load' | 'play' | 'pause' | 'resume' | 'stop' | 'loop' | 'seek';
+
+/** Fotogramas por segundo para situar el VTR (CALL SEEK). */
+const FPS = 25;
+
 const clipOf = (line: LineSnapshot | undefined): string =>
   typeof line?.cells.clip === 'string' ? line.cells.clip.trim() : '';
 const isVtr = (line: LineSnapshot | undefined): boolean =>
@@ -660,35 +665,91 @@ export class CgManager {
     });
   }
 
-  /** Control manual del VTR en aire: pausa, continuar, parar o bucle. */
+  /**
+   * Control manual del VTR: cargar (primer fotograma, sin reproducir), play,
+   * pausa, continuar, parar, bucle y búsqueda (segundos).
+   * Sin `lineId`, cargar o reproducir usa la línea en aire o la siguiente con vídeo.
+   */
   async clip(
     actor: Actor,
     rundownId: string,
-    action: 'pause' | 'resume' | 'stop' | 'loop',
+    action: ClipAction,
+    opts: { lineId?: string; seconds?: number } = {},
   ): Promise<CgState> {
     const rc = this.rundown(rundownId, actor.orgId);
     return this.enqueue(rc, async () => {
       const org = await this.org(actor.orgId);
-      const clip = rc.state.clip;
-      if (!clip) return rc.state;
       const ch = (d: CasparDevice) => d.config.channel;
       const vtr = (d: CasparDevice) => d.config.layers.vtr;
+      const now = Date.now();
+
+      if (action === 'load' || (action === 'play' && this.needsLoad(rc, opts.lineId))) {
+        const { lines, graphics } = await this.readDoc(rc);
+        const wanted = opts.lineId ?? rc.state.clip?.lineId;
+        const line =
+          (wanted && lines.find((l) => l.id === wanted)) ||
+          [rc.live?.onAir?.lineId, rc.live?.next]
+            .map((id) => lines.find((l) => l.id === id))
+            .find((l) => clipOf(l));
+        const name = clipOf(line || undefined);
+        if (!line || !name) return rc.state;
+        const play = action === 'play';
+        this.clearCues(rc);
+        await this.run(rc, org, (d) =>
+          play ? amcp.play(ch(d), vtr(d), name) : amcp.load(ch(d), vtr(d), name),
+        );
+        rc.clipStart = play ? now : null;
+        rc.state.clip = {
+          lineId: line.id,
+          name,
+          state: play ? 'playing' : 'loaded',
+          loop: false,
+          startedAt: rc.clipStart,
+          duration:
+            this.clipDuration(org, name) ??
+            (typeof line.cells.dur_vtr === 'number' ? line.cells.dur_vtr : null),
+          position: 0,
+          positionAt: now,
+        };
+        if (rc.state.preroll?.lineId === line.id) rc.state.preroll = null;
+        rc.cues = graphicCues(
+          [...graphics.values()].filter((g) => g.line.id === line.id).map((g) => g.graphic),
+          org.settings.graphicSeconds,
+        );
+        rc.cueLineId = line.id;
+        if (play) this.scheduleCues(rc, org);
+        this.broadcast(rc);
+        return rc.state;
+      }
+
+      const clip = rc.state.clip;
+      if (!clip) return rc.state;
+      const position = () =>
+        clip.state === 'playing' && rc.clipStart !== null
+          ? (now - rc.clipStart) / 1000
+          : (clip.position ?? 0);
+
       if (action === 'pause' && clip.state === 'playing') {
         await this.run(rc, org, (d) => amcp.pause(ch(d), vtr(d)));
+        clip.position = position();
+        clip.positionAt = now;
         clip.state = 'paused';
-        clip.position = rc.clipStart !== null ? (Date.now() - rc.clipStart) / 1000 : null;
-        clip.positionAt = Date.now();
         for (const t of rc.cueTimers) clearTimeout(t);
         rc.cueTimers = [];
-      } else if (action === 'resume' && clip.state === 'paused') {
+      } else if (
+        (action === 'resume' || action === 'play') &&
+        (clip.state === 'paused' || clip.state === 'loaded')
+      ) {
         await this.run(rc, org, (d) => amcp.resume(ch(d), vtr(d)));
         clip.state = 'playing';
-        rc.clipStart = Date.now() - (clip.position ?? 0) * 1000;
+        rc.clipStart = now - (clip.position ?? 0) * 1000;
         clip.startedAt = rc.clipStart;
         this.scheduleCues(rc, org);
       } else if (action === 'stop') {
         await this.run(rc, org, (d) => amcp.stop(ch(d), vtr(d)));
         clip.state = 'stopped';
+        clip.position = null;
+        rc.clipStart = null;
         // Si el VTR se para, sus rótulos salen.
         this.clearCues(rc);
         for (const [id, g] of Object.entries(rc.state.graphics)) {
@@ -700,14 +761,32 @@ export class CgManager {
           clip.loop ? amcp.play(ch(d), vtr(d), clip.name, { loop: true }) : null,
         );
         if (clip.loop) {
-          rc.clipStart = Date.now();
+          rc.clipStart = now;
           clip.startedAt = rc.clipStart;
           clip.state = 'playing';
+          this.scheduleCues(rc, org);
+        }
+      } else if (action === 'seek' && clip.state !== 'stopped') {
+        const max = clip.duration ?? Infinity;
+        const seconds = Math.max(0, Math.min(opts.seconds ?? 0, max));
+        await this.run(rc, org, (d) => amcp.seek(ch(d), vtr(d), seconds * FPS));
+        clip.position = seconds;
+        clip.positionAt = now;
+        if (clip.state === 'playing') {
+          rc.clipStart = now - seconds * 1000;
+          clip.startedAt = rc.clipStart;
+          this.scheduleCues(rc, org);
         }
       }
       this.broadcast(rc);
       return rc.state;
     });
+  }
+
+  /** PLAY necesita cargar antes: no hay clip, está parado o es de otra línea. */
+  private needsLoad(rc: RundownCg, lineId: string | undefined): boolean {
+    const clip = rc.state.clip;
+    return !clip || clip.state === 'stopped' || (!!lineId && lineId !== clip.lineId);
   }
 
   close(): void {

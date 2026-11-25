@@ -175,6 +175,16 @@ test('M7: CasparCG, diseño de rótulos, PLAY, GO con VTR y ▶/■', async ({ p
     expect(sim.sent('PAUSE 1-10')).toHaveLength(1);
     await page.getByRole('button', { name: 'Continuar' }).click();
     await shot(page, 'm7-vtr');
+
+    // LOAD: el vídeo queda cargado en el primer fotograma, sin reproducir; luego PLAY.
+    await page.getByRole('button', { name: 'Cargar vídeo (LOAD)' }).click();
+    await expect(row(page, 1).locator('.rf-play.is-loaded')).toBeVisible();
+    expect(sim.sent('LOAD 1-10')).toHaveLength(1);
+    await expect(page.getByLabel('Punto de reproducción')).toBeEnabled();
+    await page.getByRole('button', { name: 'Reproducir vídeo' }).click();
+    await expect(row(page, 1).locator('.rf-play.is-playing')).toContainText('►');
+    await page.getByRole('button', { name: 'Parar vídeo' }).click();
+    await expect.poll(() => sim.sent('STOP 1-10').length).toBeGreaterThanOrEqual(1);
   } finally {
     await sim.stop();
   }

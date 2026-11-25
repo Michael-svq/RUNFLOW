@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   computeTiming,
@@ -334,9 +334,10 @@ export function LiveBar({
   commands,
   canGo,
   error,
-  onShowAsrun,
   keyboard,
   onKeyboardChange,
+  transport,
+  status,
 }: {
   live: LiveState | null;
   lines: LineSnapshot[];
@@ -344,9 +345,12 @@ export function LiveBar({
   commands: LiveCommands;
   canGo: boolean;
   error: string | null;
-  onShowAsrun: () => void;
   keyboard: boolean;
   onKeyboardChange: (v: boolean) => void;
+  /** Transporte del VTR (LOAD, PLAY, PAUSA, STOP y deslizador), junto a Volver/Terminar. */
+  transport?: ReactNode;
+  /** Programa del mezclador, avisos y «Sacar rótulos» (a la derecha). */
+  status?: ReactNode;
 }) {
   const [cooldown, setCooldown] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
@@ -407,6 +411,7 @@ export function LiveBar({
           >
             ■ Terminar
           </Button>
+          {transport}
           {confirmReset ? (
             <>
               <Button
@@ -503,10 +508,8 @@ export function LiveBar({
         </div>
       )}
       <span className="rf-toolbar__spacer" />
+      {status}
       {state.rehearsal && <span className="rf-livebar__badge">ENSAYO</span>}
-      <Button size="sm" variant="ghost" onClick={onShowAsrun}>
-        Registro de emisión
-      </Button>
       {error && (
         <div className="rf-livebar__error">
           <Alert tone="error">{error}</Alert>

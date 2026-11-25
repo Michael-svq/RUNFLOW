@@ -205,6 +205,11 @@ export const amcp = {
   /** Precarga en segundo plano (la siguiente PLAY de la capa la lanza al instante). */
   loadbg: (ch: number, layer: number, clip: string, opts: { loop?: boolean } = {}) =>
     `LOADBG ${ch}-${layer} ${amcpString(clip)}${opts.loop ? ' LOOP' : ''}`,
+  /** Carga el clip en primer plano, parado en el primer fotograma (sin reproducir). */
+  load: (ch: number, layer: number, clip: string) => `LOAD ${ch}-${layer} ${amcpString(clip)}`,
+  /** Lleva el clip de la capa a un fotograma. */
+  seek: (ch: number, layer: number, frame: number) =>
+    `CALL ${ch}-${layer} SEEK ${Math.max(0, Math.round(frame))}`,
   pause: (ch: number, layer: number) => `PAUSE ${ch}-${layer}`,
   resume: (ch: number, layer: number) => `RESUME ${ch}-${layer}`,
   stop: (ch: number, layer: number) => `STOP ${ch}-${layer}`,

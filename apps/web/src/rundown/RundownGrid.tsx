@@ -28,7 +28,8 @@ export interface GridActions {
   /** Inserta una línea en `index` y devuelve su id. */
   insertAt(index: number, cells?: Record<string, CellValue>): string;
   duplicate(id: string): void;
-  move(id: string, toIndex: number): void;
+  /** Mueve las líneas (en bloque) para que la primera quede en `toIndex` de la lista sin ellas. */
+  move(ids: string[], toIndex: number): void;
   remove(ids: string[]): void;
   renumber(): void;
   undo(): void;
@@ -89,6 +90,8 @@ interface Menu {
 }
 
 const MIN_WIDTH = 36;
+/** Ancho de la columna rosa para seleccionar y mover filas completas. */
+const ROW_HEAD = 18;
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -116,6 +119,8 @@ export function RundownGrid({
   const [rowDrag, setRowDrag] = useState<{ id: string; drop: number | null } | null>(null);
   const [colDrag, setColDrag] = useState<{ key: string; drop: number | null } | null>(null);
   const selecting = useRef(false);
+  /** Gesto en la columna de filas: seleccionar varias o mover el bloque. */
+  const headMode = useRef<'select' | 'move' | null>(null);
 
   const rowIndex = useMemo(() => new Map(lines.map((l, i) => [l.id, i])), [lines]);
   const colIndex = useMemo(() => new Map(columns.map((c, i) => [c.def.key, i])), [columns]);
@@ -149,6 +154,8 @@ export function RundownGrid({
           c2: Math.max(focusPos.c, anchorPos.c),
         }
       : null;
+  /** La selección ocupa filas completas (de la primera a la última columna). */
+  const fullRows = !!range && range.c1 === 0 && range.c2 === columns.length - 1;
 
   // Si la línea con el foco desaparece (la borró otra persona), se suelta el foco.
   useEffect(() => {
@@ -164,7 +171,7 @@ export function RundownGrid({
   /** Columnas fijas a la izquierda: las primeras marcadas como fijas. */
   const pinnedLeft = useMemo(() => {
     const offsets: (number | undefined)[] = [];
-    let left = 0;
+    let left = ROW_HEAD;
     let pinning = true;
     for (const col of columns) {
       if (pinning && col.def.pinned) {
@@ -323,12 +330,72 @@ export function RundownGrid({
     }
   }
 
+  /** Sube o baja una posición las líneas seleccionadas (una o varias). */
   function moveSelectedLine(delta: -1 | 1) {
-    if (!canEditStructure || !focusPos || !range) return;
-    if (range.r1 !== range.r2) return;
-    const target = focusPos.r + delta;
-    if (target < 0 || target >= lines.length) return;
-    actions.move(lines[focusPos.r]!.id, target);
+    if (!canEditStructure || !range) return;
+    if (range.r1 + delta < 0 || range.r2 + delta >= lines.length) return;
+    actions.move(selectedLineIds(), range.r1 + delta);
+  }
+
+  /** Suelta un bloque de líneas antes de la fila `drop` (índice de la lista actual). */
+  function dropLines(ids: string[], drop: number) {
+    const before = ids.filter((id) => (rowIndex.get(id) ?? 0) < drop).length;
+    actions.move(ids, drop - before);
+  }
+
+  /** Líneas que se arrastran: la selección de filas completas si la incluye. */
+  function dragIds(id: string): string[] {
+    const selected = fullRows ? selectedLineIds() : [];
+    return selected.includes(id) ? selected : [id];
+  }
+
+  /* ---------- Columna rosa: selección de filas completas ---------- */
+
+  function selectRows(fromLineId: string, toLineId: string) {
+    const first = columns[0]?.def.key;
+    const last = columns[columns.length - 1]?.def.key;
+    if (!first || !last) return;
+    setAnchor({ lineId: fromLineId, col: first });
+    setFocus({ lineId: toLineId, col: last });
+  }
+
+  function onRowHeadMouseDown(e: MouseEvent, lineId: string) {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    if (editing) commit();
+    setMenu(null);
+    const r = rowIndex.get(lineId)!;
+    const inSelection = fullRows && range && r >= range.r1 && r <= range.r2;
+    if (e.shiftKey && anchor) {
+      selectRows(anchor.lineId, lineId);
+    } else if (inSelection && canEditStructure) {
+      // Pulsar sobre filas ya seleccionadas y arrastrar las mueve.
+      headMode.current = 'move';
+    } else {
+      selectRows(lineId, lineId);
+      headMode.current = 'select';
+    }
+    refocus();
+  }
+
+  function onRowHeadEnter(lineId: string) {
+    if (headMode.current === 'select' && anchor) selectRows(anchor.lineId, lineId);
+  }
+
+  function onRowPointerMove(e: MouseEvent, rowNumber: number) {
+    if (headMode.current !== 'move' || !range) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const drop = e.clientY > rect.top + rect.height / 2 ? rowNumber + 1 : rowNumber;
+    const id = lines[range.r1]!.id;
+    setRowDrag((d) => (d && d.drop === drop ? d : { id, drop }));
+  }
+
+  function onRowPointerUp() {
+    if (headMode.current === 'move' && rowDrag?.drop != null) {
+      dropLines(selectedLineIds(), rowDrag.drop);
+    }
+    headMode.current = null;
+    setRowDrag(null);
   }
 
   function deleteSelectedLines() {
@@ -504,12 +571,15 @@ export function RundownGrid({
   }
 
   function onCellMouseEnter(ref: CellRef) {
-    if (selecting.current) setFocus(ref);
+    if (headMode.current === 'select') onRowHeadEnter(ref.lineId);
+    else if (selecting.current) setFocus(ref);
   }
 
   useEffect(() => {
     const up = () => {
       selecting.current = false;
+      if (headMode.current === 'move') setRowDrag(null);
+      headMode.current = null;
     };
     window.addEventListener('mouseup', up);
     return () => window.removeEventListener('mouseup', up);
@@ -584,8 +654,9 @@ export function RundownGrid({
 
   /* ---------- Render ---------- */
 
-  const totalWidth = columns.reduce((s, c) => s + c.width, 0) + 1;
+  const totalWidth = columns.reduce((s, c) => s + c.width, 0) + ROW_HEAD + 1;
   const menuLines = selectedLineIds();
+  const draggingIds = rowDrag ? new Set(dragIds(rowDrag.id)) : null;
 
   return (
     <div
@@ -603,12 +674,25 @@ export function RundownGrid({
     >
       <table className="rf-rgrid" style={{ width: totalWidth }}>
         <colgroup>
+          <col style={{ width: ROW_HEAD }} />
           {columns.map((c) => (
             <col key={c.def.key} style={{ width: c.width }} />
           ))}
         </colgroup>
         <thead>
           <tr role="row">
+            <th
+              className="rf-rgrid__corner"
+              aria-label="Seleccionar todas las líneas"
+              title="Seleccionar todas las líneas"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                const first = lines[0];
+                const last = lines[lines.length - 1];
+                if (first && last) selectRows(first.id, last.id);
+                refocus();
+              }}
+            />
             {columns.map((c, i) => (
               <th
                 key={c.def.key}
@@ -672,9 +756,14 @@ export function RundownGrid({
                 editing={editing?.lineId === line.id ? editing : null}
                 presenceByCell={presenceByCell}
                 canDrag={canEditStructure}
+                rowSelected={!!inRows && fullRows}
+                onRowHeadMouseDown={onRowHeadMouseDown}
+                onRowHeadEnter={onRowHeadEnter}
+                onRowPointerMove={onRowPointerMove}
+                onRowPointerUp={onRowPointerUp}
                 dropBefore={rowDrag?.drop === r}
                 dropAfter={rowDrag?.drop === lines.length && r === lines.length - 1}
-                dragging={rowDrag?.id === line.id}
+                dragging={!!draggingIds?.has(line.id)}
                 onCellMouseDown={onCellMouseDown}
                 onCellMouseEnter={onCellMouseEnter}
                 onCellDoubleClick={(ref) => startEdit(ref)}
@@ -689,10 +778,8 @@ export function RundownGrid({
                   setRowDrag((d) => (d && d.drop !== drop ? { ...d, drop } : d))
                 }
                 onRowDrop={() => {
-                  if (rowDrag && rowDrag.drop !== null) {
-                    const from = rowIndex.get(rowDrag.id)!;
-                    actions.move(rowDrag.id, rowDrag.drop > from ? rowDrag.drop - 1 : rowDrag.drop);
-                  }
+                  if (rowDrag && rowDrag.drop !== null)
+                    dropLines(dragIds(rowDrag.id), rowDrag.drop);
                   setRowDrag(null);
                 }}
                 onRowDragEnd={() => setRowDrag(null)}
@@ -836,6 +923,12 @@ interface RowProps {
   editing: Editing | null;
   presenceByCell: Map<string, PresenceUser[]>;
   canDrag: boolean;
+  /** La fila está seleccionada completa (columna rosa). */
+  rowSelected: boolean;
+  onRowHeadMouseDown(e: MouseEvent, lineId: string): void;
+  onRowHeadEnter(lineId: string): void;
+  onRowPointerMove(e: MouseEvent, rowNumber: number): void;
+  onRowPointerUp(): void;
   dropBefore: boolean;
   dropAfter: boolean;
   dragging: boolean;
@@ -877,7 +970,22 @@ const Row = memo(function Row(props: RowProps) {
         e.preventDefault();
         props.onRowDrop();
       }}
+      onMouseMove={(e) => props.onRowPointerMove(e, rowNumber)}
+      onMouseUp={props.onRowPointerUp}
     >
+      <th
+        role="rowheader"
+        className="rf-rgrid__rowhead"
+        aria-selected={props.rowSelected}
+        aria-label={`Fila ${rowNumber + 1}`}
+        title={
+          props.canDrag
+            ? 'Selecciona la fila (Mayús o arrastrar para varias). Arrastra las seleccionadas para moverlas.'
+            : 'Selecciona la fila'
+        }
+        onMouseDown={(e) => props.onRowHeadMouseDown(e, line.id)}
+        onMouseEnter={() => props.onRowHeadEnter(line.id)}
+      />
       {columns.map((c, i) => {
         const key = c.def.key;
         const ref = { lineId: line.id, col: key };

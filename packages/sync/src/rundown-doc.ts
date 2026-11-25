@@ -169,6 +169,31 @@ export function moveLine(doc: Y.Doc, id: string, toIndex: number, origin?: unkno
   }, origin);
 }
 
+/**
+ * Mueve varias líneas a la vez (en su orden actual, una tras otra) para que la
+ * primera quede en `toIndex` de la lista sin esas líneas.
+ */
+export function moveLines(doc: Y.Doc, ids: string[], toIndex: number, origin?: unknown): void {
+  doc.transact(() => {
+    const set = new Set(ids);
+    const all = readLines(doc);
+    const block = all.filter((l) => set.has(l.id)).map((l) => l.id);
+    const others = all.filter((l) => !set.has(l.id));
+    const before = others[Math.max(0, Math.min(toIndex, others.length))]?.id ?? null;
+    let prev: string | null = null;
+    for (const id of block) {
+      const rest = readLines(doc).filter((l) => l.id !== id);
+      const index = prev
+        ? rest.findIndex((l) => l.id === prev) + 1
+        : before
+          ? rest.findIndex((l) => l.id === before)
+          : rest.length;
+      moveLine(doc, id, index, origin);
+      prev = id;
+    }
+  }, origin);
+}
+
 export function deleteLines(doc: Y.Doc, ids: string[], origin?: unknown): void {
   doc.transact(() => {
     const lines = getLinesMap(doc);

@@ -5,6 +5,7 @@ import {
   duplicateLine,
   insertLine,
   moveLine,
+  moveLines,
   numberBetween,
   readLines,
   renumber,
@@ -72,6 +73,19 @@ describe('operaciones', () => {
     expect(summarize(readLines(doc))).toEqual({ lineCount: 4, estimatedSeconds: 75 });
     deleteLines(doc, [a, copy]);
     expect(names(doc)).toEqual(['B', 'C']);
+  });
+
+  it('mueve varias líneas en bloque hacia arriba y hacia abajo', () => {
+    const doc = new Y.Doc();
+    const ids = ['A', 'B', 'C', 'D', 'E'].map((n) => insertLine(doc, { cells: { nombre: n } }));
+    moveLines(doc, [ids[0]!, ids[1]!], 2);
+    expect(names(doc)).toEqual(['C', 'D', 'A', 'B', 'E']);
+    moveLines(doc, [ids[1]!, ids[0]!], 0);
+    expect(names(doc)).toEqual(['A', 'B', 'C', 'D', 'E']);
+    moveLines(doc, [ids[2]!, ids[3]!], 0);
+    expect(names(doc)).toEqual(['C', 'D', 'A', 'B', 'E']);
+    moveLines(doc, [ids[2]!, ids[3]!], 99);
+    expect(names(doc)).toEqual(['A', 'B', 'E', 'C', 'D']);
   });
 });
 

@@ -195,6 +195,25 @@ export class CasparSimulator {
         if (t.includes('LOOP')) l.loop = true;
         return '202 PLAY OK\r\n';
       }
+      case 'LOAD': {
+        // Primer plano en pausa, en el primer fotograma.
+        const name = t[2] ?? '';
+        if (!this.findClip(name)) return '404 LOAD FAILED\r\n';
+        const l = this.layer(ch, ly);
+        l.clip = name;
+        l.playing = true;
+        l.startedAt = Date.now();
+        l.pausedAt = l.startedAt;
+        l.loop = false;
+        return '202 LOAD OK\r\n';
+      }
+      case 'CALL': {
+        const l = this.layer(ch, ly);
+        if ((t[2] ?? '').toUpperCase() !== 'SEEK' || !l.clip) return '404 CALL FAILED\r\n';
+        const seconds = Number(t[3] ?? 0) / 25;
+        l.startedAt = (l.pausedAt ?? Date.now()) - seconds * 1000;
+        return '202 CALL OK\r\n';
+      }
       case 'PAUSE': {
         const l = this.layer(ch, ly);
         if (l.playing) l.pausedAt = Date.now();
