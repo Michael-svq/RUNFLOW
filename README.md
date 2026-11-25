@@ -14,6 +14,7 @@ Web (PWA) multiempresa en la nube y funcionamiento local con **RunFlow Station**
 - **Probarlo en tu ordenador (estudio virtual en Docker, un clic):** [`docs/ESTUDIO.md`](docs/ESTUDIO.md)
 - Iluminación: [`docs/ILUMINACION.md`](docs/ILUMINACION.md)
 - Otros sistemas: [`docs/SISTEMAS.md`](docs/SISTEMAS.md)
+- Control de cámara (PTZ y monitor de señal): [`docs/CAMARAS.md`](docs/CAMARAS.md)
 
 ## Estado
 

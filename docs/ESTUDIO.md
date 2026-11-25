@@ -31,6 +31,10 @@ macOS / Linux: `./estudio.sh` (y `./estudio.sh parar`).
   monitor; en la pieza «PRESUPUESTOS» los rótulos entran solos en su TC.
 - **Teleprompter**: botón **Prompter** de la escaleta (o _Salidas_ para abrirlo en otra ventana).
 - **Timeline**: botón _Timeline_ de la escaleta; los cues de cámara cortan el OBS a su tiempo.
+- **Dirección TV** (entra con `dirtv@runflow.test` / `runflow-demo`, o cambia de área arriba):
+  _Rotulación_ (todos los rótulos en una hoja), _Reproductor de vídeos_ y **Control de cámara**
+  con dos cámaras simuladas (CAM 1 y CAM 2): elige «Imagen de la cámara», pulsa AWB y activa el
+  control automático.
 - Todo lo demás (guion, IA, producción, pantallas, redes…) funciona igual que en la nube.
 
 ## Usar tus equipos reales
