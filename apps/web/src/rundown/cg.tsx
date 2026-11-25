@@ -353,23 +353,29 @@ export function VtrTransport({
   lines,
   onAirLineId,
   nextLineId,
+  lineId,
 }: {
   lines: LineSnapshot[];
   onAirLineId: string | null;
   nextLineId: string | null;
+  /** Vídeo de esta línea (Reproductor de vídeos); sin él, el de la línea en aire o el siguiente. */
+  lineId?: string;
 }) {
   const ctx = useContext(CgContext);
   const now = useServerNow(250);
   const [scrub, setScrub] = useState<number | null>(null);
   if (!ctx || !Object.keys(ctx.state?.devices ?? {}).length) return null;
   const clip = ctx.state?.clip ?? null;
-  const active = clip && clip.state !== 'stopped' ? clip : null;
+  const active =
+    clip && clip.state !== 'stopped' && (!lineId || clip.lineId === lineId) ? clip : null;
+  const fixed = lineId ? lines.find((l) => l.id === lineId && clipName(l)) : undefined;
   // Vídeo de la línea en aire o, si no tiene, el siguiente con CLIP.
   const onAirIndex = lines.findIndex((l) => l.id === onAirLineId);
-  const candidate =
-    (clipName(lines[onAirIndex]) && lines[onAirIndex]) ||
-    lines.find((l) => l.id === nextLineId && clipName(l)) ||
-    lines.slice(onAirIndex + 1).find((l) => clipName(l));
+  const candidate = lineId
+    ? fixed
+    : (clipName(lines[onAirIndex]) && lines[onAirIndex]) ||
+      lines.find((l) => l.id === nextLineId && clipName(l)) ||
+      lines.slice(onAirIndex + 1).find((l) => clipName(l));
   const target = active ? lines.find((l) => l.id === active.lineId) : candidate;
   const name = active?.name ?? clipName(target);
   const duration =
@@ -406,7 +412,9 @@ export function VtrTransport({
         aria-label="Reproducir vídeo"
         title="PLAY"
         disabled={!target}
-        onClick={() => send('play', active ? {} : target ? { lineId: target.id } : {})}
+        onClick={() =>
+          send('play', lineId ? { lineId } : active ? {} : target ? { lineId: target.id } : {})
+        }
       >
         ▶
       </button>

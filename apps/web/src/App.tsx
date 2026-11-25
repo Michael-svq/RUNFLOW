@@ -18,6 +18,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { SetupPage } from './pages/SetupPage';
 import { UsersPage } from './pages/UsersPage';
 import { StationHubPage } from './pages/StationHubPage';
+import { PlayerPage } from './pages/PlayerPage';
 import { GraphicsPage } from './pages/GraphicsPage';
 import { DesignPage } from './pages/DesignPage';
 import { ConfigPage } from './pages/ConfigPage';
@@ -121,6 +122,7 @@ export function App() {
               </RequireAny>
             }
           />
+          <Route path="/reproductor" element={<PlayerPage />} />
           <Route path="/escaletas/:id" element={<RundownPage />} />
           <Route path="/plataforma" element={<RequirePlatformAdmin />} />
         </Route>
