@@ -99,7 +99,7 @@ test('M1: tres navegadores editan la misma escaleta, uno se queda sin red', asyn
   await expect(page.getByRole('heading', { name: /Hola/ })).toBeVisible();
 
   // Programa y escaleta desde la interfaz
-  await page.getByRole('link', { name: '04 Escaletas' }).click();
+  await page.getByRole('link', { name: 'Escaletas', exact: true }).click();
   await page.getByRole('button', { name: 'Programas' }).click();
   const programs = page.getByRole('dialog');
   await programs.getByLabel('Nombre').fill('Informativo Mediodía');
@@ -226,7 +226,7 @@ test('M1: copiar y pegar desde una hoja de cálculo, deshacer y vistas', async (
   await page.getByLabel('Email').fill(ADMIN.email);
   await page.getByLabel('Contraseña').fill(ADMIN.password);
   await page.getByRole('button', { name: 'Entrar' }).click();
-  await page.getByRole('link', { name: '04 Escaletas' }).click();
+  await page.getByRole('link', { name: 'Escaletas', exact: true }).click();
   await page.locator('.rf-rundowns-table tbody tr').first().click();
   await expect(page.locator('.rf-conn--online')).toBeVisible();
   await expect(page.locator('.rf-rgrid tbody tr')).toHaveCount(3);

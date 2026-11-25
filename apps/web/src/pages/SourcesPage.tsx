@@ -78,7 +78,6 @@ export function SourcesPage() {
   return (
     <>
       <PageHeader
-        number="01"
         title="Fuentes"
         intro="Noticias de agencias y medios (RSS o Atom). Llévalas a la nevera o insértalas en una escaleta desde su panel."
       />

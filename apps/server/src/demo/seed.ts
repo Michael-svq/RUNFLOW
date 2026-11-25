@@ -1,6 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { insertLine, writeScript, type ScriptBlock } from '@runflow/sync';
+import { and, eq, sql } from 'drizzle-orm';
+import { memberships, roles, users, withSystem } from '@runflow/db';
+import { hashPassword } from '../auth/password';
 import type { AppDeps } from '../app';
 
 /*
@@ -11,6 +14,65 @@ import type { AppDeps } from '../app';
  */
 
 export const DEMO_ACCOUNT = { email: 'demo@runflow.test', password: 'runflow-demo' };
+
+/** Una cuenta por área de trabajo (misma contraseña que la de administración). */
+export const DEMO_USERS = [
+  { email: 'redac@runflow.test', name: 'Redacción', role: 'redactor' },
+  { email: 'dirtv@runflow.test', name: 'Dirección TV', role: 'direccion_tv' },
+  { email: 'produ@runflow.test', name: 'Producción', role: 'produccion' },
+] as const;
+
+/**
+ * Crea (si faltan) las cuentas de Redacción, Dirección TV y Producción en la
+ * empresa de la cuenta demo. Se ejecuta en cada arranque del estudio virtual,
+ * así también llegan a instalaciones creadas antes.
+ */
+export async function ensureDemoUsers(deps: AppDeps): Promise<number> {
+  return withSystem(deps.db, async (tx) => {
+    const [admin] = await tx
+      .select({ orgId: memberships.orgId })
+      .from(users)
+      .innerJoin(memberships, eq(memberships.userId, users.id))
+      .where(sql`lower(${users.email}) = ${DEMO_ACCOUNT.email}`)
+      .limit(1);
+    if (!admin) return 0;
+    let created = 0;
+    for (const u of DEMO_USERS) {
+      const [role] = await tx
+        .select({ id: roles.id })
+        .from(roles)
+        .where(and(eq(roles.orgId, admin.orgId), eq(roles.key, u.role)));
+      if (!role) continue;
+      let [user] = await tx
+        .select({ id: users.id })
+        .from(users)
+        .where(sql`lower(${users.email}) = ${u.email}`);
+      if (!user) {
+        [user] = await tx
+          .insert(users)
+          .values({
+            email: u.email,
+            name: u.name,
+            passwordHash: await hashPassword(DEMO_ACCOUNT.password),
+            mustChangePassword: false,
+            emailVerifiedAt: new Date(),
+          })
+          .returning({ id: users.id });
+        created++;
+      }
+      const [member] = await tx
+        .select({ id: memberships.id })
+        .from(memberships)
+        .where(and(eq(memberships.orgId, admin.orgId), eq(memberships.userId, user!.id)));
+      if (!member) {
+        await tx
+          .insert(memberships)
+          .values({ orgId: admin.orgId, userId: user!.id, roleId: role.id });
+      }
+    }
+    return created;
+  });
+}
 
 const rotulo = (type: string, f0: string, f1 = '', tcIn = '', tcOut = ''): ScriptBlock => ({
   kind: 'rotulo',

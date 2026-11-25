@@ -31,7 +31,7 @@ export function ProfilePage() {
 
   return (
     <>
-      <PageHeader number="08" title={t('profile.title')} />
+      <PageHeader title={t('profile.title')} />
       <div className="rf-stack">
         <section className="rf-card rf-section">
           <h2 className="rf-section__title">{t('profile.data')}</h2>

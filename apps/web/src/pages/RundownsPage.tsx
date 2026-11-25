@@ -86,7 +86,6 @@ export function RundownsPage() {
   return (
     <>
       <PageHeader
-        number="04"
         title={t('rundowns.title')}
         intro={t('rundowns.intro')}
         actions={

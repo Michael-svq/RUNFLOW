@@ -22,6 +22,7 @@ export const PERMISSIONS = {
   'budget.view': 'Ver presupuestos',
   'budget.manage': 'Gestionar presupuestos',
   'station.admin': 'Administrar Station',
+  'devices.configure': 'Configurar equipos, diseño de rótulos, pantallas y cámaras',
 } as const;
 
 export type Permission = keyof typeof PERMISSIONS;

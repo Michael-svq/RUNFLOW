@@ -18,7 +18,6 @@ export function FridgePage() {
   return (
     <>
       <PageHeader
-        number="02"
         title="Nevera"
         intro="Líneas preparadas (con su guion y rótulos) para insertar en cualquier escaleta desde el panel lateral."
       />

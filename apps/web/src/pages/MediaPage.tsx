@@ -152,7 +152,6 @@ export function MediaPage() {
   return (
     <>
       <PageHeader
-        number="05"
         title="Media"
         intro="Vídeos, imágenes y audio de la empresa. Previsualízalos y envíalos a CasparCG para usarlos en la columna CLIP."
       />

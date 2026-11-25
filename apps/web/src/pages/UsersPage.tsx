@@ -76,7 +76,6 @@ export function UsersPage() {
   return (
     <>
       <PageHeader
-        number="07"
         title={t('users.title')}
         intro={t('users.intro')}
         actions={

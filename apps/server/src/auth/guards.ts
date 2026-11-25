@@ -89,6 +89,15 @@ export function requirePermission(db: Db, permission: Permission): Hook {
   };
 }
 
+/** Exige alguno de los permisos indicados. */
+export function requireAnyPermission(db: Db, ...permissions: Permission[]): Hook {
+  const org = requireOrg(db);
+  return async (req, reply) => {
+    await org(req, reply);
+    if (!permissions.some((p) => req.tenant!.permissions.includes(p))) throw forbidden();
+  };
+}
+
 export function requirePlatformAdmin(): Hook {
   const auth = requireAuth();
   return async (req, reply) => {

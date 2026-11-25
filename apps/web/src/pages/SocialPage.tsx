@@ -73,8 +73,7 @@ export function SocialPage() {
   return (
     <>
       <PageHeader
-        number="03"
-        title="Social Media"
+        title="Redes sociales"
         intro="Publicaciones de redes por hashtag o cuenta, y mensajes de la audiencia. Modéralas y rotúlalas en directo con el rótulo de redes (RRS)."
       />
       {notice && <Alert tone={notice.tone}>{notice.text}</Alert>}

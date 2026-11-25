@@ -91,6 +91,24 @@ export async function outputRoutes(app: FastifyInstance, deps: AppDeps): Promise
     return { outputs: rows.map(toDto) };
   });
 
+  /** Mensaje al plató (presentador y salidas de la escaleta). Vacío = quitarlo. */
+  app.post('/api/rundowns/:id/stage', { preHandler: manage }, async (req) => {
+    const { id } = parse(idParams, req.params);
+    const input = parse(
+      z.object({
+        text: z.string().trim().max(200).default(''),
+        color: z.enum(['white', 'yellow', 'red', 'green']).default('yellow'),
+        flash: z.boolean().default(false),
+      }),
+      req.body,
+    );
+    const t = req.tenant!;
+    await withTenant(deps.db, t, (tx) => requireRundown(tx, t.orgId, id));
+    const message = input.text ? { ...input, sentAt: Date.now(), from: req.auth!.name } : null;
+    await deps.collab!.setStage(id, t.orgId, message);
+    return { message };
+  });
+
   app.post('/api/rundowns/:id/outputs', { preHandler: manage }, async (req, reply) => {
     const { id } = parse(idParams, req.params);
     const input = parse(createOutputInput, req.body);

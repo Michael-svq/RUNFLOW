@@ -25,7 +25,7 @@ test('M6: enlazar y revocar una Station desde la nube', async ({ page, request }
   await page.getByLabel('Email').fill(ADMIN.email);
   await page.getByLabel('Contraseña').fill(ADMIN.password);
   await page.getByRole('button', { name: 'Entrar' }).click();
-  await page.getByRole('link', { name: /RunFlow Station/ }).click();
+  await page.goto('/station');
   await expect(page.getByRole('heading', { name: /RunFlow Station/ })).toBeVisible();
 
   const name = `Plató ${Date.now()}`;

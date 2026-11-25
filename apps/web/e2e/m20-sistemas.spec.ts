@@ -21,7 +21,8 @@ test('F4.4: otro sistema por HTTP con prueba de cue', async ({ page, request }) 
   await expect(page.getByRole('heading', { name: /Hola/ })).toBeVisible();
   const origin = new URL(page.url()).origin;
 
-  await page.goto('/configuracion');
+  await page.goto('/station');
+  await page.getByRole('tab', { name: 'Equipos' }).click();
   await page.getByLabel('Tipo de equipo').selectOption({ label: 'Otro sistema' });
   await page.getByRole('button', { name: 'Añadir equipo' }).click();
   const form = page.getByRole('form', { name: 'Equipo Otro sistema' });

@@ -382,6 +382,14 @@ export class CollabServer {
   }
 
   /** Envía un mensaje propio (chat, etc.) a todas las conexiones de la escaleta. */
+  /** Mensaje al plató enviado desde el servidor (cabecera de Dirección TV). */
+  async setStage(rundownId: string, orgId: string, payload: unknown): Promise<void> {
+    const shared = await this.getDoc(rundownId, orgId);
+    shared.stage = payload;
+    shared.broadcast(customMessage(MESSAGE_STAGE, payload));
+    await this.releaseIfIdle(rundownId, shared);
+  }
+
   broadcastCustom(rundownId: string, type: number, payload: unknown): void {
     void this.docs.get(rundownId)?.then((shared) => shared.broadcast(customMessage(type, payload)));
   }

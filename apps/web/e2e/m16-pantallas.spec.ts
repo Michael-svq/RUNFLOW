@@ -23,8 +23,8 @@ test('F3.3: la pantalla cambia al lanzar una escena', async ({ page, request, br
   await page.getByRole('button', { name: 'Entrar' }).click();
   await expect(page.getByRole('heading', { name: /Hola/ })).toBeVisible();
 
-  await page.goto('/produccion');
-  await page.getByRole('tab', { name: 'Pantallas' }).click();
+  await page.goto('/station');
+  await page.getByRole('tab', { name: 'Pantallas y escenas' }).click();
   await page.getByLabel('Nombre de la pantalla').fill(screenName);
   await page.getByRole('button', { name: 'Añadir pantalla' }).click();
 

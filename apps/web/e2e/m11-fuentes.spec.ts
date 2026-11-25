@@ -55,7 +55,7 @@ test('F2.2: fuentes RSS a la nevera y a la escaleta', async ({ page, request }) 
     await page.getByRole('button', { name: 'Entrar' }).click();
     await expect(page.getByRole('heading', { name: /Hola/ })).toBeVisible();
 
-    await page.getByRole('link', { name: /Fuentes/ }).click();
+    await page.goto('/fuentes');
     const add = page.getByRole('form', { name: 'Nueva fuente' });
     await add.getByLabel('Nombre').fill(`Agencia ${Date.now()}`);
     await add.getByLabel('Dirección del RSS o Atom').fill(url);

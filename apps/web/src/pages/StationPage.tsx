@@ -4,7 +4,6 @@ import type { StationDto, StationLicenseStatus, StationStatusDto } from '@runflo
 import { Alert, Badge, Button, Spinner, TextField } from '@runflow/ui';
 import { api, errorMessage } from '../api/client';
 import { useMe } from '../auth/session';
-import { PageHeader } from '../components/PageHeader';
 import { locale } from '../i18n';
 
 const dateTime = new Intl.DateTimeFormat(locale, { dateStyle: 'short', timeStyle: 'short' });
@@ -22,7 +21,8 @@ export function useStationStatus(enabled = true) {
 }
 
 /** 09 RunFlow Station: en la nube, alta de Stations; en una Station, su consola. */
-export function StationPage() {
+/** Stations de la empresa (nube) o consola de esta Station. */
+export function StationPanel() {
   const { data: me } = useMe();
   return me?.mode === 'station' ? <StationConsole /> : <CloudStations />;
 }
@@ -65,11 +65,10 @@ function CloudStations() {
 
   return (
     <>
-      <PageHeader
-        number="09"
-        title="RunFlow Station"
-        intro="Un ordenador del estudio que hace de servidor: si se cae internet, el directo sigue y, al volver, todo se fusiona con la nube."
-      />
+      <p className="rf-muted rf-small">
+        Un ordenador del estudio que hace de servidor: si se cae internet, el directo sigue y, al
+        volver, todo se fusiona con la nube.
+      </p>
       <section className="rf-card rf-station">
         <h2 className="rf-form__title">Enlazar una Station nueva</h2>
         <form className="rf-station__form" onSubmit={onCreate}>
@@ -232,11 +231,10 @@ function StationConsole() {
 
   return (
     <>
-      <PageHeader
-        number="09"
-        title="RunFlow Station"
-        intro="Este ordenador hace de servidor del estudio. El resto de equipos de la red entra con el navegador."
-      />
+      <p className="rf-muted rf-small">
+        Este ordenador hace de servidor del estudio. El resto de equipos de la red entra con el
+        navegador.
+      </p>
       <div className="rf-station__grid">
         <section className="rf-card rf-station">
           <h2 className="rf-form__title">Estado</h2>

@@ -71,8 +71,8 @@ test('M7: CasparCG, diseño de rótulos, PLAY, GO con VTR y ▶/■', async ({ p
     await expect(page.getByRole('heading', { name: /Hola/ })).toBeVisible();
 
     // 1. Configuración: diseño con vista previa real y equipo CasparCG
-    await page.getByRole('link', { name: /Configuración$/ }).click();
-    await expect(page.getByRole('heading', { name: /Configuración/ })).toBeVisible();
+    await page.goto('/diseno');
+    await expect(page.getByRole('heading', { name: 'Diseño' })).toBeVisible();
     const preview = page.frameLocator('iframe[title="Vista previa del rótulo TOT"]');
     await expect(preview.getByText('MARÍA JESÚS MONTERO')).toBeVisible();
     await page.getByRole('tab', { name: 'BAN' }).click();
@@ -86,6 +86,8 @@ test('M7: CasparCG, diseño de rótulos, PLAY, GO con VTR y ▶/■', async ({ p
     await expect(page.getByText('Guardado.')).toBeVisible();
     await shot(page, 'm7-configuracion');
 
+    await page.goto('/station');
+    await page.getByRole('tab', { name: 'Equipos' }).click();
     await page.getByRole('button', { name: 'Añadir equipo' }).click();
     const form = page.getByRole('form', { name: 'Equipo CasparCG' });
     await form.getByLabel('Nombre', { exact: true }).fill('CasparCG plató');

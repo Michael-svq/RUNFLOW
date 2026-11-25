@@ -46,7 +46,6 @@ export function ArchivePage() {
   return (
     <>
       <PageHeader
-        number="06"
         title="Archivo & Papelera"
         intro="Busca en todas las escaletas y recupera las borradas."
       />

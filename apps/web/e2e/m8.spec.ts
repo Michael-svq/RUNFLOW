@@ -58,7 +58,8 @@ test('M8: vMix con mapa de fuentes, corte con GO y mando por enlace', async ({
     await expect(page.getByRole('heading', { name: /Hola/ })).toBeVisible();
 
     // 1. vMix en Configuración con su mapa de fuentes
-    await page.goto('/configuracion');
+    await page.goto('/station');
+    await page.getByRole('tab', { name: 'Equipos' }).click();
     await page.getByLabel('Tipo de equipo').selectOption({ label: 'vMix' });
     await page.getByRole('button', { name: 'Añadir equipo' }).click();
     const form = page.getByRole('form', { name: 'Equipo vMix' });

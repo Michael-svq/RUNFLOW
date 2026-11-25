@@ -20,7 +20,8 @@ test('F4.3: mesa de luces Art-Net con escena y prueba de cue', async ({ page, re
   await page.getByRole('button', { name: 'Entrar' }).click();
   await expect(page.getByRole('heading', { name: /Hola/ })).toBeVisible();
 
-  await page.goto('/configuracion');
+  await page.goto('/station');
+  await page.getByRole('tab', { name: 'Equipos' }).click();
   await page.getByLabel('Tipo de equipo').selectOption({ label: 'Iluminación' });
   await page.getByRole('button', { name: 'Añadir equipo' }).click();
   const form = page.getByRole('form', { name: 'Equipo Iluminación' });

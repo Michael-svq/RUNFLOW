@@ -52,7 +52,12 @@ export async function screenRoutes(app: FastifyInstance, deps: AppDeps): Promise
   const manage = async (req: FastifyRequest, reply: FastifyReply) => {
     await org(req, reply);
     const p = req.tenant!.permissions;
-    if (!p.includes('production.manage') && !p.includes('org.configure')) throw forbidden();
+    if (
+      !p.includes('production.manage') &&
+      !p.includes('org.configure') &&
+      !p.includes('devices.configure')
+    )
+      throw forbidden();
   };
   /** Lanzan escenas: quien da GO o producción. */
   const take = async (req: FastifyRequest, reply: FastifyReply) => {

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { readLines } from '@runflow/sync';
-import { DEMO_ACCOUNT, seedDemo } from '../src/demo/seed';
+import { DEMO_ACCOUNT, DEMO_USERS, ensureDemoUsers, seedDemo } from '../src/demo/seed';
 import { Client, createTestContext, resetDb, type TestContext } from './helpers';
 
 /* Estudio virtual: datos de ejemplo la primera vez (DEMO_SEED). */
@@ -51,5 +51,21 @@ describe('estudio virtual', () => {
     ]);
     const outputs = (await demo.get(`/api/rundowns/${id}/outputs`)).body.outputs;
     expect(outputs[0]).toMatchObject({ kind: 'prompter' });
+
+    // Una cuenta por área, lista para entrar (y solo se crean una vez).
+    expect(await ensureDemoUsers(ctx.deps)).toBe(3);
+    expect(await ensureDemoUsers(ctx.deps)).toBe(0);
+    for (const u of DEMO_USERS) {
+      const c = new Client(ctx.app);
+      const m = await c.login(u.email, DEMO_ACCOUNT.password);
+      expect(m.user.mustChangePassword).toBe(false);
+      expect(m.activeOrg.role.key).toBe(u.role);
+    }
+    const dir = new Client(ctx.app);
+    const m = await dir.login('dirtv@runflow.test', DEMO_ACCOUNT.password);
+    expect(m.activeOrg.permissions).toEqual(
+      expect.arrayContaining(['live.go', 'cg.fire', 'devices.configure', 'station.admin']),
+    );
+    expect((await dir.get('/api/devices')).status).toBe(200);
   });
 });

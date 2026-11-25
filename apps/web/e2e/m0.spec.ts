@@ -26,8 +26,15 @@ async function changePassword(page: Page, current: string, next: string) {
 }
 
 async function logout(page: Page) {
-  await page.getByRole('button', { name: 'Salir' }).click();
+  await page.getByRole('button', { name: 'Mi cuenta' }).click();
+  await page.getByRole('menuitem', { name: 'Salir' }).click();
   await expect(page).toHaveURL(/\/entrar/);
+}
+
+/** Menú de administración (rueda dentada). */
+async function admin(page: Page, item: string) {
+  await page.getByRole('button', { name: 'Administración' }).click();
+  await page.getByRole('menuitem', { name: item }).click();
 }
 
 test('M0: configuración inicial, usuarios y aislamiento entre empresas', async ({ page }) => {
@@ -44,7 +51,7 @@ test('M0: configuración inicial, usuarios y aislamiento entre empresas', async 
   await shot(page, '02-inicio');
 
   // 2. Alta de un redactor
-  await page.getByRole('link', { name: /Gestión de usuarios/ }).click();
+  await admin(page, 'Gestión de usuarios');
   await page.getByRole('button', { name: '+ Nuevo usuario' }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Nombre y apellidos').fill('Rafa Redactor');
@@ -66,7 +73,7 @@ test('M0: configuración inicial, usuarios y aislamiento entre empresas', async 
   await page.getByRole('dialog').getByRole('button', { name: 'Cancelar' }).click();
 
   // 3. Alta de otra empresa desde la administración de plataforma
-  await page.getByRole('link', { name: 'Plataforma' }).click();
+  await admin(page, 'Plataforma');
   await page.getByRole('button', { name: '+ Nueva empresa' }).click();
   const orgDialog = page.getByRole('dialog');
   await orgDialog.getByLabel('Nombre de la empresa').fill('Escuela Audiovisual');
@@ -83,7 +90,7 @@ test('M0: configuración inicial, usuarios y aislamiento entre empresas', async 
   await shot(page, '06-cambiar-contrasena');
   await changePassword(page, 'temporal-12345', 'clave-de-rafa-123');
   await expect(page.getByRole('heading', { name: 'Hola, Rafa' })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Gestión de usuarios/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Administración' })).toHaveCount(0);
   await page.goto('/usuarios');
   await expect(page).toHaveURL(/\/inicio/);
   await logout(page);
@@ -91,21 +98,23 @@ test('M0: configuración inicial, usuarios y aislamiento entre empresas', async 
   // 5. La administradora de la otra empresa solo ve a su gente
   await login(page, 'bea@escuela.test', 'temporal-12345');
   await changePassword(page, 'temporal-12345', 'clave-de-bea-123');
-  await page.getByRole('link', { name: /Gestión de usuarios/ }).click();
+  await admin(page, 'Gestión de usuarios');
   await expect(page.getByRole('row', { name: /Bea Profe/ })).toBeVisible();
   await expect(page.getByText('ana@chaneltv.test')).toHaveCount(0);
   await expect(page.getByText('rafa@chaneltv.test')).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'Plataforma' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Administración' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Plataforma' })).toHaveCount(0);
   await shot(page, '07-aislamiento');
 });
 
-test('tema exterior y vista de móvil', async ({ page }) => {
+test('modo claro y vista de móvil', async ({ page }) => {
   await login(page, 'ana@chaneltv.test', 'contraseña-segura-1');
-  await page.getByRole('button', { name: 'Exterior' }).click();
+  await page.getByRole('button', { name: 'Cambiar a modo claro' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'exterior');
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'exterior');
-  await page.getByRole('link', { name: /Gestión de usuarios/ }).click();
+  await expect(page.getByRole('button', { name: 'Cambiar a modo oscuro' })).toBeVisible();
+  await admin(page, 'Gestión de usuarios');
   await expect(page.getByRole('row', { name: /Rafa Redactor/ })).toBeVisible();
   await shot(page, '08-tema-exterior');
 
@@ -114,9 +123,10 @@ test('tema exterior y vista de móvil', async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await shot(page, '09-movil-usuarios');
   await page.getByRole('button', { name: 'Menú' }).click();
-  await expect(page.getByRole('link', { name: /Configuración de usuario/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Escaletas' })).toBeVisible();
   await shot(page, '10-movil-menu');
-  await page.getByRole('link', { name: /Configuración de usuario/ }).click();
+  await page.getByRole('button', { name: 'Mi cuenta' }).click();
+  await page.getByRole('menuitem', { name: /Configuración de usuario/ }).click();
   await expect(page.getByRole('heading', { name: /Configuración de usuario/ })).toBeVisible();
   await shot(page, '11-movil-perfil');
 });

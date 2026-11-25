@@ -18,7 +18,7 @@ import {
 } from '@runflow/core';
 import { devices, organizations, withTenant } from '@runflow/db';
 import { HttpError, notFound, parse } from '../errors';
-import { requireOrg, requirePermission } from '../auth/guards';
+import { requireAnyPermission, requireOrg, requirePermission } from '../auth/guards';
 import { audit } from '../services/audit';
 import { requireRundown } from '../services/rundowns';
 import { CgManager } from '../cg/cg-manager';
@@ -46,7 +46,8 @@ const FONTS: Record<string, string> = {
 export async function cgRoutes(app: FastifyInstance, deps: AppDeps): Promise<void> {
   const cg = () => deps.cg!;
   const org = requireOrg(deps.db);
-  const configure = requirePermission(deps.db, 'org.configure');
+  // Equipos, diseño de rótulos y ajustes del directo: administración o Dirección TV.
+  const configure = requireAnyPermission(deps.db, 'org.configure', 'devices.configure');
   const view = requirePermission(deps.db, 'rundown.view');
   const fire = requirePermission(deps.db, 'cg.fire');
   const go = requirePermission(deps.db, 'live.go');

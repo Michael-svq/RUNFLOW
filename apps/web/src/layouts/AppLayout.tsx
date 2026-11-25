@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import type { MeResponse } from '@runflow/core';
-import { Alert, Badge, Button, Logo } from '@runflow/ui';
+import { Alert, Logo } from '@runflow/ui';
 import { api } from '../api/client';
 import { useApplyMe, useLogout, useMe } from '../auth/session';
 import { t } from '../i18n';
 import { useTheme } from '../lib/theme';
-import { NAV_ITEMS } from './nav';
+import { areaForPath, areaItems } from './areas';
+import { useArea } from './useArea';
+import { Dropdown, MenuLink, StageMessageButton } from './HeaderMenus';
 import { useStationStatus } from '../pages/StationPage';
 import { VerifyEmailBanner } from '../pages/AccountPages';
 
@@ -85,12 +87,25 @@ export function AppLayout() {
   const location = useLocation();
   const [theme, setTheme] = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
+  const permissions = me?.activeOrg?.permissions ?? [];
+  const area = useArea();
 
   useEffect(() => setMenuOpen(false), [location.pathname]);
+  // Al abrir una página que solo es de otra área, se cambia a esa área.
+  useEffect(() => {
+    const owner = areaForPath(location.pathname, area.allowed);
+    if (owner && owner !== area.current?.key) area.set(owner);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
   if (!me) return null;
 
-  const permissions = me.activeOrg?.permissions ?? [];
-  const items = NAV_ITEMS.filter((i) => !i.permission || permissions.includes(i.permission));
+  const items = area.current ? areaItems(area.current, permissions) : [];
+  const isAdmin =
+    permissions.includes('org.configure') ||
+    permissions.includes('users.manage') ||
+    me.user.isPlatformAdmin;
+  const canStage = permissions.includes('prompter.control') || permissions.includes('live.go');
+  const dark = theme === 'interior';
 
   return (
     <div className={`rf-shell${menuOpen ? ' rf-shell--menu-open' : ''}`}>
@@ -98,55 +113,56 @@ export function AppLayout() {
         <div className="rf-sidebar__brand">
           <Logo size={20} />
         </div>
+        {area.allowed.length > 1 && (
+          <div className="rf-sidebar__areas" role="group" aria-label="Área de trabajo (móvil)">
+            {area.allowed.map((a) => (
+              <button
+                key={a.key}
+                type="button"
+                className={`rf-areas__tab${a.key === area.current?.key ? ' is-active' : ''}`}
+                onClick={() => {
+                  area.set(a.key);
+                  navigate('/inicio');
+                }}
+              >
+                {a.icon} {a.label}
+              </button>
+            ))}
+          </div>
+        )}
+        {area.current && (
+          <div className="rf-sidebar__area" aria-hidden="true">
+            {area.current.icon} {area.current.label}
+          </div>
+        )}
         <nav className="rf-nav">
-          {me.activeOrg && (
-            <NavLink to="/inicio" className="rf-nav__item">
-              <span className="rf-nav__number" aria-hidden="true">
-                ⌂
-              </span>
-              <span className="rf-nav__label">{t('nav.home')}</span>
-            </NavLink>
-          )}
           {me.activeOrg &&
             items.map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}
-                title={t(item.label)}
-                className={`rf-nav__item${item.milestone ? ' rf-nav__item--soon' : ''}`}
+                end={item.path === '/inicio'}
+                title={item.label}
+                className="rf-nav__item"
               >
-                <span className="rf-nav__number">{item.number}</span>
-                <span className="rf-nav__label">{t(item.label)}</span>
-                {item.milestone && (
-                  <Badge tone="muted" title={t('nav.comingSoon')}>
-                    {item.milestone}
-                  </Badge>
-                )}
+                <span className="rf-nav__number" aria-hidden="true">
+                  {item.icon}
+                </span>
+                <span className="rf-nav__label">{item.label}</span>
               </NavLink>
             ))}
-          {me.user.isPlatformAdmin && (
-            <NavLink to="/plataforma" className="rf-nav__item rf-nav__item--platform">
-              <span className="rf-nav__number" aria-hidden="true">
-                ◆
-              </span>
-              <span className="rf-nav__label">{t('nav.platform')}</span>
-            </NavLink>
-          )}
         </nav>
         <div className="rf-sidebar__footer">
-          <div className="rf-theme-switch" role="group" aria-label={t('theme.label')}>
-            {(['interior', 'exterior'] as const).map((value) => (
-              <button
-                key={value}
-                type="button"
-                className={`rf-theme-switch__btn${theme === value ? ' is-active' : ''}`}
-                aria-pressed={theme === value}
-                onClick={() => setTheme(value)}
-              >
-                {t(`theme.${value}`)}
-              </button>
-            ))}
-          </div>
+          <button
+            type="button"
+            className={`rf-theme-toggle${dark ? '' : ' is-light'}`}
+            onClick={() => setTheme(dark ? 'exterior' : 'interior')}
+            aria-label={dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+            title={dark ? 'Modo oscuro (pulsa para el claro)' : 'Modo claro (pulsa para el oscuro)'}
+          >
+            <span aria-hidden="true">{dark ? '☾' : '☀'}</span>
+            <span className="rf-theme-toggle__label">{dark ? 'Modo oscuro' : 'Modo claro'}</span>
+          </button>
         </div>
       </aside>
 
@@ -165,28 +181,73 @@ export function AppLayout() {
             <Logo size={16} />
           </span>
           <OrgSwitcher me={me} />
+          {area.allowed.length > 1 && (
+            <div className="rf-areas" role="tablist" aria-label="Área de trabajo">
+              {area.allowed.map((a) => (
+                <button
+                  key={a.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={a.key === area.current?.key}
+                  className={`rf-areas__tab${a.key === area.current?.key ? ' is-active' : ''}`}
+                  onClick={() => {
+                    area.set(a.key);
+                    navigate('/inicio');
+                  }}
+                >
+                  <span aria-hidden="true">{a.icon}</span> {a.label}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="rf-header__spacer" />
-          <div className="rf-header__user">
-            <span className="rf-avatar" aria-hidden="true">
-              {initials(me.user.name)}
-            </span>
-            <span className="rf-header__user-text">
-              <span className="rf-header__user-name">{me.user.name}</span>
-              {me.activeOrg && (
-                <span className="rf-header__user-role">{me.activeOrg.role.name}</span>
+          {area.current?.key === 'direccion' && canStage && <StageMessageButton />}
+          {isAdmin && (
+            <Dropdown
+              label="Administración"
+              className="rf-header__admin"
+              button={<span aria-hidden="true">⚙</span>}
+            >
+              {permissions.includes('org.configure') && (
+                <MenuLink to="/configuracion">Configuración</MenuLink>
               )}
-            </span>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={async () => {
-              await logout();
-              navigate('/entrar', { replace: true });
-            }}
+              {permissions.includes('users.manage') && (
+                <MenuLink to="/usuarios">{t('nav.users')}</MenuLink>
+              )}
+              {me.user.isPlatformAdmin && <MenuLink to="/plataforma">{t('nav.platform')}</MenuLink>}
+            </Dropdown>
+          )}
+          <Dropdown
+            label="Mi cuenta"
+            className="rf-header__account"
+            button={
+              <span className="rf-header__user">
+                <span className="rf-avatar" aria-hidden="true">
+                  {initials(me.user.name)}
+                </span>
+                <span className="rf-header__user-text">
+                  <span className="rf-header__user-name">{me.user.name}</span>
+                  {me.activeOrg && (
+                    <span className="rf-header__user-role">{me.activeOrg.role.name}</span>
+                  )}
+                </span>
+              </span>
+            }
           >
-            {t('nav.logout')}
-          </Button>
+            <MenuLink to="/perfil">{t('nav.profile')}</MenuLink>
+            <MenuLink to="/ayuda">Ayuda</MenuLink>
+            <button
+              type="button"
+              role="menuitem"
+              className="rf-dropdown__item"
+              onClick={async () => {
+                await logout();
+                navigate('/entrar', { replace: true });
+              }}
+            >
+              {t('nav.logout')}
+            </button>
+          </Dropdown>
         </header>
         <main className="rf-content" id="contenido">
           {me.mode === 'station' && <StationBanner />}

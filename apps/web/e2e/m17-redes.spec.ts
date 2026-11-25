@@ -42,7 +42,7 @@ test('F3.4: mensaje de la audiencia rotulado en la escaleta', async ({ page, req
   const rundownId = (await rundown.json()).rundown.id as string;
 
   await page.goto('/social');
-  await expect(page.getByRole('heading', { name: /Social Media/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Redes sociales/ })).toBeVisible();
   const form = page.getByRole('form', { name: 'Publicación manual' });
   await form.getByLabel('Nombre').fill(author);
   await form.getByLabel('Mensaje').fill('Saludos a mi nieta, que actúa hoy en la gala');

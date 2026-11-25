@@ -55,7 +55,7 @@ export const es = {
   'nav.home': 'Inicio',
   'nav.sources': 'Fuentes',
   'nav.fridge': 'Nevera',
-  'nav.social': 'Social Media',
+  'nav.social': 'Redes sociales',
   'nav.rundowns': 'Escaletas',
   'nav.media': 'Media',
   'nav.archive': 'Archivo & Papelera',

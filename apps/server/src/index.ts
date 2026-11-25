@@ -1,7 +1,7 @@
 import { createDb } from '@runflow/db';
 import { buildApp, type AppDeps } from './app';
 import { loadConfig, loadDotEnv } from './config';
-import { DEMO_ACCOUNT, seedDemo } from './demo/seed';
+import { DEMO_ACCOUNT, ensureDemoUsers, seedDemo } from './demo/seed';
 
 loadDotEnv();
 const config = loadConfig();
@@ -40,9 +40,10 @@ if (config.demo.seed) {
       studioHost: config.demo.studioHost,
       runflowUrl: config.publicUrl ?? `http://localhost:${config.port}`,
     });
-    if (created)
+    const users = await ensureDemoUsers(deps);
+    if (created || users)
       app.log.info(
-        `Estudio virtual listo: entra con ${DEMO_ACCOUNT.email} / ${DEMO_ACCOUNT.password}`,
+        `Estudio virtual listo: entra con ${DEMO_ACCOUNT.email} (o redac@, dirtv@, produ@runflow.test) / ${DEMO_ACCOUNT.password}`,
       );
   } catch (err) {
     app.log.error({ err }, 'No se pudieron crear los datos de ejemplo');

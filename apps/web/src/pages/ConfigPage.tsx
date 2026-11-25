@@ -25,7 +25,7 @@ import { BillingConfig } from './BillingConfig';
  * las plantillas de RunFlow CG con vista previa real y equipos (CasparCG).
  */
 
-const settingsKey = ['org-settings'];
+export const settingsKey = ['org-settings'];
 const devicesKey = ['devices'];
 
 const SAMPLE: Record<string, Record<string, string>> = {
@@ -51,9 +51,8 @@ export function ConfigPage() {
   return (
     <>
       <PageHeader
-        number="10"
         title="Configuración"
-        intro="Opciones Master de la empresa: rótulos, directo, diseño de la grafía, equipos del estudio e inteligencia artificial."
+        intro="Administración de la empresa: plan y facturación, inteligencia artificial y API. El diseño de los rótulos está en Dirección TV → Diseño, y los equipos en Dirección TV → RunFlow Station."
       />
       {settings.isPending ? (
         <Spinner label="Cargando…" />
@@ -62,9 +61,6 @@ export function ConfigPage() {
       ) : (
         <>
           <BillingConfig />
-          <LiveSettings settings={settings.data} />
-          <DesignEditor settings={settings.data} />
-          <Devices />
           <AiConfig settings={settings.data} />
           <ApiConfig />
         </>
@@ -94,7 +90,7 @@ function useSaveSettings() {
 
 /* ---------- Rótulos y directo ---------- */
 
-function LiveSettings({ settings }: { settings: OrgSettings }) {
+export function LiveSettings({ settings }: { settings: OrgSettings }) {
   const [form, setForm] = useState({
     graphicSeconds: String(settings.graphicSeconds),
     cameraAutoOut: settings.cameraAutoOut,
@@ -156,7 +152,7 @@ function LiveSettings({ settings }: { settings: OrgSettings }) {
 
 /* ---------- Diseño de rótulos ---------- */
 
-function DesignEditor({ settings }: { settings: OrgSettings }) {
+export function DesignEditor({ settings }: { settings: OrgSettings }) {
   const [design, setDesign] = useState<CgDesign>(settings.cgDesign);
   const [type, setType] = useState('TOT');
   const frame = useRef<HTMLIFrameElement>(null);
@@ -549,7 +545,7 @@ function deviceSummary(d: DeviceDto): string {
   return d.kind === 'casparcg' ? `${where} · canal ${c.channel}` : where;
 }
 
-function Devices() {
+export function Devices() {
   const qc = useQueryClient();
   const list = useQuery({
     queryKey: devicesKey,

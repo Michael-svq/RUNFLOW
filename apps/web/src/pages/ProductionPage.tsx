@@ -25,7 +25,6 @@ import { api, errorMessage } from '../api/client';
 import { useCan } from '../auth/session';
 import { PageHeader } from '../components/PageHeader';
 import { BudgetPanel } from '../production/BudgetPanel';
-import { ScreensPanel } from '../production/ScreensPanel';
 import {
   dayKey,
   fmtDateTime,
@@ -52,18 +51,16 @@ const statusTone = (s: EventStatus | CallStatus | GuestStatus) =>
       : 'muted';
 
 export function ProductionPage() {
-  const [tab, setTab] = useState<'calendar' | 'crew' | 'budget' | 'screens'>('calendar');
+  const [tab, setTab] = useState<'calendar' | 'crew' | 'budget'>('calendar');
   const canBudget = useCan('budget.view');
   const tabs = [
     ['calendar', 'Calendario'],
     ['crew', 'Personal'],
     ...(canBudget ? [['budget', 'Presupuesto']] : []),
-    ['screens', 'Pantallas'],
   ] as [typeof tab, string][];
   return (
     <>
       <PageHeader
-        number="11"
         title="Producción"
         intro="Directos, grabaciones y ensayos: quién va y a qué hora, invitados, logística y presupuesto, al día para todo el equipo."
         actions={
@@ -87,8 +84,6 @@ export function ProductionPage() {
         <Calendar />
       ) : tab === 'crew' ? (
         <CrewDirectory />
-      ) : tab === 'screens' ? (
-        <ScreensPanel />
       ) : (
         <section className="rf-card" aria-label="Presupuesto">
           <BudgetPanel />
