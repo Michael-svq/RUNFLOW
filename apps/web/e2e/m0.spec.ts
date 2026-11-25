@@ -125,6 +125,8 @@ test('modo claro y vista de móvil', async ({ page }) => {
   await page.getByRole('button', { name: 'Menú' }).click();
   await expect(page.getByRole('link', { name: 'Escaletas' })).toBeVisible();
   await shot(page, '10-movil-menu');
+  // Tocar fuera del menú lo cierra.
+  await page.locator('.rf-shell__scrim').click({ position: { x: 370, y: 400 } });
   await page.getByRole('button', { name: 'Mi cuenta' }).click();
   await page.getByRole('menuitem', { name: /Configuración de usuario/ }).click();
   await expect(page.getByRole('heading', { name: /Configuración de usuario/ })).toBeVisible();
