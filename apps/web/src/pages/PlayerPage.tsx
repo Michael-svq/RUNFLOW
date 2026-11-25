@@ -1,11 +1,6 @@
 import { useMemo, useState, type KeyboardEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import {
-  formatDuration,
-  normalizeClip,
-  type MediaDto,
-  type RundownDto,
-} from '@runflow/core';
+import { formatDuration, normalizeClip, type MediaDto, type RundownDto } from '@runflow/core';
 import { moveLines, type LineSnapshot, type ScriptGraphicBlock } from '@runflow/sync';
 import { Spinner } from '@runflow/ui';
 import { api } from '../api/client';
