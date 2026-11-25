@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 import { deleteLines, duplicateLine, insertLine } from './rundown-doc';
 import {
+  insertGraphic,
+  moveGraphic,
+  removeGraphic,
+  updateGraphic,
   appendBlocks,
   countWords,
   getScriptFragment,
@@ -125,5 +129,55 @@ describe('guion', () => {
     expect(blocks).toHaveLength(2);
     expect(blocks[0]).toEqual({ kind: 'paso', text: 'Hola.' });
     expect(blocks[1]).toMatchObject({ kind: 'rotulo', type: 'RRS', f2: 'Gran gala' });
+  });
+});
+
+describe('rótulos sueltos', () => {
+  it('cambia, añade, mueve y quita rótulos sin tocar el texto', () => {
+    const doc = new Y.Doc();
+    const a = insertLine(doc, { cells: { nombre: 'A' } });
+    const b = insertLine(doc, { cells: { nombre: 'B' } });
+    writeScript(doc, a, [
+      { kind: 'paso', text: 'Hola' },
+      {
+        kind: 'rotulo',
+        id: 'g1',
+        type: 'TOT',
+        f0: 'Ana',
+        f1: '',
+        f2: '',
+        f3: '',
+        tcIn: '',
+        tcOut: '',
+      },
+      { kind: 'off', text: 'Fin' },
+    ]);
+    const graphics = (id: string) => lineScript(doc, id).graphics;
+    expect(updateGraphic(doc, a, 'g1', { f1: 'Presentadora', tcIn: '00:03' })).toBe(true);
+    expect(graphics(a)[0]).toMatchObject({ f0: 'Ana', f1: 'Presentadora', tcIn: '00:03' });
+    updateGraphic(doc, a, 'g1', { tcIn: '' });
+    expect(graphics(a)[0]!.tcIn).toBe('');
+
+    const g2 = insertGraphic(
+      doc,
+      a,
+      { type: 'LOC', f0: 'Sevilla', f1: '', f2: '', f3: '', tcIn: '', tcOut: '' },
+      { afterId: 'g1' },
+    );
+    expect(readScript(getScriptFragment(doc, a)).map((x) => x.kind)).toEqual([
+      'paso',
+      'rotulo',
+      'rotulo',
+      'off',
+    ]);
+    expect(graphics(a).map((g) => g.id)).toEqual(['g1', g2]);
+
+    expect(moveGraphic(doc, a, 'g1', b)).toBe(true);
+    expect(graphics(a).map((g) => g.id)).toEqual([g2]);
+    expect(graphics(b)[0]).toMatchObject({ id: 'g1', f1: 'Presentadora' });
+
+    expect(removeGraphic(doc, a, g2)).toBe(true);
+    expect(readScript(getScriptFragment(doc, a)).map((x) => x.kind)).toEqual(['paso', 'off']);
+    expect(removeGraphic(doc, a, 'nada')).toBe(false);
   });
 });

@@ -18,6 +18,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { SetupPage } from './pages/SetupPage';
 import { UsersPage } from './pages/UsersPage';
 import { StationHubPage } from './pages/StationHubPage';
+import { GraphicsPage } from './pages/GraphicsPage';
 import { DesignPage } from './pages/DesignPage';
 import { ConfigPage } from './pages/ConfigPage';
 import { SignupPage } from './pages/SignupPage';
@@ -109,6 +110,14 @@ export function App() {
             element={
               <RequireAny perms={['devices.configure', 'org.configure']}>
                 <DesignPage />
+              </RequireAny>
+            }
+          />
+          <Route
+            path="/rotulacion"
+            element={
+              <RequireAny perms={['cg.fire', 'script.edit_any']}>
+                <GraphicsPage />
               </RequireAny>
             }
           />

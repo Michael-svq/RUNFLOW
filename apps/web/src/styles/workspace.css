@@ -928,3 +928,136 @@
   background: #e0442b;
   box-shadow: 0 0 6px rgba(224, 68, 43, 0.7);
 }
+
+/* ---------- Rotulación (hoja de rótulos) ---------- */
+.rf-graphics {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rf-space-3);
+}
+.rf-graphics__pick {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rf-space-1);
+  font-size: var(--rf-text-xs);
+  font-weight: 700;
+  color: var(--rf-text-muted);
+}
+.rf-graphics__pick .rf-select {
+  min-height: 30px;
+  width: auto;
+  max-width: 260px;
+}
+.rf-graphics__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: var(--rf-space-3);
+  align-items: start;
+}
+.rf-graphics__preview {
+  position: sticky;
+  top: var(--rf-space-3);
+  display: grid;
+  gap: var(--rf-space-2);
+}
+.rf-gsheet {
+  font-size: var(--rf-text-sm);
+}
+.rf-gsheet th,
+.rf-gsheet td {
+  padding: 2px 4px;
+  vertical-align: middle;
+}
+.rf-gsheet th {
+  white-space: nowrap;
+}
+.rf-gsheet tbody tr.is-selected td {
+  background: color-mix(in srgb, var(--rf-accent) 12%, transparent);
+}
+.rf-gsheet tbody tr.is-onair td {
+  background: rgba(229, 72, 77, 0.22);
+}
+.rf-gsheet tbody tr.is-done td {
+  opacity: 0.75;
+}
+.rf-gsheet__input,
+.rf-gsheet__select {
+  width: 100%;
+  min-width: 90px;
+  min-height: 28px;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.rf-gsheet__select {
+  min-width: 120px;
+}
+.rf-gsheet__type {
+  min-width: 70px;
+  font-weight: 700;
+}
+.rf-gsheet__input:hover:not(:disabled),
+.rf-gsheet__select:hover {
+  border-color: var(--rf-border);
+}
+.rf-gsheet__input:focus,
+.rf-gsheet__select:focus {
+  outline: none;
+  border-color: var(--rf-accent);
+  background: var(--rf-surface);
+}
+.rf-gsheet__input.is-invalid {
+  border-color: var(--rf-danger);
+}
+.rf-gsheet__input:disabled {
+  cursor: not-allowed;
+}
+.rf-gsheet td.is-unused {
+  background: color-mix(in srgb, var(--rf-text) 5%, transparent);
+}
+.rf-gsheet__tc .rf-gsheet__input {
+  min-width: 64px;
+  width: 64px;
+  font-variant-numeric: tabular-nums;
+}
+.rf-gsheet__state {
+  font-size: var(--rf-text-xs);
+  font-weight: 900;
+  white-space: nowrap;
+}
+.rf-gsheet__state.is-onair {
+  color: #fff;
+  background: #d93025;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+.rf-gsheet__state.is-done {
+  color: var(--rf-success);
+}
+.rf-gsheet__state.is-bad {
+  color: var(--rf-warning);
+}
+.rf-gsheet__actions {
+  white-space: nowrap;
+}
+.rf-gsheet__del {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.6;
+}
+.rf-gsheet__del:hover {
+  opacity: 1;
+}
+@media (max-width: 1440px) {
+  .rf-graphics__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .rf-graphics__preview {
+    position: static;
+    max-width: 480px;
+  }
+}

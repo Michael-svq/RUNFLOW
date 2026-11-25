@@ -207,3 +207,95 @@ export function appendBlocks(
     fragment.insert(fragment.length, blocks.map(toNode));
   }, origin);
 }
+
+/* ---------- Rótulos sueltos (hoja de Rotulación) ---------- */
+
+export type GraphicPatch = Partial<Omit<ScriptGraphicBlock, 'kind' | 'id'>>;
+
+function findGraphic(
+  doc: Y.Doc,
+  lineId: string,
+  graphicId: string,
+): { fragment: Y.XmlFragment; index: number; el: Y.XmlElement } | null {
+  if (!doc.share.get(scriptField(lineId))) return null;
+  const fragment = getScriptFragment(doc, lineId);
+  const nodes = fragment.toArray();
+  for (let i = 0; i < nodes.length; i++) {
+    const n = nodes[i];
+    if (n instanceof Y.XmlElement && n.nodeName === 'rotulo' && attr(n, 'id') === graphicId) {
+      return { fragment, index: i, el: n };
+    }
+  }
+  return null;
+}
+
+/** Cambia campos de un rótulo (el resto del guion no se toca). */
+export function updateGraphic(
+  doc: Y.Doc,
+  lineId: string,
+  graphicId: string,
+  patch: GraphicPatch,
+  origin?: unknown,
+): boolean {
+  const found = findGraphic(doc, lineId, graphicId);
+  if (!found) return false;
+  doc.transact(() => {
+    for (const [k, v] of Object.entries(patch)) {
+      if (v) found.el.setAttribute(k, v);
+      else found.el.removeAttribute(k);
+    }
+  }, origin);
+  return true;
+}
+
+/** Añade un rótulo al guion de una línea: tras `afterId` o al final. Devuelve su id. */
+export function insertGraphic(
+  doc: Y.Doc,
+  lineId: string,
+  graphic: Omit<ScriptGraphicBlock, 'kind' | 'id'> & { id?: string },
+  opts: { afterId?: string } = {},
+  origin?: unknown,
+): string {
+  const id = graphic.id || globalThis.crypto.randomUUID();
+  doc.transact(() => {
+    const fragment = getScriptFragment(doc, lineId);
+    const after = opts.afterId ? findGraphic(doc, lineId, opts.afterId) : null;
+    const at = after ? after.index + 1 : fragment.length;
+    fragment.insert(at, [toNode({ ...graphic, kind: 'rotulo', id })]);
+  }, origin);
+  return id;
+}
+
+/** Quita un rótulo del guion de su línea. */
+export function removeGraphic(
+  doc: Y.Doc,
+  lineId: string,
+  graphicId: string,
+  origin?: unknown,
+): boolean {
+  const found = findGraphic(doc, lineId, graphicId);
+  if (!found) return false;
+  doc.transact(() => found.fragment.delete(found.index, 1), origin);
+  return true;
+}
+
+/** Pasa un rótulo (con el mismo id) al final del guion de otra línea. */
+export function moveGraphic(
+  doc: Y.Doc,
+  fromLineId: string,
+  graphicId: string,
+  toLineId: string,
+  origin?: unknown,
+): boolean {
+  if (fromLineId === toLineId) return false;
+  const found = findGraphic(doc, fromLineId, graphicId);
+  if (!found) return false;
+  const block = readScript(getScriptFragment(doc, fromLineId))[found.index];
+  if (!block || block.kind !== 'rotulo') return false;
+  doc.transact(() => {
+    found.fragment.delete(found.index, 1);
+    const to = getScriptFragment(doc, toLineId);
+    to.insert(to.length, [toNode(block)]);
+  }, origin);
+  return true;
+}
